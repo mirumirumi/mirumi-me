@@ -1,3 +1,3 @@
 export default defineAppConfig({
-  siteFullPath: "https://xxxxx.xxx",
+  siteFullPath: "https://mirumi.me",
 })

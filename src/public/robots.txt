@@ -1,1 +1,3 @@
 User-agent: *
+Disallow: /assets/components/
+Disallow: /assets/404.html

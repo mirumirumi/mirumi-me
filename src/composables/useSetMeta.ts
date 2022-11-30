@@ -2,10 +2,10 @@ import { PageMeta } from "@/lib/defines"
 
 export default (pageMeta: PageMeta) => {
   useHead({
-    title: "<<site name>>",
+    title: "みるめも",
     titleTemplate: (title) => {
       if (pageMeta && title !== pageMeta.title) return `${pageMeta.title} | ${title}`
-      else return title
+      else return `${title} | みるみのブログ`
     },
     meta: [
       { name: "description", content: pageMeta.description },
