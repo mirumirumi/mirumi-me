@@ -8,7 +8,6 @@
 }
 @mixin tablet {
   @media screen and (max-width: 1024px) {
-    --width-sidebar: 250px;
     @content;
   }
 }
@@ -29,7 +28,6 @@
   --width-max-base          : 1188px;
   --width-scrollbar         : 16px;
   --width-max-screen        : calc(var(--width-max-base) - var(--width-scrollbar));
-  --width-sidebar           : 331px;
 }
 * {
   box-sizing: border-box;
