@@ -45,16 +45,6 @@ export default defineNuxtConfig({
     //   mode: "out-in",
     // },
   },
-  components: {
-    dirs: [
-      "@/components",
-    ],
-  },
-  imports: {
-    dirs: [
-      "@/composables",
-    ],
-  },
   nitro: {
     // prerender: {  // for SSR + SSG
     //   routes: []
