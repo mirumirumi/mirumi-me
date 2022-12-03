@@ -1,4 +1,4 @@
-import { PageMeta } from "@/lib/defines"
+import { PageMeta } from "@/utils/defines"
 
 export default (pageMeta: PageMeta) => {
   useHead({
