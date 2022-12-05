@@ -57,5 +57,8 @@ svg {
   bottom: 0;
   margin: auto;
   width: 1.1em;
+  path {
+    transition: 0.29s all ease;
+  }
 }
 </style>
