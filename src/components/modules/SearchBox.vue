@@ -1,6 +1,6 @@
-<template>
+s<template>
   <div class="search_box">
-    <input type="text" ref="search" class="input" placeholder="Search for..." 
+    <input type="text" ref="search" class="input" placeholder="記事を検索..." 
       v-model="query"
       @keydown.enter.prevent="move"
     >
@@ -9,20 +9,24 @@
 </template>
 
 <script setup lang="ts">
-const router = useRouter()
-const query = ref("")
-const search = ref()
+const p = defineProps<{
+  query?: string,
+}>()
 
 const emit = defineEmits<{
   (e: "closeSearchBox"): void,
 }>()
 
-onMounted(() => {
-  search.value.focus()
+const router = useRouter()
+const query = ref("")
+const search = ref()
+
+watch(p, () => {
+  query.value = p.query ?? ""
 })
 
 const move = () => {
-  router.push({ path: "/search", query: { q: query.value } })
+  router.push({ query: { s: query.value } })
   emit("closeSearchBox")
 }
 </script>
@@ -33,13 +37,19 @@ const move = () => {
   width: 100%;
   height: 100%;
   input {
-    padding: 0.395em 2em 0.355em 1.3em;
-    line-height: 2.1;
+    padding: 0.395em 3.3em 0.355em 1.3em;
+    font-size: 0.9em;
+    line-height: 1.5;
     border: 1.9px solid #e5e5e5;
     border-radius: 31px;
+    background-color: transparent;
+    &::placeholder {
+      font-size: 0.85em;
+    }
   }
   svg {
     right: 1.7em;
+    cursor: pointer;
   }
 }
 </style>
