@@ -16,18 +16,21 @@
  * common
  */
 :root {
-  --color-text              : #4e4e4e;
-  --color-text-white        : #f2f2f2;
-  --color-text-white-hover  : #e3e3e3;
-  --color-background        : #fffcf9;
-  --color-primary           : #ec6839;
-  --color-link              : #bb0000;
-  --color-invalid           : #dc3545;
+  --color-text: #4e4e4e;
+  --color-gray: #bab9b9;
+  --color-text-white: #f2f2f2;
+  --color-text-white-hover: #e3e3e3;
+  --color-background: #fffcf9;
+  --color-footer: #f8f5f2;
+  --color-primary: #ec6839;
+  --color-mi: #604134;
+  --color-link: #bb0000;
+  --color-invalid: #dc3545;
   --color-input-focus-border: #e9b18d;
   --color-input-focus-shadow: 0 0 0 0.19rem rgba(237, 120, 45, 0.37);
-  --width-max-base          : 1188px;
-  --width-scrollbar         : 16px;
-  --width-max-screen        : calc(var(--width-max-base) - var(--width-scrollbar));
+  --width-max-base: 1188px;
+  --width-scrollbar: 16px;
+  --width-max-screen: calc(var(--width-max-base) - var(--width-scrollbar));
 }
 * {
   box-sizing: border-box;
@@ -39,10 +42,10 @@ html, body {
   font-size: 18px;
   font-family: "Custom Noto Sans", "Open Sans", Helvetica, "Lucida Sans Unicode", "Lucida Grande", Arial, Verdana, sans-serif;
   color: var(--color-text);
-  background-color: var(--color-background);
+  background-color: var(--color-footer);
   @include mobile {
     font-size: 16px;
-  }  
+  }
 }
 p a,
 span a,
@@ -63,7 +66,7 @@ textarea {
 }
 input::placeholder,
 textarea::placeholder {
-  color: #ccc;
+  color: #cccccc;
 }
 input:focus-visible,
 button:focus-visible,
@@ -78,7 +81,7 @@ textarea:focus-visible {
   font-size: 1em;
   font-weight: 400;
   line-height: 1.5;
-  background-color: #fff;
+  background-color: #ffffff;
   background-clip: padding-box;
   border: 1.1px solid #e2dcd3;
   appearance: none;
@@ -93,6 +96,9 @@ textarea:focus-visible {
   &:disabled, &[readonly] {
     background-color: #e9ecef;
     opacity: 1;
+  }
+  &::placeholder {
+    font-family: "Custom Noto Sans", "Open Sans", Helvetica, "Lucida Sans Unicode", "Lucida Grande", Arial, Verdana, sans-serif;
   }
 }
 label {
@@ -111,7 +117,7 @@ label {
   margin-bottom: 0.125rem;
   .form-check-input {
     float: left;
-    margin-left: -1.7em;  
+    margin-left: -1.7em;
   }
 }
 .form-check-input {
@@ -120,7 +126,7 @@ label {
   margin-top: 0.25em;
   font-size: inherit;
   vertical-align: top;
-  background-color: #fff;
+  background-color: #ffffff;
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
@@ -153,7 +159,7 @@ label {
 @include mobile {
   .display_none_mobile {
     display: none;
-  }  
+  }
 }
 .dropdown-caret {
   display: inline-block;
@@ -182,7 +188,8 @@ label {
 /**
  * globals
  */
-
+.xxxxxxxx {
+}
 
 /**
  * modal series
@@ -257,7 +264,6 @@ label {
 .page-leave-to {
   opacity: 0;
 }
-
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.07s ease-out;
@@ -270,7 +276,6 @@ label {
 .fade-leave-from {
   opacity: 1;
 }
-
 .fadedown-enter-active,
 .fadedown-leave-active {
   transition: all 0.2s ease;
@@ -289,7 +294,6 @@ label {
 .fadedown-leave-from {
   opacity: 1;
 }
-
 .tooltip-enter-active,
 .tooltip-leave-active {
   transition: opacity 0.11s ease-out;
@@ -302,7 +306,6 @@ label {
 .tooltip-leave-from {
   opacity: 1;
 }
-
 .move-move {
   transition: transform 0.19s ease-out;
 }
@@ -317,7 +320,6 @@ label {
 .move-leave-to {
   opacity: 0;
 }
-
 .slide-enter-active,
 .slide-leave-active {
   transition: transform 0.13s ease-out;
@@ -334,14 +336,15 @@ label {
 /**
  * fonts
  */
- @font-face {
+@font-face {
   font-family: "Custom Noto Sans";
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: local("NotoSansCJKjp-Regular.otf"),
-       local("NotoSansJP-Regular.otf"),
-       url("@/assets/fonts/Noto_Sans_JP/NotoSansJP-Regular.woff2") format("woff2");
+  src:
+    local("NotoSansCJKjp-Regular.otf"),
+    local("NotoSansJP-Regular.otf"),
+    url("@/assets/fonts/Noto_Sans_JP/NotoSansJP-Regular.woff2") format("woff2");
   // unicode-range: U+000-5FF;
 }
 @font-face {
@@ -349,8 +352,9 @@ label {
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: local("NotoSansCJKjp-Bold.otf"),
-       local("NotoSansJP-Bold.otf"),
-       url("@/assets/fonts/Noto_Sans_JP/NotoSansJP-Bold.woff2") format("woff2");
+  src:
+    local("NotoSansCJKjp-Bold.otf"),
+    local("NotoSansJP-Bold.otf"),
+    url("@/assets/fonts/Noto_Sans_JP/NotoSansJP-Bold.woff2") format("woff2");
   // unicode-range: U+000-5FF;
 }
