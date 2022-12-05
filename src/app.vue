@@ -13,6 +13,7 @@
 #app {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-background);
   #container {
     width: var(--width-max-screen);
     margin: 0 auto;
