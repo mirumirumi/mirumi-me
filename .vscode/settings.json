@@ -42,6 +42,7 @@
             "at-rule-no-unknown": null,
             "declaration-empty-line-before": "never",
             "declaration-block-trailing-semicolon": null,
+            "no-eol-whitespace": null,
         },
     },
     "stylelint.snippet": [
