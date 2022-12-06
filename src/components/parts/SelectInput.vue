@@ -1,7 +1,7 @@
 <template>
   <div class="select_input">
     <button type="button" class="select_button" :class="{ 'invalid': _isInvalid }" @click="toggleIsSelecting(); disableInavalid()">
-      {{ currentItem }}
+      {{ selectName || currentItem }}
       <span class="dropdown_caret"></span>
     </button>
     <ul v-show="isSelecting">
@@ -20,7 +20,8 @@ import { v4 as uuidv4 } from "uuid"
 
 const p = defineProps<{
   items: Array<string>,
-  current: string | null,
+  selectName?: string,
+  current?: string,
   width?: string,
   isDisable?: boolean,
   isInvalid?: boolean,
