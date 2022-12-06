@@ -20,7 +20,7 @@ import { v4 as uuidv4 } from "uuid"
 
 const p = defineProps<{
   items: Array<string>,
-  current: string,
+  current: string | null,
   width?: string,
   isDisable?: boolean,
   isInvalid?: boolean,
