@@ -103,24 +103,24 @@ textarea:focus-visible {
 }
 label {
   display: inline-block;
-  .form-check-input[disabled] ~ & {
+  .form_check_input[disabled] ~ & {
     opacity: 0.5;
   }
 }
-.form-label {
+.form_label {
   margin-bottom: 0.5rem;
 }
-.form-check {
+.form_check {
   display: block;
   min-height: 1.5rem;
   padding-left: 1.7em;
   margin-bottom: 0.125rem;
-  .form-check-input {
+  .form_check_input {
     float: left;
     margin-left: -1.7em;
   }
 }
-.form-check-input {
+.form_check_input {
   width: 1em;
   height: 1em;
   margin-top: 0.25em;
@@ -161,7 +161,7 @@ label {
     display: none;
   }
 }
-.dropdown-caret {
+.dropdown_caret {
   display: inline-block;
   width: 0;
   height: 0;

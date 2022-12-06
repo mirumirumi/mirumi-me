@@ -2,7 +2,7 @@
   <div class="select_input">
     <button type="button" class="select_button" :class="{ 'invalid': _isInvalid }" @click="toggleIsSelecting(); disableInavalid()">
       {{ currentItem }}
-      <span class="dropdown-caret"></span>
+      <span class="dropdown_caret"></span>
     </button>
     <ul v-show="isSelecting">
       <li v-for="item, index in items" @click="decideSelect(item)" :id="'item_' + uuid + '_' + index" @keydown.prevent="selectWithKeys($event, item)" tabindex="-1" :key="item">
@@ -112,13 +112,13 @@ function tabindexToId(to: number, maxlength: number): string {
     color: var(--color-text);
     font-size: 1em;
     line-height: 1.5;
-    background-color: #fff;
+    background-color: #ffffff;
     border: 1px solid #ced4da;
     border-radius: 0.25rem;
     appearance: none;
     transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
     cursor: pointer;
-    .dropdown-caret {
+    .dropdown_caret {
       position: absolute;
       top: 2.1px;
       bottom: 0;
@@ -142,7 +142,7 @@ function tabindexToId(to: number, maxlength: number): string {
     max-height: 200px;
     border: solid 1.9px #c9c9c9;
     border-radius: 0.25rem;
-    background-color: #fff;
+    background-color: #ffffff;
     box-shadow: 2px 2px 4px 0px rgba(0, 0, 0, 0.19);
     overflow-y: auto;
     z-index: 14;
