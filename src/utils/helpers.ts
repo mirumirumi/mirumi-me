@@ -1,7 +1,3 @@
-export const toggle = (flag: boolean) => {
-  return flag === true ? false : true
-}
-
 export const today = () => {
   return `${new Date().getFullYear()}/${new Date().getMonth() + 1}/${new Date().getDate()}`
 }
