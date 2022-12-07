@@ -3,7 +3,7 @@
     <div class="category_menu" v-if="_isShown">
       <ul>
         <li v-for="category in categories" :key="category.name">
-          <NuxtLink :to="category.slug" :class="{ 'current': category.current }">{{ category.name }}</NuxtLink>
+          <NuxtLink :to="`/category/${category.slug}`" :class="{ 'current': category.current }">{{ category.name }}</NuxtLink>
         </li>
       </ul>
       <Teleport to="body">
@@ -29,6 +29,8 @@ const emit = defineEmits<{
 }>()
 
 const route = useRoute()
+const appConfig = useAppConfig()
+
 const _isShown = ref(p.isShown)
 
 // TODO: APIで取る
@@ -42,22 +44,37 @@ const categories: Category[] = [
   { name: "雑記", slug: "notes" },
   { name: "その他", slug: "" },
 ]
+const others: Category[] = [
+  { name: "音楽", slug: "music" },
+  { name: "カーナビ", slug: "car-navigation-system" },
+  { name: "枕", slug: "pillow" },
+  { name: "明晰夢/体外離脱", slug: "dreaming" },
+  { name: "Software Design", slug: "software-design" },
+]
+
+checkCurrentCategory()
 
 watch(p, () => {
   _isShown.value = p.isShown
 })
 
-watch(route, async () => {
-  for (const category of categories) {
-    if (isBelongCategoryPage() && await matchCategory(category.slug)) {
-      category.current = true
-    }
-  }
+watch(route, () => {
+  checkCurrentCategory()
 })
 
 const closeSelections = () => {
   _isShown.value = false
   emit("close")
+}
+
+async function checkCurrentCategory(): Promise<void> {
+  for (const category of categories) {
+    if (isBelongCategoryPage() && await matchCategory(category.slug)) {
+      category.current = true
+    } else {
+      category.current = false
+    }
+  }
 }
 
 // TODO: 固定ページの一覧をAPIで取得してまとめる
@@ -66,12 +83,12 @@ function isBelongCategoryPage(): boolean {
     route.path === "/"
     || route.path.includes("/all-entries")
     || route.path.includes("/new-entries")
-    || route.path.includes("about")
-    || route.path.includes("contact")
-    || route.path.includes("nice-to-meet-you-10")
-    || route.path.includes("privacy-policy")
-    || route.path.includes("profile")
-    || route.path.includes("what-is-this-blog")
+    || route.path.includes("/about")
+    || route.path.includes("/contact")
+    || route.path.includes("/nice-to-meet-you-10")
+    || route.path.includes("/privacy-policy")
+    || route.path.includes("/profile")
+    || route.path.includes("/what-is-this-blog")
   ) {
     return false
   } else {
@@ -79,10 +96,40 @@ function isBelongCategoryPage(): boolean {
   }
 }
 
-async function matchCategory(targetCategory: string): Promise<boolean> {
-  // TODO: APIで取る
-  const currentCategory = "mobile"
-  return targetCategory === currentCategory
+async function matchCategory(targetCategorySlug: string): Promise<boolean> {
+  let categorySlug = ""
+
+  if (route.path.includes("/category/")) {
+    // In category page
+
+    const { data: resCategories } = await useFetch(`/categories`, {
+      baseURL: appConfig.baseURL,
+      params: {
+        slug: route.path.replace("/category/", ""),
+      },
+    })
+    categorySlug = JSON.parse(resCategories.value as string)[0].slug
+  } else {
+    // In post page
+
+    const { data: resPosts } = await useFetch(`/posts`, {
+      baseURL: appConfig.baseURL,
+      params: {
+        slug: route.path.replace("/", ""),
+      },
+    })
+    const postId = JSON.parse(resPosts.value as string)[0].id
+    
+    const { data } = await useFetch(`/categories`, {
+      baseURL: appConfig.baseURL,
+      params: {
+        post: postId,
+      },
+    })
+    categorySlug = JSON.parse(data.value as string)[0].slug
+  }
+
+  return targetCategorySlug === categorySlug
 }
 </script>
 
