@@ -276,13 +276,15 @@ label {
 .fade-leave-from {
   opacity: 1;
 }
-.fadedown-enter-active,
+.fadedown-enter-active {
+  transition: all 0.13s ease-out;
+}
 .fadedown-leave-active {
-  transition: all 0.2s ease;
+  transition: all 0.1s ease;
 }
 .fadedown-enter-from {
   opacity: 0;
-  transform: translateY(-23px);
+  transform: translateY(-11px);
 }
 .fadedown-leave-to {
   opacity: 0;
