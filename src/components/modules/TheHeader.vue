@@ -14,9 +14,10 @@
             </NuxtLink>
           </li>
           <li>
-            <div class="category_menu" @mouseenter="(hoverCategory = true)" @mouseleave="(hoverCategory = false)">
+            <div class="category_menu_wrap" @mouseenter="(isHoveredCategory = true)" @mouseleave="(isHoveredCategory = false)" @click="onClick">
               <span>かてごり</span>
-              <PartsSvgIcon :icon="'angle_down'" :color="'var(--color-gray)'" :hover="{ on: hoverCategory, color: 'var(--color-mi)' }" />
+              <PartsSvgIcon :icon="'angle_down'" :color="'var(--color-gray)'" :hover="{ on: isHoveredCategory, color: hoverStyle }" :class="{ 'rotate': isShownCategoryMenu }" />
+              <ModulesTheCategoryMenu :isShown="isShownCategoryMenu" @close="close" />
             </div>
           </li>
           <li>
@@ -36,7 +37,24 @@
 </template>
 
 <script setup lang="ts">
-const hoverCategory = ref(false)
+const isHoveredCategory = ref(false)
+const isShownCategoryMenu = ref(false)
+
+const hoverStyle = ref("var(--color-mi)")
+
+const onClick = () => {
+  if (isShownCategoryMenu.value) {
+    isShownCategoryMenu.value = false
+  } else {
+    isShownCategoryMenu.value = true
+    hoverStyle.value = "var(--color-gray)"
+  }
+}
+
+const close = () => {
+  isShownCategoryMenu.value = false
+  hoverStyle.value = "var(--color-mi)"
+}
 </script>
 
 <style lang="scss" scoped>
@@ -81,28 +99,33 @@ const hoverCategory = ref(false)
             font-weight: bold;
             text-decoration: none;
           }
-          a, .category_menu {
+          a, .category_menu_wrap {
             display: flex;
             align-items: center;
             height: 100%;
             color: var(--color-gray);
             font-size: 0.8em;
             transition: 0.29s all ease;
+            &:hover {
+              color: v-bind(hoverStyle);
+            }
+          }
+          .category_menu_wrap {
+            position: relative;
+            margin-left: 1.3em;
+            margin-right: -0.9em;
+            cursor: pointer;
             svg {
               position: relative;
               top: 0.1em;
               right: 0;
               width: 1.9em;
               transform: scale(0.4);
+              transition: 0.17s all ease-in-out;
+              &.rotate {
+                transform: scale(0.4) rotate(180deg);
+              }
             }
-            &:hover {
-              color: var(--color-mi);
-            }
-          }
-          .category_menu {
-            margin-left: 1.3em;
-            margin-right: -0.9em;
-            cursor: pointer;
           }
           @include mobile {
             width: 40px;
