@@ -10,13 +10,15 @@
               </span>
               <PartsSvgIcon :icon="'angle_down'" :color="'var(--color-gray)'" :class="{ 'rotate': isShownOthers }" />
             </div>
-            <ul v-if="isShownOthers">
-              <li v-for="other in others" :key="other.name">
-                <NuxtLink :to="`/category/${other.slug}`" :class="{ 'current': other.current }">
-                  {{ other.name }}
-                </NuxtLink>
-              </li>
-            </ul>
+            <Transition name="fade" appear>
+              <ul v-if="isShownOthers">
+                <li v-for="other in others" :key="other.name">
+                  <NuxtLink :to="`/category/${other.slug}`" :class="{ 'current': other.current }">
+                    {{ other.name }}
+                  </NuxtLink>
+                </li>
+              </ul>
+            </Transition>
           </div>
           <NuxtLink v-else :to="`/category/${category.slug}`" :class="{ 'current': category.current }">
             {{ category.name }}
@@ -51,7 +53,6 @@ const appConfig = useAppConfig()
 const _isShown = ref(p.isShown)
 const isShownOthers = ref(false)
 
-// TODO: APIで取る
 const categories: Category[] = [
   { name: "PC", slug: "pc" },
   { name: "スマートフォン", slug: "mobile" },
