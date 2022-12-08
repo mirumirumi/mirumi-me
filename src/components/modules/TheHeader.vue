@@ -15,9 +15,11 @@
           </li>
           <li>
             <div class="category_menu_wrap" @mouseenter="(isHoveredCategory = true)" @mouseleave="(isHoveredCategory = false)" @click="onClick">
-              <span>かてごり</span>
+              <span>
+                かてごり
+              </span>
               <PartsSvgIcon :icon="'angle_down'" :color="'var(--color-gray)'" :hover="{ on: isHoveredCategory, color: hoverStyle }" :class="{ 'rotate': isShownCategoryMenu }" />
-              <ModulesTheCategoryMenu :isShown="isShownCategoryMenu" @close="close" />
+              <ModulesTheCategoryMenu :isShown="isShownCategoryMenu" @interruptChoose="interruptChooseCategory" />
             </div>
           </li>
           <li>
@@ -51,7 +53,7 @@ const onClick = () => {
   }
 }
 
-const close = () => {
+const interruptChooseCategory = () => {
   isShownCategoryMenu.value = false
   hoverStyle.value = "var(--color-mi)"
 }
