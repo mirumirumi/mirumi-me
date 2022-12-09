@@ -5,7 +5,7 @@
         <li v-for="category in categories" :class="{ 'others_li_wrap': category.slug === 'others' }" :key="category.name">
           <div v-if="category.slug === 'others'" class="others_wrap" @mouseenter="(isShownOthers = true)" @mouseleave="(isShownOthers = false)" @click.stop>
             <div class="others_title">
-              <span>
+              <span  :class="{ 'current': category.current }">
                 {{ category.name }}
               </span>
               <PartsSvgIcon :icon="'angle_down'" :color="'var(--color-gray)'" :class="{ 'rotate': isShownOthers }" />
@@ -99,11 +99,20 @@ async function checkCurrentCategory(): Promise<void> {
   // This process is too long and heavy as there are no endpoints that meet needs I want,
   // but I accept them because this site is made with SSG.
 
-  for (const category of categories.concat(others)) {
+  for (const category of categories) {
     if (await isBelongCategoryPage() && await matchCategory(category.slug)) {
       category.current = true
     } else {
       category.current = false
+    }
+  }
+
+  for (const other of others) {
+    if (await isBelongCategoryPage() && await matchCategory(other.slug)) {
+      other.current = true
+      categories.slice(-1)[0].current = true  // `その他`
+    } else {
+      other.current = false
     }
   }
 }
@@ -184,6 +193,11 @@ async function matchCategory(targetCategorySlug: string): Promise<boolean> {
         cursor: default;
         .others_title {
           position: relative;
+          span {
+            &.current {
+              color: var(--color-text);
+            }
+          }
           svg {
             right: 0em;
             width: 0.7em;
@@ -211,6 +225,9 @@ async function matchCategory(targetCategorySlug: string): Promise<boolean> {
         display: block;
         color: var(--color-gray);
         text-decoration: none;
+        &.current {
+          color: var(--color-text) !important;
+        }
       }
       .current {
         color: var(--color-text);
