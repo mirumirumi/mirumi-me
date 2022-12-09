@@ -13,7 +13,7 @@
             <Transition name="fade" appear>
               <ul v-if="isShownOthers">
                 <li v-for="other in others" :key="other.name">
-                  <NuxtLink :to="`/category/${other.slug}`" :class="{ 'current': other.current }">
+                  <NuxtLink :to="`/category/${other.slug}`" :class="{ 'current': other.current }" @click="interruptChoose">
                     {{ other.name }}
                   </NuxtLink>
                 </li>
@@ -73,6 +73,9 @@ const others: Category[] = [
 
 const { data } = await useFetch(`/pages`, {
   baseURL: appConfig.baseURL,
+  params: {
+    _fields: "name,slug",
+  },
 })
 const pages = JSON.parse(data.value as string)  // included root(`/`) as `home`
 
@@ -96,7 +99,7 @@ async function checkCurrentCategory(): Promise<void> {
   // This process is too long and heavy as there are no endpoints that meet needs I want,
   // but I accept them because this site is made with SSG.
 
-  for (const category of categories) {
+  for (const category of categories.concat(others)) {
     if (await isBelongCategoryPage() && await matchCategory(category.slug)) {
       category.current = true
     } else {
@@ -128,6 +131,7 @@ async function matchCategory(targetCategorySlug: string): Promise<boolean> {
       baseURL: appConfig.baseURL,
       params: {
         slug: route.path.replace("/category/", ""),
+        _fields: "name,slug",
       },
     })
     categorySlug = JSON.parse(resCategories.value as string)[0].slug
@@ -138,6 +142,7 @@ async function matchCategory(targetCategorySlug: string): Promise<boolean> {
       baseURL: appConfig.baseURL,
       params: {
         slug: route.path.replace("/", ""),
+        _fields: "id",
       },
     })
     const postId = JSON.parse(resPosts.value as string)[0].id
@@ -146,6 +151,7 @@ async function matchCategory(targetCategorySlug: string): Promise<boolean> {
       baseURL: appConfig.baseURL,
       params: {
         post: postId,
+        _fields: "slug",
       },
     })
     categorySlug = JSON.parse(data.value as string)[0].slug

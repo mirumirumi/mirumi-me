@@ -55,6 +55,7 @@ const onClick = () => {
 
 const interruptChooseCategory = () => {
   isShownCategoryMenu.value = false
+  isHoveredCategory.value = false
   hoverStyle.value = "var(--color-mi)"
 }
 </script>
