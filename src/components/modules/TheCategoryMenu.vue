@@ -136,14 +136,7 @@ async function matchCategory(targetCategorySlug: string): Promise<boolean> {
   if (route.path.includes("/category/")) {
     // In category page
 
-    const { data: resCategories } = await useFetch(`/categories`, {
-      baseURL: appConfig.baseURL,
-      params: {
-        slug: route.path.replace("/category/", ""),
-        _fields: "name,slug",
-      },
-    })
-    categorySlug = JSON.parse(resCategories.value as string)[0].slug
+    categorySlug = route.path.replace("/category/", "")
   } else {
     // In post page
 
