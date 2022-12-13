@@ -96,9 +96,6 @@ const interruptChoose = () => {
 }
 
 async function checkCurrentCategory(): Promise<void> {
-  // This process is too long and heavy as there are no endpoints that meet needs I want,
-  // but I accept them because this site is made with SSG.
-
   for (const category of categories) {
     if (await isBelongCategoryPage() && await matchCategory(category.slug)) {
       category.current = true
