@@ -140,23 +140,10 @@ async function matchCategory(targetCategorySlug: string): Promise<boolean> {
   } else {
     // In post page
 
-    const { data: resPosts } = await useFetch(`/posts`, {
-      baseURL: appConfig.baseURL,
-      params: {
-        slug: route.path.replace("/", ""),
-        _fields: "id",
-      },
-    })
-    const postId = JSON.parse(resPosts.value as string)[0].id
-    
-    const { data } = await useFetch(`/categories`, {
-      baseURL: appConfig.baseURL,
-      params: {
-        post: postId,
-        _fields: "slug",
-      },
-    })
-    categorySlug = JSON.parse(data.value as string)[0].slug
+    categorySlug = route.path.replace("/", "")
+
+    const { data: resCategorySlug } = await useFetch(`${appConfig.siteFullPath}/wp-json/mirumi/category_slug_with_post_slug/${categorySlug}`)
+    categorySlug = JSON.parse(resCategorySlug.value as string)
   }
 
   return targetCategorySlug === categorySlug
