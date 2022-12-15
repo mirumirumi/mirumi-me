@@ -7,4 +7,7 @@ export default defineAppConfig({
 
   // About APIs
   baseURL: siteFullPath + "/wp-json/wp/v2",
+
+  // Profiles
+  twitterName: "milmemo_net",
 })
