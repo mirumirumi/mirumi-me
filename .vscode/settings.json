@@ -43,6 +43,7 @@
             "declaration-empty-line-before": "never",
             "declaration-block-trailing-semicolon": null,
             "no-eol-whitespace": null,
+            "number-max-precision": null,
         },
     },
     "stylelint.snippet": [
