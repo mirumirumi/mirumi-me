@@ -19,6 +19,13 @@
         "editor.formatOnType": true,
         "editor.formatOnPaste": true,
     },
+    "[vue]": {
+        "editor.tabSize": 2,
+        "editor.defaultFormatter": "stylelint.vscode-stylelint",
+        "editor.formatOnSave": true,
+        "editor.formatOnType": true,
+        "editor.formatOnPaste": true,
+    },
     "stylelint.config": {
         "extends": [
             "stylelint-config-standard-scss",
