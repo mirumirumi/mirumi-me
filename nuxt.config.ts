@@ -82,6 +82,6 @@ export default defineNuxtConfig({
       isCustomElement: (tag) => {
         return tag.startsWith("Script")
       },
-    }
+    },
   },
 })

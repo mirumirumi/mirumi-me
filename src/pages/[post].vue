@@ -6,7 +6,7 @@
           {{ post.title }}
         </h1>
         <div class="thumbnail">
-          <img :src="post.thumbnail_url.replace(/\.(png|jpg|jpeg)$/gmi, '.webp')" :alt="post.title">
+          <img :src="post.thumbnail_url.replace(/\.(png|jpg|jpeg)$/gmi, '.webp')" :alt="post.title" width="1200" height="630">
         </div>
         <div class="meta">
           <div class="category">
@@ -52,11 +52,11 @@ const post = JSON.parse(resPostData.value as string)
 console.log(post)
 
 const counts = {
-  twitter: post.twitter,
-  hatebu: post.hatebu,
-  feedly: post.feedly,
-  pocket: post.pocket,
-  like: post.like,
+  twitter: Number(post.twitter),
+  hatebu: Number(post.hatebu),
+  feedly: Number(post.feedly),
+  pocket: Number(post.pocket),
+  like: Number(post.like),
 }
 
 
@@ -100,7 +100,7 @@ useSetMeta({
         }
       }
       .meta {
-        margin: 1.5em auto 1.7em;
+        margin: 1.1em auto 1.7em;
         font-size: 0.78em;
         text-align: center;
         > * {
