@@ -83,7 +83,7 @@ useSetMeta({
     header {
       h1.title {
         margin: 0 0 1em;
-        color: #533939;
+        color: #554545;
         line-height: 1.5;
         font-size: 1.4em;
         font-weight: bold;
