@@ -34,8 +34,14 @@
         <div class="content" v-html="post.content"></div>
       </article>
       <footer>
-
+        <div class="share">
+          <ModulesShareButtons :slug="slug" :title="post.title" :counts="counts" />
+        </div>
+        <div class="profile">
+          <ModulesProfileBox :category="post.category_slug" />
+        </div>
       </footer>
+      <ModulesCommentForm />
     </main>
   </div>
 </template>
@@ -83,6 +89,7 @@ useSetMeta({
     header {
       h1.title {
         margin: 0 0 1em;
+        padding: 0 0.1em;
         color: #554545;
         line-height: 1.5;
         font-size: 1.4em;
@@ -114,11 +121,14 @@ useSetMeta({
     }
     article {
       .content {
-        margin-top: 5em;
+
       }
     }
     footer {
+      margin-top: 6.3em;
+      .profile {
 
+      }
     }
   }
 }
