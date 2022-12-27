@@ -1,5 +1,5 @@
 <template>
-  <div class="index_view" style="height: 500px">
+  <div class="index_view">
     
   </div>
 </template>
