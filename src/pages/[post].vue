@@ -23,7 +23,7 @@
           </div>
           <div class="author">
             <span>書いた人: </span>
-            <a :href="`https://twitter.com/${appConfig.twitterName}`" target="_top" rel="nofollow">@mirumi</a>
+            <a :href="`https://twitter.com/${appConfig.twitterName}`" target="_top" rel="nofollow">＠みるみ</a>
           </div>
         </div>
         <div class="share">
@@ -31,7 +31,7 @@
         </div>
       </header>
       <article>
-        <div class="content" v-html="post.content"></div>
+        <div id="content" v-html="post.content"></div>
       </article>
       <footer>
         <div class="share">
@@ -54,8 +54,6 @@ const slug = route.params.post as string
 
 const { data: resPostData } = await useFetch(`${appConfig.siteFullPath}/wp-json/mirumi/post_data/${slug}`)
 const post = JSON.parse(resPostData.value as string)
-
-console.log(post)
 
 const counts = {
   twitter: Number(post.twitter),
@@ -119,16 +117,8 @@ useSetMeta({
         }
       }
     }
-    article {
-      .content {
-
-      }
-    }
     footer {
       margin-top: 6.3em;
-      .profile {
-
-      }
     }
   }
 }

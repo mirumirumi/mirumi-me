@@ -70,7 +70,7 @@ const p = defineProps<{
 const appConfig = useAppConfig()
 const likeState = useLocalStorage("like", "")
 
-const fillColor = ref("#cbbbb4")
+const fillColor = ref("#cfc7c3")
 /**
  * Old colors:
  *  - Twitter: #8cbadb
