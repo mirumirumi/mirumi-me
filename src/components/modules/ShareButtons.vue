@@ -138,9 +138,9 @@ function isLikedThisSlug(): boolean {
       display: inline-flex;
       justify-content: center;
       align-items: center;
-      width: 66.6px;
-      height: 64.26px;
-      margin-bottom: -5px;
+      aspect-ratio: 66.6/64.26;
+      width: 60px;
+      margin-bottom: -1px;
       border-radius: 50%;
       border-color: transparent;
       background-color: transparent;

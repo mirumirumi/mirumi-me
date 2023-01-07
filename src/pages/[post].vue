@@ -120,7 +120,7 @@ useSetMeta({
         }
       }
       .meta {
-        margin: 1.1em auto 1.7em;
+        margin: 0.9em auto 1.9em;
         font-size: 0.78em;
         text-align: center;
         > * {

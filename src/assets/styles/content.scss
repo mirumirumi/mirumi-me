@@ -378,6 +378,8 @@
       border-radius: 5px;
       transition: all 0.43s cubic-bezier(0.55, -0.07, 0.17, 0.77);
       .product-item-title a {
+        display: inline-block;
+        line-height: 1.4;
         color: var(--color-link);
         font-weight: bold;
       }

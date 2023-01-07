@@ -87,7 +87,7 @@ const interruptChooseCategory = () => {
     nav {
       display: block;
       height: 57px;
-      margin-top: 1.1em;
+      margin-top: 0.7em;
       text-align: center;
       .menu {
         display: flex;
