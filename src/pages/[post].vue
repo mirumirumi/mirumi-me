@@ -70,15 +70,6 @@ const counts = {
   like: Number(post.like),
 }
 
-
-
-
-
-
-// もくじ！
-/**
- * Prism.js
- */
 post.content = post.content.replace(
   /<pre( class=\"(.*?)\")?>/gmi,
   "<pre class=\"language-$2\"><code class=\"$2 language-$2\">"
@@ -157,6 +148,10 @@ useSetMeta({
     }
     footer {
       margin-top: 6.3em;
+    }
+    @include mobile {
+      padding-left: 0;
+      padding-right: 0;
     }
   }
 }
