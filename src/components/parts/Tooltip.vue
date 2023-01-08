@@ -50,7 +50,7 @@ const isAutoWidth = computed(() => {
   display: inline-block;
   width: auto;
   padding: 0.25em 1.3em 0.35em;
-  color: $text_white;
+  color: var(--color-text-white);
   font-size: 0.65em;
   text-align: center;
   text-decoration: none;

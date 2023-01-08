@@ -1,6 +1,6 @@
 <template>
   <div class="load_spinner">
-    <svg v-if="kind === 'short'" height="100%" viewBox="-4 -4 45 45" xmlns="http://www.w3.org/2000/svg" :stroke="color">
+    <svg v-if="kind === 'short'" class="short" height="100%" viewBox="-4 -4 45 45" xmlns="http://www.w3.org/2000/svg" :stroke="color">
       <g fill="none" fill-rule="evenodd">
         <g transform="translate(1 1)" stroke-width="4.5">
           <circle stroke-opacity=".5" cx="18" cy="18" r="18" />
@@ -18,33 +18,31 @@
 
 <script setup lang="ts">
 withDefaults(defineProps<{
-  kind: "short" | "long",
-  color?: string,
+  kind: "short" | "long"
+  color?: string
 }>(), {
-  color: "#8b8b8b",
+  color: "#8b8b8b"
 })
 </script>
 
 <style lang="scss" scoped>
 .load_spinner {
-  display: flex;
-  align-items: center;
-  .ring {
-    --uib-size: 40px;
-    --uib-speed: 2s;
-    --uib-color: v-bind(color);
-    height: var(--uib-size);
-    width: var(--uib-size);
+  --size: 27px;
+  --speed: 2s;
+  --color: v-bind(color);
+  .short, .ring {
+    width: var(--size);
+    height: var(--size);
     vertical-align: middle;
     transform-origin: center;
-    animation: rotate var(--uib-speed) linear infinite;
+    animation: rotate var(--speed) linear infinite;
     circle {
       fill: none;
-      stroke: var(--uib-color);
+      stroke: var(--color);
       stroke-dasharray: 1, 200;
       stroke-dashoffset: 0;
       stroke-linecap: round;
-      animation: stretch calc(var(--uib-speed) * 0.75) ease-in-out infinite;
+      animation: stretch calc(var(--speed) * 0.75) ease-in-out infinite;
     }
   }
 }

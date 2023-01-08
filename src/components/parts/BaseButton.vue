@@ -1,37 +1,54 @@
 <template>
-  <button type="button" :id="_id" class="btn" :class="{ 'btn-primary': type === 'fill', 'btn-outline-primary': type === 'outline', 'btn-text-only': type === 'text', 'auto_width': isAutoWidth }" @click.prevent=";" :disabled="isSubmitting || disabled">
-    <PartsLoadSpinner v-if="isSubmitting" :kind="'short'" :color="spinnerColor ? spinnerColor : '#fff'" />
-    <slot v-else></slot>
+  <button
+    type="button"
+    class="btn"
+    :class="{
+      'btn_primary': type === 'fill',
+      'btn_outline_primary': type === 'outline',
+      'btn_text_only': type === 'text',
+      'auto_width': isAutoWidth,
+      'auto_height': isAutoHeight,
+    }"
+    :disabled="isSubmitting || disabled"
+    ref="button"
+    @click.prevent=";"
+  >
+    <PartsLoadSpinner
+      v-if="isSubmitting"
+      :kind="'short'"
+      :color="spinnerColor || '#fff'"
+    />
+    <slot v-else />
   </button>
 </template>
 
 <script setup lang="ts">
-import { v4 as uuidv4 } from "uuid"
-
 const p = defineProps<{
-  type: "fill" | "outline" | "text",
-  id?: string,
-  isSubmitting?: boolean,
-  disabled?: boolean,
-  spinnerColor?: string,
+  type: "fill" | "outline" | "text"
+  mainColor?: string
+  isSubmitting?: boolean
+  disabled?: boolean
+  spinnerColor?: string
 }>()
 
-const uuid = uuidv4()
-const _id = ref(p.id)
 const width = ref("")
+const height = ref("")
+const _mainColor = ref(p.mainColor || "var(--color-primary)")
+const button = templateRef("button")
 
 onMounted(async () => {
-  if (!_id.value) {
-    _id.value = uuid
-  }
-
   await nextTick()
 
-  width.value = ((document.getElementById(_id.value)?.offsetWidth ?? 0) + 1)?.toString() + "px"  // roundup
+  width.value = (((button.value as HTMLElement).offsetWidth ?? 0) + 1)?.toString() + "px"  // roundup
+  height.value = (((button.value as HTMLElement).offsetHeight ?? 0) + 1)?.toString() + "px"  // roundup
 })
 
 const isAutoWidth = computed(() => {
   return !width.value.includes("undefined")
+})
+
+const isAutoHeight = computed(() => {
+  return !height.value.includes("undefined")
 })
 </script>
 
@@ -39,17 +56,18 @@ const isAutoWidth = computed(() => {
 .btn {
   display: inline-block;
   width: auto;
+  height: auto;
   margin: auto;
-  line-height: 1.5;
+  padding: 0.7em 1.3em 0.79em;
   color: var(--color-text);
   font-size: 0.85em;
   font-weight: bold;
+  font-family: var(--font-family);
+  line-height: 1.5;
   text-align: center;
   text-decoration: none;
   border: 1px solid transparent;
-  padding: 0.7em 1.3em 0.65em;
   border-radius: 5px;
-  background-color: transparent;
   box-shadow: 1.3px 1.7px 5px -2px #50494e59;
   cursor: pointer;
   user-select: none;
@@ -57,33 +75,37 @@ const isAutoWidth = computed(() => {
   &.auto_width {
     width: v-bind(width);
   }
+  &.auto_height {
+    height: v-bind(height);
+  }
   &:disabled {
     pointer-events: none;
     opacity: 0.666;
     filter: contrast(0.5);
   }
 }
-.btn-primary {
+.btn_primary {
   color: #ffffff;
-  border-color: var(--color-primary);
-  background-color: var(--color-primary);
+  border-color: v-bind(_mainColor);
+  background-color: v-bind(_mainColor);
   &:hover {
     filter: saturate(0.85);
   }
 }
-.btn-outline-primary {
-  color: var(--color-primary);
-  border-color: var(--color-primary);
+.btn_outline_primary {
+  color: v-bind(_mainColor);
+  border-color: v-bind(_mainColor);
   background-color: #ffffff;
   &:hover {
-    color: var(--color-primary);
+    color: v-bind(_mainColor);
     background-color: #f6f2f3;
   }
 }
-.btn-text-only {
+.btn_text_only {
+  background-color: transparent;
   box-shadow: none;
 }
-.btn-check:focus + .btn-primary[data-v-4ba94436], .btn-primary[data-v-4ba94436]:focus {
+.btn-check:focus + .btn_primary[data-v-4ba94436], .btn_primary[data-v-4ba94436]:focus {
   box-shadow: 0 0 0 0.25rem rgba(196, 55, 93, 0.5);
 }
 </style>
