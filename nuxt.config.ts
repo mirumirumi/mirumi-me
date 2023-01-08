@@ -71,6 +71,7 @@ export default defineNuxtConfig({
           additionalData: `
             @import "@/assets/styles/main.scss";
             @import "@/assets/styles/content.scss";
+            @import "@/assets/styles/syntaxhighlight.scss";
           `,
         },
       },

@@ -1,3 +1,5 @@
+src/public/assets/components/
+
 node_modules
 *.log*
 .nuxt
