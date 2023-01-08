@@ -52,8 +52,10 @@ const appConfig = useAppConfig()
 
 const slug = route.params.post as string
 
-const { data: resPostData } = await useFetch(`${appConfig.siteFullPath}/wp-json/mirumi/post_data/${slug}`)
-const post = JSON.parse(resPostData.value as string)
+const { data } = await useFetch(`${appConfig.siteFullPath}/wp-json/mirumi/post_data/${slug}`, {
+  parseResponse: JSON.parse,
+})
+const post = data.value as Record<string, any>
 
 const counts = {
   twitter: Number(post.twitter),
