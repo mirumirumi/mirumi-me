@@ -31,7 +31,7 @@
         </div>
       </header>
       <article>
-        <div id="content" v-html="post.content"></div>
+        <div id="content" v-html="post.content" @click="clickHandle"></div>
       </article>
       <footer>
         <div class="share">
@@ -95,8 +95,21 @@ useHead({ script: [{ src: "/assets/prism.js", defer: true }] })
 
 
 
+const clickHandle = (e: any) => {
+  const link = e.target.closest("a")
+  if (!link)
+    return
 
+  const to = link.getAttribute("href")
+  if (!to.startsWith("/"))
+    return
 
+  if (e.ctrlKey || e.shiftKey || e.altKey || e.metaKey)  // open new tab
+    return
+
+  e.preventDefault()
+  navigateTo(to)
+}
 
 useSetMeta({
   title: post.title,
