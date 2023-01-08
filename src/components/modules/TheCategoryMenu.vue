@@ -34,17 +34,17 @@
 
 <script setup lang="ts">
 interface Category {
-  name: string,
-  slug: string,
-  current?: boolean,
+  name: string
+  slug: string
+  current?: boolean
 }
 
 const p = defineProps<{
-  isShown: boolean,
+  isShown: boolean
 }>()
 
 const emit = defineEmits<{
-  (e: "interruptChoose" ): void,
+  (e: "interruptChoose" ): void
 }>()
 
 const route = useRoute()
@@ -71,22 +71,22 @@ const others: Category[] = [
   { name: "Software Design", slug: "software-design" },
 ]
 
-const { data } = await useFetch(`/pages`, {
+const { data: pages } = await useFetch(`/pages`, {
   baseURL: appConfig.baseURL,
   params: {
     _fields: "name,slug",
   },
-})
-const pages = JSON.parse(data.value as string)  // included root(`/`) as `home`
+  parseResponse: JSON.parse,
+})  // included root(`/`) as `home`
 
-checkCurrentCategory()
+await checkCurrentCategory()
 
 watch(() => p.isShown, () => {
   _isShown.value = p.isShown
 })
 
-watch(route, () => {
-  checkCurrentCategory()
+watch(route, async () => {
+  await checkCurrentCategory()
 })
 
 const interruptChoose = () => {
@@ -96,8 +96,23 @@ const interruptChoose = () => {
 }
 
 async function checkCurrentCategory(): Promise<void> {
+  let categorySlug = ""
+
+  if (route.params.categoryName) {
+    // In category page
+
+    categorySlug = route.path.replace("/category/", "")
+  } else if (route.params.post) {
+    // In post page
+
+    const pagePath = route.path.replace("/", "")
+    categorySlug = await $fetch<string>(`${appConfig.siteFullPath}/wp-json/mirumi/category_slug_with_post_slug/${pagePath}`, {
+      parseResponse: JSON.parse,
+    })  // https://github.com/nuxt/framework/discussions/1142
+  }
+
   for (const category of categories) {
-    if (await isBelongCategoryPage() && await matchCategory(category.slug)) {
+    if (categorySlug === category.slug) {
       category.current = true
     } else {
       category.current = false
@@ -105,45 +120,13 @@ async function checkCurrentCategory(): Promise<void> {
   }
 
   for (const other of others) {
-    if (await isBelongCategoryPage() && await matchCategory(other.slug)) {
+    if (categorySlug === other.slug) {
       other.current = true
       categories.slice(-1)[0].current = true  // `その他`
     } else {
       other.current = false
     }
   }
-}
-
-async function isBelongCategoryPage(): Promise<boolean> {
-  let pageSlugs: string[] = Array()
-  for (const page of (pages as Record<string, any>[])) {
-    if (page.slug === "home") {
-      pageSlugs.push("/")
-      continue
-    }
-    pageSlugs.push("/" + page.slug)
-  }
-
-  return !pageSlugs.includes(route.path)
-}
-
-async function matchCategory(targetCategorySlug: string): Promise<boolean> {
-  let categorySlug = ""
-
-  if (route.path.includes("/category/")) {
-    // In category page
-
-    categorySlug = route.path.replace("/category/", "")
-  } else {
-    // In post page
-
-    categorySlug = route.path.replace("/", "")
-
-    const { data: resCategorySlug } = await useFetch(`${appConfig.siteFullPath}/wp-json/mirumi/category_slug_with_post_slug/${categorySlug}`)
-    categorySlug = JSON.parse(resCategorySlug.value as string)
-  }
-
-  return targetCategorySlug === categorySlug
 }
 </script>
 
