@@ -43,6 +43,11 @@
       </footer>
       <ModulesCommentForm />
     </main>
+    <Teleport to="body">
+      <ClientOnly>
+        <PartsTopButton />
+      </ClientOnly>
+    </Teleport>
   </div>
 </template>
 
@@ -83,17 +88,6 @@ post.content = post.content.replace(
 )
 
 useHead({ script: [{ src: "/assets/prism.js", defer: true }] })
-
-
-
-
-
-
-// トップボタン薄めに！
-
-
-
-
 
 const clickHandle = (e: any) => {
   const link = e.target.closest("a")

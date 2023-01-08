@@ -276,6 +276,20 @@ label {
 .fade-leave-from {
   opacity: 1;
 }
+.fade_topbtn-enter-active {
+  transition: opacity 0.31s ease-in;
+}
+.fade_topbtn-leave-active {
+  transition: opacity 0.31s ease-out;
+}
+.fade_topbtn-enter-from,
+.fade_topbtn-leave-to {
+  opacity: 0;
+}
+.fade_topbtn-enter-to,
+.fade_topbtn-leave-from {
+  opacity: 0.57;
+}
 .fadedown-enter-active {
   transition: all 0.13s ease-out;
 }
