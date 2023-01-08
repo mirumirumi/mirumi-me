@@ -49,6 +49,9 @@ export default defineNuxtConfig({
     //   mode: "out-in",
     // },
   },
+  modules: [
+    "@vueuse/nuxt",
+  ],
   nitro: {
     // prerender: {  // for SSR + SSG
     //   routes: []
