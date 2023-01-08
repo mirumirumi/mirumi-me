@@ -477,7 +477,7 @@
       }
     }
   }
-  .speech-wrap {  // のちに一括置換してもよい（バルーンの HTML タグセットの出力を使わなくなったら）
+  .speech-wrap {  // クラス名が嫌ならのちに一括置換してもよい（バルーンの HTML タグセットの出力を使わなくなったら）
     .speech-person {
       display: none;
     }
@@ -488,6 +488,78 @@
       border-radius: 7px;
       background-color: #f1efec;
     }
+  }
+  .appreach {
+    margin: 2.3em auto;
+    padding: 1.2em 1em 1.3em;
+    width: 93%;
+    border: solid 2.3px #f0efee;
+    border-radius: 13px;
+    p {
+      margin: 0;
+    }
+    img {
+      box-shadow: none;
+      border: none;
+    }
+    .appreach__icon {
+      float: left;
+      margin: 0 3% 0 0;
+      width: 16%;
+      max-width: 16%;
+      height: auto;
+      border-radius: 10%;
+      overflow: hidden;
+    }
+    .appreach__detail {
+      display: inline-block;
+      width: 76%;
+      max-width: 76%;
+      line-height: 1.5;
+      .appreach__name {
+        font-size: 1em;
+        line-height: 1.5em;
+      }
+      .appreach__info {
+        font-size: 0.7em;
+        .appreach__developper,
+        .appreach__price {
+          margin-right: 0.8em;
+        }
+        .appreach__posted {
+          display: none;
+        }
+      }
+      &::after {
+        content: "";
+        display: block;
+        clear: both;
+      }
+    }
+    .appreach__links {
+      float: left;
+      margin-top: 13px;
+      height: 40px;
+      white-space: nowrap;
+      .appreach__aslink, .appreach__gplink {
+        display: inline-block;
+        img {
+          display: inline-block;
+          margin-right: 0.7em;
+          height: 40px;
+          width: 135px;
+        }
+      }
+    }
+    &::after {
+      content: "";
+      display: block;
+      clear: both;
+    }
+  }
+  .sss {
+    box-shadow: none !important;
+    border: none !important;
   }
   img[width="1"][height="1"] {
     margin: 0 !important;
