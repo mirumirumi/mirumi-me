@@ -9,42 +9,29 @@
 </template>
 
 <script setup lang="ts">
-const theme = useState("theme")
-
 const p = defineProps<{
-  icon: string,
-  color: string,
-  dark?: string,
-  hover?: {
-    on: boolean,
-    color: string,
-  },
+  icon: string
+  color: string
+  hoverOn?: boolean
+  hoverColor?: string
 }>()
 
 const color = ref(p.color)
 const viewBox = ref("0 0 512 512")
 
 onMounted(() => {
-  color.value = theme.value === "dark" ? (p.dark ?? p.color) : p.color
+  color.value = p.color
 })
 
 setViewBox()
 
-watch(theme, () => {
-  if (theme.value === "dark") {
-    color.value = p.dark ?? p.color
+watch(() => p.hoverOn, () => {
+  if (p.hoverOn && p.hoverColor) {
+    color.value = p.hoverColor
   } else {
     color.value = p.color
   }
 })
-
-watch(p, () => {
-  if (p.hover?.on) {
-    color.value = p.hover.color
-  } else {
-    color.value = p.color
-  }
-}, { deep: true })
 
 function setViewBox(): void {
   switch (p.icon) {

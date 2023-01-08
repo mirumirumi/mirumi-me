@@ -13,14 +13,12 @@
 </template>
 
 <script setup lang="ts">
-import { delay } from "@/lib/utils"
-
 defineProps<{
-  className: string,
+  className: string
 }>()
 
 const emit = defineEmits<{
-  (e: "closeModal"): void,
+  (e: "closeModal"): void
 }>()
 
 const isOpenModalBack = ref(true)

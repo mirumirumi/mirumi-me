@@ -10,18 +10,18 @@ s<template>
 
 <script setup lang="ts">
 const p = defineProps<{
-  query?: string,
+  query?: string
 }>()
 
 const emit = defineEmits<{
-  (e: "closeSearchBox"): void,
+  (e: "closeSearchBox"): void
 }>()
 
 const router = useRouter()
 const query = ref("")
 const search = ref()
 
-watch(p, () => {
+watch(() => p.query, () => {
   query.value = p.query ?? ""
 })
 

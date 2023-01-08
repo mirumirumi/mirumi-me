@@ -18,7 +18,7 @@
               <span>
                 かてごり
               </span>
-              <PartsSvgIcon :icon="'angle_down'" :color="'var(--color-gray)'" :hover="{ on: isHoveredCategory, color: hoverStyle }" :class="{ 'rotate': isShownCategoryMenu }" />
+              <PartsSvgIcon :icon="'angle_down'" :color="'var(--color-gray)'" :hoverOn="isHoveredCategory" :hoverColor="hoverStyle" :class="{ 'rotate': isShownCategoryMenu }" />
               <ModulesTheCategoryMenu :isShown="isShownCategoryMenu" @interruptChoose="interruptChooseCategory" />
             </div>
           </li>

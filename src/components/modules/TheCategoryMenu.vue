@@ -81,7 +81,7 @@ const pages = JSON.parse(data.value as string)  // included root(`/`) as `home`
 
 checkCurrentCategory()
 
-watch(p, () => {
+watch(() => p.isShown, () => {
   _isShown.value = p.isShown
 })
 
