@@ -1,0 +1,86 @@
+.Vue-Toastification__container {
+  &.bottom-left {
+    left: 2.7em;
+    @include mobile {
+      left: auto;
+    }
+  }
+}
+.Vue-Toastification__toast {
+  display: flex;
+  align-content: center;
+  min-width: auto;
+  min-height: 1em;
+  padding: 0.8em 1.3em 0.93em;
+  font-family: var(--font-famliy);
+  border-radius: 5px;
+  box-shadow: 1px 1px 3.7px 1px rgb(0 0 0 / 19%);
+  @include mobile {
+    width: 87% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    margin-bottom: 1.1em !important;
+  }
+}
+.Vue-Toastification__toast-body {
+  font-size: 0.93rem;
+}
+.Vue-Toastification__toast--info {
+  color: #8c8e90;
+  background-color: #f3f7f8;
+  .Vue-Toastification__close-button {
+    color: #a1a4a7;
+  }
+}
+.Vue-Toastification__toast--success {
+  color: #479f63;
+  background-color: #e8f6e7;
+  .Vue-Toastification__close-button {
+    color: #479f63;
+  }
+}
+.Vue-Toastification__toast--warning {
+  color: #b2b07f;
+  background-color: #f4f4e6;
+  .Vue-Toastification__close-button {
+    color: #b2b07f;
+  }
+}
+.Vue-Toastification__toast--error {
+  color: #c57676;
+  background-color: #f7eaed;
+  .Vue-Toastification__close-button {
+    color: #ca8787;
+  }
+}
+.Vue-Toastification__close-button {
+  padding-left: 0.6em;
+}
+@keyframes fade-in-up {
+  from {
+    opacity: 0.5;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fade-out-down {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+}
+.original_fade-enter-active {
+  animation: fade-in-up 111ms ease both;
+}
+.original_fade-leave-active {
+  animation: fade-out-down 133ms ease-in-out both;
+}
+.original_fade-move {
+  transition: all 333ms ease;
+}
