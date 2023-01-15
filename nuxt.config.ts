@@ -1,3 +1,5 @@
+import secret from "./src/secrets"
+
 export default defineNuxtConfig({
   app: {
     baseURL: "/",  // can override by NUXT_APP_BASE_URL
@@ -58,6 +60,12 @@ export default defineNuxtConfig({
     // },
   },
   pages: true,
+  runtimeConfig: {
+    public: {
+      userName: secret.USER_NAME,
+      applicationPassword: secret.APPLICATION_PASSWORD,
+    },
+  },
   srcDir: "src/",
   ssr: true,
   telemetry: false,
