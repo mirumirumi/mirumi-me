@@ -22,7 +22,7 @@
   --color-text-white-hover: #e3e3e3;
   --color-background: #fffcf9;
   --color-footer: #f8f5f2;
-  --color-primary: #ec6839;
+  --color-primary: #816e68;
   --color-mi: #604134;
   --color-link: #c74f16;
   --color-invalid: #dc3545;
@@ -63,6 +63,7 @@ img {
 }
 textarea {
   font-family: inherit;
+  resize: vertical;
 }
 input::placeholder,
 textarea::placeholder {
@@ -72,6 +73,9 @@ input:focus-visible,
 button:focus-visible,
 textarea:focus-visible {
   outline: none;
+}
+.form {
+  margin: 1em 0;
 }
 .input {
   display: block;
@@ -85,7 +89,7 @@ textarea:focus-visible {
   background-clip: padding-box;
   border: 1.1px solid #e2dcd3;
   appearance: none;
-  border-radius: 5px;
+  border-radius: 7px;
   transition: all 0.17s ease-out;
   &:focus {
     // border-color: #a3c0e1;
@@ -106,9 +110,20 @@ label {
   .form_check_input[disabled] ~ & {
     opacity: 0.5;
   }
+  .required {
+    display: inline-block;
+    margin-left: 0.3em;
+    padding: 0.07em 0.43em 0.13em;
+    color: var(--color-text-white);
+    font-size: 0.65em;
+    font-weight: bold;
+    background-color: #ff5151;
+    border-radius: 5px;
+    transform: translateY(-0.1em);
+  }
 }
 .form_label {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.3em;
 }
 .form_check {
   display: block;
