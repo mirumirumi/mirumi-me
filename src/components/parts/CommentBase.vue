@@ -1,39 +1,50 @@
 <template>
   <div class="comment_base">
-    <div :class="`comment depth-${depth}`" :id="`comment-${c.comment_ID}`">
+    <div :class="`comment depth-${depth}`" :id="`comment-${_c.comment_ID}`">
       <div class="meta_data">
         <div class="icon">
-          <img v-if="c.user_id === '1'" src="@/assets/images/mirumi.png" alt="みるみ">
+          <img v-if="_c.user_id === '1'" src="@/assets/images/mirumi.png" alt="みるみ">
           <img v-else src="@/assets/images/profile_icon.png" class="default" alt="comment author">
         </div>
         <div class="info">
           <div class="name">
-            {{ c.comment_author === "" ? "匿名" : c.comment_author }}
+            {{ _c.comment_author === "" ? "匿名" : _c.comment_author }}
           </div>
           <div class="timestamp">
-            {{ formatTimestamp(c.comment_date) }}
+            {{ formatTimestamp(_c.comment_date) }}
           </div>
         </div>
         <div class="link">
-          <a :href="`#comment-${c.comment_ID}`">
+          <a :href="`#comment-${_c.comment_ID}`">
             <PartsSvgIcon :icon="'link'" :color="'#9b9b9b'" />
           </a>
         </div>
       </div>
-      <div class="content" v-html="formatContent(c.comment_content)">
+      <div class="content" v-html="formatContent(_c.comment_content)">
       </div>
     </div>
-    <div class="reply">
-
+    <div class="reply_button">
+      <PartsBaseButton
+        :type="'outline'"
+        @click="_c.isOpenReply = !_c.isOpenReply"
+      >
+        {{ _c.isOpenReply ? "やめる" : "返信" }}
+      </PartsBaseButton>
+    </div>
+    <div v-if="_c.isOpenReply" class="reply">
+      <ModulesCommentForm :reply_to="_c.comment_ID" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-defineProps<{
+const p = defineProps<{
   c: Record<string, any>
   depth: number
 }>()
+
+const _c = p.c
+_c.isOpenReply = ref(false)
 
 const formatContent = (content: string) => {
   return content
@@ -56,7 +67,7 @@ const formatTimestamp = (timestamp: string) => {
 <style lang="scss" scoped>
 .comment_base {
   .comment {
-    margin: 3em 0;
+    margin: 3em 0 0.7em;
     .meta_data {
       position: relative;
       display: flex;
@@ -115,8 +126,18 @@ const formatTimestamp = (timestamp: string) => {
       padding-left: calc(1.07em * 3);
     }
   }
+  .reply_button {
+    text-align: right;
+    button {
+      margin-right: 3em;
+      padding: 0.2em 1em 0.3em;
+      font-size: 0.8em;
+    }
+  }
   .reply {
-
+    .comment_form {
+      margin-top: 1em;
+    }
   }
 }
 </style>
