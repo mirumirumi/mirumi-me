@@ -28,7 +28,7 @@
         :type="'outline'"
         @click="_c.isOpenReply = !_c.isOpenReply"
       >
-        {{ _c.isOpenReply ? "やめる" : "返信" }}
+        {{ _c.isOpenReply ? "やめる" : "返信する" }}
       </PartsBaseButton>
     </div>
     <div v-if="_c.isOpenReply" class="reply">
