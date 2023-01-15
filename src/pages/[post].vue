@@ -41,6 +41,7 @@
           <ModulesProfileBox :category="post.category_slug" />
         </div>
       </footer>
+      <ModulesCommentList />
       <ModulesCommentForm />
     </main>
     <Teleport to="body">

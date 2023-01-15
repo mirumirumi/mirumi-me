@@ -1,6 +1,6 @@
 <template>
   <button
-    type="button"
+    :type="isSubmitButton ? 'submit' : 'button'"
     class="btn"
     :class="{
       'btn_primary': type === 'fill',
@@ -25,6 +25,7 @@
 <script setup lang="ts">
 const p = defineProps<{
   type: "fill" | "outline" | "text"
+  isSubmitButton?: boolean
   mainColor?: string
   isSubmitting?: boolean
   disabled?: boolean

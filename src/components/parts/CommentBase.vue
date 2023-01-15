@@ -1,0 +1,122 @@
+<template>
+  <div class="comment_base">
+    <div :class="`comment depth-${depth}`" :id="`comment-${c.comment_ID}`">
+      <div class="meta_data">
+        <div class="icon">
+          <img v-if="c.user_id === '1'" src="@/assets/images/mirumi.png" alt="みるみ">
+          <img v-else src="@/assets/images/profile_icon.png" class="default" alt="comment author">
+        </div>
+        <div class="info">
+          <div class="name">
+            {{ c.comment_author === "" ? "匿名" : c.comment_author }}
+          </div>
+          <div class="timestamp">
+            {{ formatTimestamp(c.comment_date) }}
+          </div>
+        </div>
+        <div class="link">
+          <a :href="`#comment-${c.comment_ID}`">
+            <PartsSvgIcon :icon="'link'" :color="'#9b9b9b'" />
+          </a>
+        </div>
+      </div>
+      <div class="content" v-html="formatContent(c.comment_content)">
+      </div>
+    </div>
+    <div class="reply">
+
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+defineProps<{
+  c: Record<string, any>
+  depth: number
+}>()
+
+const formatContent = (content: string) => {
+  return content
+    // https://regex101.com/r/DWX3oZ/1
+    .replace(/(([^\r\n]+(\r?\n)?)+)/gmi, "<p>$1</p>")
+    // https://regex101.com/r/lUK6Rc/1
+    .replaceAll(/\r?\n([^<])/gmi, "<br />$1")
+    // https://regex101.com/r/bjsDHH/1
+    .replaceAll(
+      /((<p>)|<br \/>)?(https?:\/\/[\w\/:;%#\$&\?\(\)~\.=\+\-]+)(\r?\n)?((<\/p>)|<br \/>)/gmi,
+      '$1<a href="$3" rel="nofollow ugc">$3</a>$5'
+    )
+}
+
+const formatTimestamp = (timestamp: string) => {
+  return timestamp.replace(/(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2}):\d{2}/gmi, "$1/$2/$3 $4")
+}
+</script>
+
+<style lang="scss" scoped>
+.comment_base {
+  .comment {
+    margin: 3em 0;
+    .meta_data {
+      position: relative;
+      display: flex;
+      align-items: center;
+      .icon {
+        margin-right: 1.5em;
+        img {
+          display: block;
+          width: 48.33px;
+          height: 47.7px;
+          padding: 1px;
+          border: solid 1.9px #e6e4e3;
+          border-radius: 50%;
+          &.default {
+            transform: scale(0.93);
+          }
+        }
+      }
+      .info {
+        margin-bottom: 3px;
+        font-size: 0.9em;
+        .name {
+        }
+        .timestamp {
+          color: #999999;
+          font-size: 0.85em;
+        }
+      }
+      .link {
+        display: none;
+        position: absolute;
+        right: 3em;
+        top: 0;
+        bottom: 3px;
+        svg {
+          width: 1.3em;
+          transform: rotate(-23deg);
+        }
+      }
+      &:hover .link {
+        display: block;
+      }
+    }
+    .content {
+      margin: 0.7em 0 0;
+      padding-left: 0.23em;
+      padding-right: 1em;
+    }
+    &.depth-2 {
+      padding-left: calc(1.07em * 1);
+    }
+    &.depth-3 {
+      padding-left: calc(1.07em * 2);
+    }
+    &.depth-4 {
+      padding-left: calc(1.07em * 3);
+    }
+  }
+  .reply {
+
+  }
+}
+</style>
