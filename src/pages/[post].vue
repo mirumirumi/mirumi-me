@@ -23,7 +23,7 @@
           </div>
           <div class="author">
             <span>書いた人: </span>
-            <a :href="`https://twitter.com/${appConfig.twitterName}`" target="_top" rel="nofollow">＠みるみ</a>
+            <a :href="`https://twitter.com/${appConfig.twitterName}`" target="_blank" rel="nofollow">＠みるみ</a>
           </div>
         </div>
         <div class="share">
@@ -112,7 +112,7 @@ useSetMeta({
   main {
     width: 100%;
     max-width: calc(785px + 13px + 13px);
-    margin: auto;
+    margin: auto auto 5em;
     padding: 0.1em 13px 0;
     header {
       h1.title {

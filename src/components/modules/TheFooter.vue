@@ -24,13 +24,13 @@
             Tech
           </div>
           <li>
-            <a href="https://github.com/mirumirumi" target="_top">GitHub</a>
+            <a href="https://github.com/mirumirumi" target="_blank">GitHub</a>
           </li>
           <li>
-            <a href="https://mirumi.tech" target="_top">mirumi.tech (技術ブログ)</a>
+            <a href="https://mirumi.tech" target="_blank">mirumi.tech (技術ブログ)</a>
           </li>
           <li>
-            <a href="https://zenn.dev/mirumi" target="_top">Zenn</a>
+            <a href="https://zenn.dev/mirumi" target="_blank">Zenn</a>
           </li>
         </ul>
       </div>
