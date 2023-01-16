@@ -1,5 +1,5 @@
 <template>
-  <div class="page_view">
+  <div class="profile_view">
     
   </div>
 </template>
@@ -11,7 +11,7 @@
 </script>
 
 <style lang="scss" scoped>
-.page_view {
+.profile_view {
   
 }
 </style>
