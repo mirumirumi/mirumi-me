@@ -54,7 +54,7 @@
     .search_wrap {
       max-width: 31em;
       margin: auto auto 2.3em;
-      padding-left: 2.7em;
+      padding-left: 0.9em;
     }
     .link_group {
       display: flex;
