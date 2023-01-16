@@ -1,5 +1,5 @@
 <template>
-  <div class="post_view">
+  <div class="post_view article_layout">
     <main>
       <header>
         <h1 class="title">
@@ -109,51 +109,6 @@ useSetMeta({
 
 <style lang="scss" scoped>
 .post_view {
-  main {
-    width: 100%;
-    max-width: calc(785px + 13px + 13px);
-    margin: auto auto 5em;
-    padding: 0.1em 13px 0;
-    header {
-      h1.title {
-        margin: 0 0 1em;
-        padding: 0 0.1em;
-        color: #554545;
-        line-height: 1.5;
-        font-size: 1.4em;
-        font-weight: bold;
-      }
-      .thumbnail {
-        position: relative;
-        max-width: 100%;
-        margin-bottom: 0.13em;
-        img {
-          max-width: 100%;
-          height: 100%;
-          border-radius: 0.5em;
-          aspect-ratio: 1200 / 630;
-        }
-      }
-      .meta {
-        margin: 0.9em auto 1.9em;
-        font-size: 0.78em;
-        text-align: center;
-        > * {
-          display: inline-block;
-          margin: auto 1.3em;
-          a, span, time {
-            color: var(--color-gray);
-          }
-        }
-      }
-    }
-    footer {
-      margin-top: 6.3em;
-    }
-    @include mobile {
-      padding-left: 0;
-      padding-right: 0;
-    }
-  }
+
 }
 </style>

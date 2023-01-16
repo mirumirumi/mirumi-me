@@ -13,7 +13,7 @@
             <NuxtLink to="/about">運営者情報</NuxtLink>
           </li>
           <li>
-            <NuxtLink to="/privacy">プライバシーポリシー</NuxtLink>
+            <NuxtLink to="/privacy-policy">プライバシーポリシー</NuxtLink>
           </li>
           <li>
             <NuxtLink to="/contact">お問い合わせ</NuxtLink>

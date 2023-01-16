@@ -1,17 +1,5 @@
 <template>
   <div class="profile_view">
-    
+    <ModulesPageBase />
   </div>
 </template>
-
-<script setup lang="ts">
-
-
-
-</script>
-
-<style lang="scss" scoped>
-.profile_view {
-  
-}
-</style>
