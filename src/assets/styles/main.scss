@@ -110,16 +110,22 @@ label {
   .form_check_input[disabled] ~ & {
     opacity: 0.5;
   }
-  .required {
+  .required, .no_required {
     display: inline-block;
-    margin-left: 0.3em;
-    padding: 0.07em 0.43em 0.13em;
+    margin-left: 0.7em;
+    padding: 0.07em 0.43em 0.105em;
     color: var(--color-text-white);
     font-size: 0.65em;
     font-weight: bold;
-    background-color: #ff5151;
+    line-height: 1.4;
     border-radius: 5px;
-    transform: translateY(-0.1em);
+    transform: translateY(-0.07em);
+  }
+  .required {
+    background-color: #e36672;
+  }
+  .no_required {
+    background-color: #82878b;
   }
 }
 .form_label {
