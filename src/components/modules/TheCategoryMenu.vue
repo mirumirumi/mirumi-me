@@ -71,14 +71,6 @@ const others: Category[] = [
   { name: "Software Design", slug: "software-design" },
 ]
 
-const { data: pages } = await useFetch(`/pages`, {
-  baseURL: appConfig.baseURL,
-  params: {
-    _fields: "name,slug",
-  },
-  parseResponse: JSON.parse,
-})  // included root(`/`) as `home`
-
 await checkCurrentCategory()
 
 watch(() => p.isShown, () => {

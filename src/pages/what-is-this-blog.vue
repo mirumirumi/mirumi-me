@@ -3,4 +3,3 @@
     <ModulesPageBase />
   </div>
 </template>
-

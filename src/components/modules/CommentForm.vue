@@ -13,7 +13,7 @@
       ※メールアドレスを書いた場合も公開されることはないのでご安心ください。</li>
         <li v-if="reply_to === '0'">特定のコメントに返信したい場合は各コメントにある「返信」ボタンからどうぞ。</li>
         <li>コメントはこちらで承認の作業を行うまでは表示されません。ご了承ください。<br />
-      ※ここ数年スパムが激化しており、誤って削除されてしまうケースが増えてきました。スパムボックスも毎日自分の目で確認するようにはしているのですが、どうしても限界があります。確実に僕に連絡を取りたい方は <a href="mailto:mail@mirumi.me">メール</a> か <a href="https://twitter.com/milmemo_net" rel="nofollow" target="_blank">Twitter</a> からお願いします。</li>
+      ※ここ数年スパムが激化しており、誤って削除されてしまうケースが増えてきました。スパムボックスも毎日自分の目で確認するようにはしているのですが、どうしても限界があります。確実に僕に連絡を取りたい方は <a href="mailto:mail@mirumi.me">メール</a> か <a :href="`https://twitter.com/${appConfig.twitterName}`" target="_blank" rel="nofollow">Twitter</a> からお願いします。</li>
       </ul>
     </div>
     <form autocomplete="off">
@@ -26,11 +26,11 @@
       </div>
       <div class="form">
         <label for="name" class="form_label">おなまえ</label>
-        <input type="text" id="name" class="input" v-model="name" autocomplete="on" />
+        <input type="text" id="name" class="input" v-model="name" autocomplete="on" placeholder="匿名" />
       </div>
       <div class="form">
         <label for="email" class="form_label">メールアドレス</label>
-        <input type="email" id="email" class="input" v-model="email" autocomplete="on" />
+        <input type="email" id="email" class="input" v-model="email" autocomplete="on" placeholder="mail@example.com" />
       </div>
       <div class="button">
         <PartsBaseButton
@@ -134,9 +134,6 @@ const submit = async () => {
         background: none;
         transform: translateY(0.05em);
       }
-    }
-    input, textarea {
-
     }
     .button {
       margin-top: 2.3em;
