@@ -27,7 +27,8 @@ const appConfig = useAppConfig()
 
 const slug = route.name as string
 
-const { data } = await useFetch(`${appConfig.siteFullPath}/wp-json/mirumi/page_data/${slug}`, {
+const { data } = await useFetch(`/mirumi/page_data/${slug}`, {
+  baseURL: appConfig.baseURL,
   parseResponse: JSON.parse,
 })
 const page = data.value as Record<string, any>

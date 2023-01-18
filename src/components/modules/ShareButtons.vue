@@ -93,7 +93,8 @@ onMounted(() => {
 const onClickLike = async () => {
   const _isLikedThisSlug = isLikedThisSlug()
 
-  await useFetch(`${appConfig.siteFullPath}/wp-json/mirumi/upsert_like_count`, {
+  await useFetch(`/mirumi/upsert_like_count`, {
+    baseURL: appConfig.baseURL,
     method: "POST",
     params: {
       slug: p.slug,

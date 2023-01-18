@@ -32,7 +32,8 @@ const appConfig = useAppConfig()
 
 const slug = route.params.post as string
 
-const { data } = await useFetch(`${appConfig.siteFullPath}/wp-json/mirumi/comments_per_post/${slug}`, {
+const { data } = await useFetch(`/mirumi/comments_per_post/${slug}`, {
+  baseURL: appConfig.baseURL,
   parseResponse: JSON.parse,
 })
 const res = data.value as Record<string, any>[]

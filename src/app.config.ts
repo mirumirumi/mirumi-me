@@ -8,9 +8,9 @@ export default defineAppConfig({
   createdAt: "2016/6/1",
 
   // About APIs
+  apiFullPath,
   apiDomain: apiFullPath.replace("https://", ""),
-  baseURL: siteFullPath + "/wp-json/wp/v2",
-  // baseURL: apiFullPath + "/wp-json/wp/v2",
+  baseURL: siteFullPath + "/wp-json",
 
   // Profiles
   twitterName: "milmemo_net",

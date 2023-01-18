@@ -74,11 +74,12 @@ const submit = async () => {
 
   isSubmitting.value = true
 
-  const { data: postId } = await useFetch(`${appConfig.siteFullPath}/wp-json/mirumi/post_id_with_post_slug/${slug}`, {
+  const { data: postId } = await useFetch(`/mirumi/post_id_with_post_slug/${slug}`, {
+    baseURL: appConfig.baseURL,
     parseResponse: JSON.parse,
   })
 
-  const { error } = await useFetch(`/comments`, {
+  const { error } = await useFetch(`/wp/v2/comments`, {
     baseURL: appConfig.baseURL,
     method: "POST",
     headers: {
