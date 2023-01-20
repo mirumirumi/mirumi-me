@@ -58,7 +58,8 @@ const appConfig = useAppConfig()
 
 const slug = route.params.post as string
 
-const { data } = await useFetch(`${appConfig.siteFullPath}/wp-json/mirumi/post_data/${slug}`, {
+const { data } = await useFetch(`/mirumi/post_data/${slug}`, {
+  baseURL: appConfig.baseURL,
   parseResponse: JSON.parse,
 })
 const post = data.value as Record<string, any>
@@ -87,12 +88,20 @@ const clickHandle = (e: any) => {
     return
 
   const to = link.getAttribute("href")
-  if (!to.startsWith("/"))
+  if (to.startsWith(appConfig.siteFullPath)) {
+    // In case of `https://mirumi.me/slug`
+    e.preventDefault()
+    navigateTo(to.replace(appConfig.siteFullPath, ""))
+  } else if (!to.startsWith("/")) {
+    // In case of normal external links
+    return    
+  }
+
+  if (e.ctrlKey || e.shiftKey || e.altKey || e.metaKey)
+    // For open new tab etc
     return
 
-  if (e.ctrlKey || e.shiftKey || e.altKey || e.metaKey)  // open new tab
-    return
-
+  // In case of start with `/slug` 
   e.preventDefault()
   navigateTo(to)
 }
