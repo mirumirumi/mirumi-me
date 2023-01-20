@@ -104,7 +104,7 @@ async function search() {
     text-align: center;
   }
   .loading {
-    height: 44.4vh;
+    height: 100vh;
     text-align: center;
     > * {
       margin-top: 3em;

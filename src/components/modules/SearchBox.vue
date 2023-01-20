@@ -28,6 +28,7 @@ watch(() => p.query, () => {
 const move = () => {
   router.push({ name: "s", query: { q: _query.value } })
   emit("onEnter")
+  search.value.blur()
 }
 </script>
 

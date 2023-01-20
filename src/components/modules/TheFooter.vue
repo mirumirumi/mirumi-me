@@ -2,7 +2,7 @@
   <div class="footer_wrap">
     <footer>
       <div class="search_wrap">
-        <ModulesSearchBox />
+        <ModulesSearchBox :query="query" @onEnter="onEnter" />
       </div>
       <div class="link_group">
         <ul class="links">
@@ -42,6 +42,20 @@
 </template>
 
 <script setup lang="ts">
+const router = useRouter()
+
+const query = ref("")
+
+watch(() => router.currentRoute.value.fullPath, () => {
+  query.value = router.currentRoute.value.query.q as string
+})
+
+const onEnter = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+  })
+}
 </script>
 
 <style lang="scss" scoped>
