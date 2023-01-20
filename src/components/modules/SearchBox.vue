@@ -1,7 +1,7 @@
 s<template>
   <div class="search_box">
     <input type="text" ref="search" class="input" placeholder="記事を検索..." 
-      v-model="query"
+      v-model="_query"
       @keydown.enter.prevent="move"
     >
     <PartsSvgIcon :icon="'search'" :color="'#bbbbba'" @click="move" />
@@ -14,20 +14,20 @@ const p = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: "closeSearchBox"): void
+  (e: "onEnter"): void
 }>()
 
 const router = useRouter()
-const query = ref("")
+const _query = ref(p.query)
 const search = ref()
 
 watch(() => p.query, () => {
-  query.value = p.query ?? ""
+  _query.value = p.query ?? ""
 })
 
 const move = () => {
-  router.push({ query: { s: query.value } })
-  emit("closeSearchBox")
+  router.push({ name: "s", query: { q: _query.value } })
+  emit("onEnter")
 }
 </script>
 

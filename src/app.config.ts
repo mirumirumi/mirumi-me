@@ -11,6 +11,7 @@ export default defineAppConfig({
   apiFullPath,
   apiDomain: apiFullPath.replace("https://", ""),
   baseURL: siteFullPath + "/wp-json",
+  perPage: 13,
 
   // Profiles
   twitterName: "milmemo_net",

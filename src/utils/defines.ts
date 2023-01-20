@@ -9,3 +9,11 @@ export interface PageMeta {
   createdAt: string,
   updatedAt: string,
 }
+
+export interface PageSummary {
+  slug: string
+  title: string
+  thumbnailUrl: string
+  createdAt: string
+  updatedAt: string
+}
