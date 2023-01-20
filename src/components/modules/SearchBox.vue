@@ -29,6 +29,18 @@ const move = () => {
   router.push({ name: "s", query: { q: _query.value } })
   emit("onEnter")
   search.value.blur()
+
+  if (_query.value === "斜め" || _query.value === "skew") {
+    document.getElementsByTagName("body")[0].style.transform = "rotate(1.3deg)"
+  } else {
+    document.getElementsByTagName("body")[0].style.transform = "none"
+  }
+
+  if (_query.value === "逆" || _query.value === "reverse") {
+    document.getElementsByTagName("body")[0].style.transform = "scaleX(-1)"
+  } else {
+    document.getElementsByTagName("body")[0].style.transform = "none"
+  }
 }
 </script>
 
