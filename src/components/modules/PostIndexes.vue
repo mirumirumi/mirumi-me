@@ -6,9 +6,9 @@
           <img :src="p.thumbnailUrl" :alt="p.title" width="412" height="216">
         </div>
         <div class="content">
-          <div class="title">
+          <h2 class="title">
             {{ p.title }}
-          </div>
+          </h2>
           <div class="meta">
             <div class="created_at">
               <PartsSvgIcon :icon="'pen'" :color="'var(--color-gray)'" />
@@ -26,29 +26,26 @@
 </template>
 
 <script setup lang="ts">
+import { PageSummary } from "@/utils/defines"
+
 defineProps<{
-  posts: Array<{
-    slug: string
-    title: string
-    thumbnailUrl: string
-    createdAt: string
-    updatedAt: string
-  }>,
+  posts: PageSummary[],
 }>()
 </script>
 
 <style lang="scss" scoped>
 .post_indexes {
+  margin: 2em 0 4em;
   padding: 0 2em;
   a.post {
     display: flex;
     flex-direction: row;
     justify-content: center;
     width: 100%;
-    max-width: 800px;
+    max-width: 725px;
     height: 96.51px;
     margin: auto auto 2em;
-    padding: 1em 3em 1em 1em;
+    padding: 1em 1em 1em 0.5em;
     text-decoration: none;
     background-color: var(--color-background);
     border-radius: 8px;
@@ -72,8 +69,9 @@ defineProps<{
       justify-content: center;
       width: 75%;
       margin-left: 2em;
-      transform: translateY(-2px);
+      transform: translateY(-2.3px);
       .title {
+        margin: 0;
         color: #545454;
         line-height: 1.2;
         font-size: 0.87em;
