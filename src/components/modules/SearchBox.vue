@@ -25,21 +25,24 @@ watch(() => p.query, () => {
   _query.value = p.query ?? ""
 })
 
-const move = () => {
+const move = async () => {
   router.push({ name: "s", query: { q: _query.value } })
   emit("onEnter")
   search.value.blur()
 
-  if (_query.value === "斜め" || _query.value === "skew") {
-    document.getElementsByTagName("body")[0].style.transform = "rotate(1.3deg)"
-  } else {
-    document.getElementsByTagName("body")[0].style.transform = "none"
+  await delay(100)
+
+  if (_query.value?.includes("斜め") || _query.value?.includes("skew")) {
+    document.getElementsByTagName("body")[0].style.transform = "rotate(1.3deg) "
   }
 
-  if (_query.value === "逆" || _query.value === "reverse") {
-    document.getElementsByTagName("body")[0].style.transform = "scaleX(-1)"
-  } else {
-    document.getElementsByTagName("body")[0].style.transform = "none"
+  if (_query.value?.includes("逆") || _query.value?.includes("reverse")) {
+    document.getElementsByTagName("body")[0].style.transform
+    if (document.getElementsByTagName("body")[0].style.transform !== "none") {
+      document.getElementsByTagName("body")[0].style.transform += " scaleX(-1)"
+    } else {
+      document.getElementsByTagName("body")[0].style.transform = "scaleX(-1)"
+    }
   }
 }
 </script>
