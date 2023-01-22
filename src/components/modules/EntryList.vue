@@ -73,15 +73,17 @@ for (const [i, e] of entries.entries()) {
   > ul {
     > li.category {
       font-size: 0.88em;
+      &:first-child {
+        a {
+          margin-top: 0;
+        }
+      }
       > a {
         display: block;
         margin: 2.1em 0 0.7em;
         padding: 0 0 0.3em 0.3em;
         border-bottom: solid 1px #e5e5e5;
         text-decoration: none;
-        &:first-child {
-          margin-top: 0;
-        }
       }
       > ul {
         padding-left: 0.5em;

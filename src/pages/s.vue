@@ -74,7 +74,7 @@ async function search() {
 
   isLoading.value = true
 
-  const res = await $fetch.raw(`/wp/v2/search`, {
+  const res = await $fetch.raw(`/wp/v2/posts`, {
     baseURL: appConfig.baseURL,
     params: {
       page: page.value,
@@ -82,6 +82,7 @@ async function search() {
       search: keyword.value,
       type: "post",
       subtype: "post",
+      status: ["publish"],
       _fields: "id",
     },
     parseResponse: JSON.parse,

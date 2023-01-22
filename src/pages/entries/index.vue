@@ -43,6 +43,7 @@ const { data, refresh } = await useFetch(`/wp/v2/posts`, {
     per_page: appConfig.perPage,
     type: "post",
     subtype: "post",
+    status: ["publish"],
     _fields: "id",
   },
   parseResponse: JSON.parse,
@@ -52,7 +53,7 @@ const { data, refresh } = await useFetch(`/wp/v2/posts`, {
   },
 })
 
-// TODO: `onResponse` does not work at page first loading, so I have no choice but to run it 2 times (#1)
+// FIXME: `onResponse` does not work at page first loading, so I have no choice but to run it 2 times (#1)
 refresh()
 
 const postIdObjs = data.value as Record<string, number>[]
