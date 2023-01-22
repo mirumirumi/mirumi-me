@@ -131,7 +131,8 @@ const formatTimestamp = (timestamp: string) => {
     button {
       margin-right: 3em;
       padding: 0.2em 1em 0.3em;
-      font-size: 0.8em;
+      font-size: 0.73em;
+      box-shadow: none;
     }
   }
   .reply {

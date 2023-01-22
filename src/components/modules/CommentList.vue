@@ -5,16 +5,16 @@
     </div>
     <div class="comments_wrap">
       <template v-for="c in comments" :key="c.comment_ID">
-        <PartsCommentBase :c="c" :depth="1" />
+        <ModulesCommentBase :c="c" :depth="1" />
         <template v-if="1 <= c.children.length">
           <template v-for="cc in c.children" :key="cc.comment_ID">
-            <PartsCommentBase :c="cc" :depth="2" />
+            <ModulesCommentBase :c="cc" :depth="2" />
             <template v-if="1 <= cc.children.length">
               <template v-for="ccc in cc.children" :key="ccc.comment_ID">
-                <PartsCommentBase :c="ccc" :depth="3" />
+                <ModulesCommentBase :c="ccc" :depth="3" />
                 <template v-if="1 <= ccc.children.length">
                   <template v-for="cccc in ccc.children" :key="cccc.comment_ID">
-                    <PartsCommentBase :c="cccc" :depth="4" />
+                    <ModulesCommentBase :c="cccc" :depth="4" />
                   </template>
                 </template>
               </template>
