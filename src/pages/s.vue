@@ -41,7 +41,7 @@ const router = useRouter()
 const appConfig = useAppConfig()
 
 const keyword = ref(router.currentRoute.value.query.q)
-const page = ref(Number(router.currentRoute.value.query.p) ?? 1)
+const page = ref(Number(router.currentRoute.value.query.p ?? 1))
 
 const posts = ref<PageSummary[] | null>(null)
 const pageCount = ref(0)
@@ -58,7 +58,7 @@ watch(() => router.currentRoute.value, async (newValue, oldValue) => {
     page.value = 1
     await search()
   } else if (newValue.query.p !== oldValue.query.p) {
-    page.value = Number(newValue.query.p)
+    page.value = Number(newValue.query.p ?? 1)
     await search()
   }
 })
@@ -102,11 +102,10 @@ async function search() {
     postIds.push(p.id)
   }
 
-  const { data: postSummaries } = await useFetch(`/mirumi/post_summaries_with_post_ids/${(postIds as number[]).join(",")}`, {
+  posts.value = await $fetch<PageSummary[]>(`/mirumi/post_summaries_with_post_ids/${(postIds as number[]).join(",")}`, {
     baseURL: appConfig.baseURL,
     parseResponse: JSON.parse,
   })
-  posts.value = postSummaries.value as any
 
   // Prevent flickering of previous results
   await delay(300)
