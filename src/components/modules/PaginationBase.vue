@@ -1,10 +1,10 @@
 <template>
-  <div class="pagination_base">
+  <div v-if="2 <= pageCount" class="pagination_base">
     <NuxtLink
       v-if="1 < currentPage"
       :to="isCsr
         ? { query: { ...$route.query, p: currentPage - 1 } }
-        : {  }"
+        : { path: `${basePath}/page/${currentPage - 1}` }"
       class="arrow prev"
     >
       <PartsSvgIcon :icon="'arrow_left'" :color="'#727272'" />
@@ -18,7 +18,7 @@
       <NuxtLink
         :to="isCsr
           ? { query: { ...$route.query, p: 1 } }
-          : {  }"
+          : { path: `${basePath}/page/${1}` }"
         class="page_latest"
       >
         {{ 1 }}
@@ -33,7 +33,7 @@
         v-if="1 < currentPage - x"
         :to="isCsr
           ? { query: { ...$route.query, p: currentPage - x } }
-          : {  }"
+          : { path: `${basePath}/page/${currentPage - x}` }"
       >
         {{ currentPage - x }}
       </NuxtLink>
@@ -46,7 +46,7 @@
         v-if="currentPage + x < pageCount"
         :to="isCsr
           ? { query: { ...$route.query, p: currentPage + x } }
-          : {  }"
+          : { path: `${basePath}/page/${currentPage + x}` }"
       >
         {{ currentPage + x }}
       </NuxtLink>
@@ -64,7 +64,7 @@
       <NuxtLink
         :to="isCsr
           ? { query: { ...$route.query, p: pageCount } }
-          : {  }"
+          : { path: `${basePath}/page/${pageCount}` }"
         class="page_oldest"
       >
         {{ pageCount }}
@@ -74,7 +74,7 @@
       v-if="currentPage < pageCount"
       :to="isCsr
         ? { query: { ...$route.query, p: currentPage + 1 } }
-        : {  }"
+        : { path: `${basePath}/page/${currentPage + 1}` }"
       class="arrow next"
     >
       <PartsSvgIcon :icon="'arrow_right'" :color="'#727272'" />
@@ -84,14 +84,19 @@
 
 <script setup lang="ts">
 defineProps<{
-  currentPage: number,
-  pageCount: number,
-  itemCount: number,
-  isCsr: boolean,
+  currentPage: number
+  pageCount: number
+  itemCount: number
+  isCsr: boolean
 }>()
+
+const route = useRoute()
 
 const LINKS_TO_SHOW = 3  // Only odd
 const BEFORE_AND_AFTER = [...Array((LINKS_TO_SHOW - 1) / 2).keys()].map((x) => x + 1)
+
+const basePath = ref("")
+basePath.value = route.path.replace(/\/page\/\d+/gmi, "")
 </script>
 
 <style lang="scss" scoped>

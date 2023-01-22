@@ -1,12 +1,12 @@
 <template>
   <div class="entries_view indexes_single_column">
-    <ModulesEntryList />
+    <ModulesEntryList v-if="page === 1" />
     <ClientOnly>
       <ModulesPaginationBase
         :currentPage="page"
         :pageCount="pageCount"
         :itemCount="itemCount"
-        :isCsr="true"
+        :isCsr="false"
         style="margin-top: 0;"
       />
     </ClientOnly>
@@ -16,7 +16,7 @@
         :currentPage="page"
         :pageCount="pageCount"
         :itemCount="itemCount"
-        :isCsr="true"
+        :isCsr="false"
       />
     </ClientOnly>
   </div>
@@ -25,10 +25,13 @@
 <script setup lang="ts">
 import { PageSummary } from "@/utils/defines"
 
-const route = useRoute()
+const p = defineProps<{
+  pageNumber?: number
+}>()
+
 const appConfig = useAppConfig()
 
-const page = ref(Number(route.params.pageNumber ?? 1))
+const page = ref(Number(p.pageNumber ?? 1))
 const posts = ref<PageSummary[]>([])
 const pageCount = ref(0)
 const itemCount = ref(0)
