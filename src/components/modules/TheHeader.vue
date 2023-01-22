@@ -9,7 +9,7 @@
       <nav aria-label="global-menu">
         <ul class="menu">
           <li>
-            <NuxtLink to="/all-entries">
+            <NuxtLink to="/entries">
               記事一覧
             </NuxtLink>
           </li>
