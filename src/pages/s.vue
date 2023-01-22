@@ -1,6 +1,14 @@
 <template>
   <div class="search_view indexes_single_column">
     <ModulesSearchBox :query="(keyword as string)" @onEnter="onEnter" />
+    <ClientOnly>
+      <ModulesPaginationBase
+        :currentPage="page"
+        :pageCount="pageCount"
+        :itemCount="itemCount"
+        :isCsr="true"
+      />
+    </ClientOnly>
     <div v-if="!keyword" class="no_keywords">
       検索ワードを入力してください :)
     </div>
@@ -15,6 +23,14 @@
         </div>
       </template>
     </template>
+    <ClientOnly>
+      <ModulesPaginationBase
+        :currentPage="page"
+        :pageCount="pageCount"
+        :itemCount="itemCount"
+        :isCsr="true"
+      />
+    </ClientOnly>
   </div>
 </template>
 
@@ -25,9 +41,11 @@ const router = useRouter()
 const appConfig = useAppConfig()
 
 const keyword = ref(router.currentRoute.value.query.q)
-const page = ref(router.currentRoute.value.query.p || 1)
+const page = ref(Number(router.currentRoute.value.query.p) ?? 1)
 
 const posts = ref<PageSummary[] | null>(null)
+const pageCount = ref(0)
+const itemCount = ref(0)
 const isLoading = ref(false)
 
 onMounted(async () => {
@@ -40,6 +58,7 @@ watch(() => router.currentRoute.value, async (newValue, oldValue) => {
     page.value = 1
     await search()
   } else if (newValue.query.p !== oldValue.query.p) {
+    page.value = Number(newValue.query.p)
     await search()
   }
 })
@@ -55,7 +74,7 @@ async function search() {
 
   isLoading.value = true
 
-  const postIdObjs = await $fetch<Record<string, number>[]>(`/wp/v2/search`, {
+  const res = await $fetch.raw(`/wp/v2/search`, {
     baseURL: appConfig.baseURL,
     params: {
       page: page.value,
@@ -67,6 +86,11 @@ async function search() {
     },
     parseResponse: JSON.parse,
   })
+
+  pageCount.value = Number(res.headers.get("x-wp-totalpages"))
+  itemCount.value = Number(res.headers.get("x-wp-total"))
+
+  const postIdObjs = res._data as Record<string, number>[]
   if (postIdObjs.length === 0) {
     posts.value = []
     isLoading.value = false

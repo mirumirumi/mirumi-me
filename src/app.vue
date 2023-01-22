@@ -17,7 +17,7 @@
   #container {
     width: var(--width-max-screen);
     margin: 0 auto;
-    padding: 0.9em 0.5em 1em;
+    padding: 0.9em 0.5em 2.3em;
     @include tablet {
       width: 100%;
     }

@@ -35,7 +35,7 @@ defineProps<{
 
 <style lang="scss" scoped>
 .post_indexes {
-  margin: 2em 0 4em;
+  margin: 2em 0 3.5em;
   padding: 0 2em;
   a.post {
     display: flex;
