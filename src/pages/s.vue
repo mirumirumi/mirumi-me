@@ -1,14 +1,12 @@
 <template>
   <div class="search_view indexes_single_column">
     <ModulesSearchBox :query="(keyword as string)" @onEnter="onEnter" />
-    <ClientOnly>
-      <ModulesPaginationBase
-        :currentPage="page"
-        :pageCount="pageCount"
-        :itemCount="itemCount"
-        :isCsr="true"
-      />
-    </ClientOnly>
+    <ModulesPaginationBase
+      :currentPage="page"
+      :pageCount="pageCount"
+      :itemCount="itemCount"
+      :isCsr="true"
+    />
     <div v-if="!keyword" class="no_keywords">
       検索ワードを入力してください :)
     </div>
@@ -23,14 +21,12 @@
         </div>
       </template>
     </template>
-    <ClientOnly>
-      <ModulesPaginationBase
-        :currentPage="page"
-        :pageCount="pageCount"
-        :itemCount="itemCount"
-        :isCsr="true"
-      />
-    </ClientOnly>
+    <ModulesPaginationBase
+      :currentPage="page"
+      :pageCount="pageCount"
+      :itemCount="itemCount"
+      :isCsr="true"
+    />
   </div>
 </template>
 

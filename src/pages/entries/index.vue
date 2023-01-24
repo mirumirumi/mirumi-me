@@ -1,24 +1,19 @@
 <template>
   <div class="entries_view indexes_single_column">
-    <ModulesEntryList v-if="page === 1" />
-    <ClientOnly>
-      <ModulesPaginationBase
-        :currentPage="page"
-        :pageCount="pageCount"
-        :itemCount="itemCount"
-        :isCsr="false"
-        style="margin-top: 0;"
-      />
-    </ClientOnly>
+    <ModulesPaginationBase
+      :currentPage="page"
+      :pageCount="pageCount"
+      :itemCount="itemCount"
+      :isCsr="false"
+      style="margin-top: 0;"
+    />
     <ModulesPostIndexes :posts="posts" />
-    <ClientOnly>
-      <ModulesPaginationBase
-        :currentPage="page"
-        :pageCount="pageCount"
-        :itemCount="itemCount"
-        :isCsr="false"
-      />
-    </ClientOnly>
+    <ModulesPaginationBase
+      :currentPage="page"
+      :pageCount="pageCount"
+      :itemCount="itemCount"
+      :isCsr="false"
+    />
   </div>
 </template>
 

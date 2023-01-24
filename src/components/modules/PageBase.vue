@@ -68,7 +68,5 @@ useSetMeta({
 </script>
 
 <style lang="scss" scoped>
-.page_base {
-  
-}
+.page_base {}
 </style>
