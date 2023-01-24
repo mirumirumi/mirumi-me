@@ -7,6 +7,17 @@
       <div class="link_group">
         <ul class="links">
           <div class="group_title">
+            Page
+          </div>
+          <li>
+            <NuxtLink to="/entry-list">全記事一覧</NuxtLink>
+          </li>
+          <li>
+            <NuxtLink to="/nice-to-meet-you-10">はじめましての 10 記事</NuxtLink>
+          </li>
+        </ul>
+        <ul class="links">
+          <div class="group_title">
             About
           </div>
           <li>
@@ -73,7 +84,7 @@ const onEnter = () => {
     .link_group {
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: flex-start;
       gap: 7em;
       padding-left: 4.3em;  // `mirumi.tech` is too long
       .links {
