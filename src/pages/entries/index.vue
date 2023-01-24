@@ -49,7 +49,7 @@ const { data, refresh } = await useFetch(`/wp/v2/posts`, {
 })
 
 // FIXME: `onResponse` does not work at page first loading, so I have no choice but to run it 2 times (#1)
-refresh()
+await refresh()
 
 const postIdObjs = data.value as Record<string, number>[]
 if (postIdObjs.length === 0) {

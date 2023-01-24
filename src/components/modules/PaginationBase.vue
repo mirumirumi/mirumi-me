@@ -28,7 +28,7 @@
       <PartsSvgIcon :icon="'ellipsis'" :color="'#727272'" />
     </div>
 
-    <template v-for="x in BEFORE_AND_AFTER.slice().reverse()">
+    <template v-for="x in BEFORE_AND_AFTER.slice().reverse()" :key="x">
       <NuxtLink
         v-if="1 < currentPage - x"
         :to="isCsr
@@ -41,7 +41,7 @@
     <div v-if="currentPage !== 1 && currentPage !== pageCount" class="current">
       {{ currentPage }}
     </div>      
-    <template v-for="x in BEFORE_AND_AFTER">
+    <template v-for="x in BEFORE_AND_AFTER" :key="x">
       <NuxtLink
         v-if="currentPage + x < pageCount"
         :to="isCsr
