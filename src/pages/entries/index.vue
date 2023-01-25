@@ -24,6 +24,7 @@ const p = defineProps<{
   pageNumber?: number
 }>()
 
+const route = useRoute()
 const appConfig = useAppConfig()
 
 const page = ref(Number(p.pageNumber ?? 1))
@@ -67,3 +68,12 @@ const { data: postSummaries } = await useFetch(`/mirumi/post_summaries_with_post
 })
 posts.value = postSummaries.value as PageSummary[]
 
+useSetMeta({
+  title: "記事一覧",
+  description: "呆れるほど話題に統一感のない雑記ブログ。",
+  keywords: "みるめも,みるみ,ブログ,雑記ブログ",
+  url: appConfig.siteFullPath + route.fullPath,
+  createdAt: appConfig.createdAt,
+  updatedAt: today(),
+})
+</script>

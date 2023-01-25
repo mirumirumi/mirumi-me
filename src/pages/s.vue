@@ -104,11 +104,21 @@ async function search() {
     parseResponse: JSON.parse,
   })
 
-  // Prevent flickering of previous results
-  await delay(300)
-
   isLoading.value = false
 }
+
+useHead({
+  meta: [{ name: "robots", content: "noindex" }]
+})
+
+useSetMeta({
+  title: `検索: ${keyword.value}`,
+  description: "呆れるほど話題に統一感のない雑記ブログ。",
+  keywords: "みるめも,みるみ,ブログ,雑記ブログ",
+  url: appConfig.siteFullPath + router.currentRoute.value.fullPath,
+  createdAt: appConfig.createdAt,
+  updatedAt: today(),
+})
 </script>
 
 <style lang="scss" scoped>

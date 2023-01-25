@@ -18,6 +18,7 @@
 </template>
 
 <script setup lang="ts">
+const route = useRoute()
 const appConfig = useAppConfig()
 
 const { data } = await useFetch(`/mirumi/entry_list`, {
@@ -69,6 +70,15 @@ for (const [i, e] of entries.entries()) {
     title: e.title,
   })
 }
+
+useSetMeta({
+  title: "全記事一覧",
+  description: "みるめもの全記事を一覧で確認できるページです。",
+  keywords: "みるめも,サイトマップ,記事一覧",
+  url: appConfig.siteFullPath + route.fullPath,
+  createdAt: appConfig.createdAt,
+  updatedAt: today(),
+})
 </script>
 
 <style lang="scss" scoped>

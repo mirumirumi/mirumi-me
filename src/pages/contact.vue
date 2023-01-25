@@ -62,6 +62,7 @@
 <script setup lang="ts">
 import { useToast } from "vue-toastification"
 
+const route = useRoute()
 const appConfig = useAppConfig()
 const toast = useToast()
 
@@ -86,7 +87,7 @@ const submit = async () => {
 
   isSubmitting.value = true
 
-  const { data, error } = await useFetch(`https://wxdwbxfdjdqc7ekpokyjnhmhd40dcldj.lambda-url.ap-northeast-1.on.aws/`, {
+  const { error } = await useFetch(`https://wxdwbxfdjdqc7ekpokyjnhmhd40dcldj.lambda-url.ap-northeast-1.on.aws/`, {
     method: "POST",
     headers: {
       "Content-Type": "multipart/form-data",
@@ -112,6 +113,15 @@ const submit = async () => {
   subject.value = ""
   body.value = ""
 }
+
+useSetMeta({
+  title: "お問い合わせ",
+  description: "みるめも、もしくは運営者自身へのお問い合わせ等を受け付けているページです。",
+  keywords: "みるめも,お問い合わせ,Contact,Inquiry",
+  url: appConfig.siteFullPath + route.fullPath,
+  createdAt: appConfig.createdAt,
+  updatedAt: today(),
+})
 </script>
 
 <style lang="scss" scoped>
