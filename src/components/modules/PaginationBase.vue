@@ -106,7 +106,7 @@ basePath.value = route.path.replace(/\/page\/\d+/gmi, "")
   flex-direction: row;
   justify-content: center;
   align-items: center;
-  margin: 2.7em 0 2.3em;
+  margin: 2.7em 0 2.5em;
   > * {
     display: flex;
     justify-content: center;
