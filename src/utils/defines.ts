@@ -6,8 +6,8 @@ export interface PageMeta {
   keywords: string,
   thumbnail?: string,
   url: string,
-  createdAt: string,
-  updatedAt: string,
+  createdAt?: string,
+  updatedAt?: string,
 }
 
 export interface PageSummary {

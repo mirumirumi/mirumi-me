@@ -115,9 +115,3 @@ useSetMeta({
   updatedAt: post.modified,
 })
 </script>
-
-<style lang="scss" scoped>
-.post_view {
-
-}
-</style>

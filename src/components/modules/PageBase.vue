@@ -66,7 +66,3 @@ useSetMeta({
   updatedAt: page.modified,
 })
 </script>
-
-<style lang="scss" scoped>
-.page_base {}
-</style>

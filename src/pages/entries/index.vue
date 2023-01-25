@@ -66,8 +66,4 @@ const { data: postSummaries } = await useFetch(`/mirumi/post_summaries_with_post
   parseResponse: JSON.parse,
 })
 posts.value = postSummaries.value as PageSummary[]
-</script>
 
-<style lang="scss" scoped>
-.entries_view {}
-</style>
