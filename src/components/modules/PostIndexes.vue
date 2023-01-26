@@ -3,7 +3,7 @@
     <template v-for="p in posts" :key="p.slug">
       <NuxtLink :to="`/${p.slug}`" class="post">
         <div class="thumbnail">
-          <img :src="p.thumbnailUrl" :alt="p.title" width="412" height="216">
+          <img :src="p.thumbnailUrl" :alt="p.title" width="412" height="216" />
         </div>
         <div class="content">
           <h2 class="title">
@@ -12,11 +12,11 @@
           <div class="meta">
             <div class="created_at">
               <PartsSvgIcon :icon="'pen'" :color="'var(--color-gray)'" />
-              <time :datetime="p.createdAt">{{ friendlyDatetime(p.createdAt) }}</time>
+              <time :datetime="p.createdAt">{{ friendlyDatetime(p.createdAt!) }}</time>
             </div>
             <div class="updated_at">
               <PartsSvgIcon :icon="'reload'" :color="'var(--color-gray)'" />
-              <time :datetime="p.updatedAt">{{ friendlyDatetime(p.updatedAt) }}</time>
+              <time :datetime="p.updatedAt">{{ friendlyDatetime(p.updatedAt!) }}</time>
             </div>
           </div>
         </div>

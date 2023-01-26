@@ -14,6 +14,6 @@ export interface PageSummary {
   slug: string
   title: string
   thumbnailUrl: string
-  createdAt: string
-  updatedAt: string
+  createdAt?: string
+  updatedAt?: string
 }
