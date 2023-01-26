@@ -52,6 +52,10 @@ span a,
 li a,
 table a {
   color: var(--color-link);
+  transition: 0.13s all ease;
+  &:hover {
+    filter: saturate(0.7);
+  }
 }
 ul, li {
   margin: 0;

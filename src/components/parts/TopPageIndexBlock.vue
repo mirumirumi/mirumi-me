@@ -87,6 +87,9 @@ defineProps<{
       .arrow {
         text-decoration: none;
       }
+      &:hover {
+        filter: saturate(0.7);
+      }
     }
   }
 }
