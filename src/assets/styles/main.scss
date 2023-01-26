@@ -355,11 +355,11 @@ label {
 }
 .fade_topbtn-enter-from,
 .fade_topbtn-leave-to {
-  opacity: 0;
+  opacity: 0 !important;
 }
 .fade_topbtn-enter-to,
 .fade_topbtn-leave-from {
-  opacity: 0.57;
+  opacity: 0.57 !important;
 }
 .fadedown-enter-active {
   transition: all 0.13s ease-out;

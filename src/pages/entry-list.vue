@@ -14,6 +14,11 @@
         </ul>
       </li>
     </ul>
+    <Teleport to="body">
+      <ClientOnly>
+        <PartsTopButton />
+      </ClientOnly>
+    </Teleport>
   </div>
 </template>
 
