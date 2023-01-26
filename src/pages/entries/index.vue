@@ -40,6 +40,7 @@ const { data, refresh } = await useFetch(`/wp/v2/posts`, {
     type: "post",
     subtype: "post",
     status: ["publish"],
+    categories_exclude: [1877],  // Software Design
     _fields: "id",
   },
   parseResponse: JSON.parse,
