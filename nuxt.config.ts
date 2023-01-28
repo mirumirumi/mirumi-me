@@ -42,6 +42,9 @@ export default defineNuxtConfig({
         { rel: "preconnect dns-prefetch", href: "//ad.doubleclick.net" },
         { rel: "preconnect dns-prefetch", href: "//www.gstatic.com" },
         { rel: "preconnect dns-prefetch", href: "//cse.google.com" },
+        { rel: "alternate", type: "application/rss+xml", title: "RSS feed", href: "https://mirumi.me/feed.xml" },
+        // No comment feed for each article
+        { rel: "alternate", type: "application/rss+xml", title: "RSS feed (Comments)", href: "https://mirumi.me/feed-comments.xml" },
       ],
       style: [],
       script: [],

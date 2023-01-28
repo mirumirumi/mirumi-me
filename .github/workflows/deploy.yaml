@@ -28,6 +28,8 @@ jobs:
         run: |
           npm run generate
           curl https://mirumi.io/sitemap.xml > .output/public/sitemap.xml
+          curl https://mirumi.io/feed > .output/public/feed.xml
+          curl https://mirumi.io/comments/feed > .output/public/feed-comments.xml
 
       - name: Sign in
         uses: aws-actions/configure-aws-credentials@v1
