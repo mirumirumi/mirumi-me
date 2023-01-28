@@ -16,25 +16,27 @@ jobs:
         with:
           node-version: 18.9.1
 
-      - name: Installing npm modules...
+      - name: Install dependencies
         run: npm ci
 
-      - name: Decrypting secrets with gpg...
+      - name: Decrypt secrets with gpg
         run: |
           echo "${{ secrets.GPG_PASSPHRASE }}" | sudo gpg --batch --passphrase-fd 0 --output "src/secrets/secret.dev.js" --decrypt "src/secrets/secret.dev.js.gpg" 
           echo "${{ secrets.GPG_PASSPHRASE }}" | sudo gpg --batch --passphrase-fd 0 --output "src/secrets/secret.prd.js" --decrypt "src/secrets/secret.prd.js.gpg" 
 
-      - name: Generating...
-        run: npm run generate
+      - name: Generate site
+        run: |
+          npm run generate
+          curl https://mirumi.io/sitemap.xml > .output/public/sitemap.xml
 
-      - name: Deploying...
+      - name: Sign in
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-region: ap-northeast-1
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Copying files to s3...
+      - name: Copy files to S3
         run: |
           aws s3 sync --region ap-northeast-1 .output/public/_nuxt/ s3://xxxxx/_nuxt --cache-control "max-age=31536000"
           aws s3 sync --region ap-northeast-1 .output/public/ s3://xxxxx --cache-control "no-cache"
