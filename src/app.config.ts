@@ -5,7 +5,7 @@ export default defineAppConfig({
   // Site meta
   siteFullPath,
   siteDomain: siteFullPath.replace("https://", ""),
-  createdAt: "2016/6/1",
+  createdAt: "2016-06-01T00:00:00+09:00",
 
   // About APIs
   apiFullPath,

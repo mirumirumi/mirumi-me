@@ -1,5 +1,5 @@
 export const today = () => {
-  return `${new Date().getFullYear()}/${new Date().getMonth() + 1}/${new Date().getDate()}`
+  return new Date().toISOString()
 }
 
 export const round = (value: number, base = 6): number => {

@@ -57,12 +57,13 @@ const clickHandle = (e: any) => {
   navigateTo(to)
 }
 
-useSetMeta({
+usePageInfo({
   title: page.title,
   description: page.meta_description,
   keywords: page.meta_keywords,
   url: appConfig.siteFullPath + "/" + slug,
   createdAt: page.date,
   updatedAt: page.modified,
+  thumbnail: page.thumbnail_url,
 })
 </script>

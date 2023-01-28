@@ -111,7 +111,7 @@ useHead({
   meta: [{ name: "robots", content: "noindex" }]
 })
 
-useSetMeta({
+usePageInfo({
   title: `検索: ${keyword.value}`,
   description: "呆れるほど話題に統一感のない雑記ブログ。",
   keywords: "みるめも,みるみ,ブログ,雑記ブログ",

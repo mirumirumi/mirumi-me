@@ -301,7 +301,7 @@ const { data: postSummaries } = await useFetch(`/mirumi/post_summaries_with_post
 })
 posts = posts.concat(postSummaries.value as PageSummary[])
 
-useSetMeta({
+usePageInfo({
   title: "みるめも",
   description: "呆れるほど話題に統一感のない雑記ブログ。",
   keywords: "みるめも,みるみ,ブログ,雑記ブログ",

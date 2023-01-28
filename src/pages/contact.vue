@@ -114,7 +114,7 @@ const submit = async () => {
   body.value = ""
 }
 
-useSetMeta({
+usePageInfo({
   title: "お問い合わせ",
   description: "みるめも、もしくは運営者自身へのお問い合わせ等を受け付けているページです。",
   keywords: "みるめも,お問い合わせ,Contact,Inquiry",

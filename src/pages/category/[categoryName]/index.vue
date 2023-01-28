@@ -98,7 +98,7 @@ const content = resCategoryContent.value as Record<string, string>
 /**
  * Utils
  */
-useSetMeta({
+usePageInfo({
   title: category.categoryName,
   description: content.meta_description,
   keywords: content.meta_keywords,

@@ -76,7 +76,7 @@ for (const [i, e] of entries.entries()) {
   })
 }
 
-useSetMeta({
+usePageInfo({
   title: "全記事一覧",
   description: "みるめもの全記事を一覧で確認できるページです。",
   keywords: "みるめも,サイトマップ,記事一覧",
