@@ -6,7 +6,7 @@
           <img src="@/assets/svgs/site-icon.svg" alt="site-icon" aria-label="みるめも">
         </NuxtLink>
       </div>
-      <nav aria-label="グローバルメニュー">
+      <nav role="navigation" aria-label="グローバルメニュー">
         <ul class="menu">
           <li>
             <NuxtLink to="/entries">

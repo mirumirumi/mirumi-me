@@ -1,6 +1,6 @@
 <template>
   <div class="page_base article_layout">
-    <main>
+    <main role="main">
       <header>
         <h1 class="title">
           {{ page.title }}

@@ -4,7 +4,7 @@
       <div class="search_wrap">
         <ModulesSearchBox :query="query" @onEnter="onEnter" />
       </div>
-      <div class="link_group">
+      <nav class="link_group" role="navigation" aria-label="フッターメニュー">
         <ul class="links">
           <div class="group_title">
             Page
@@ -44,7 +44,7 @@
             <a href="https://zenn.dev/mirumi" target="_blank">Zenn</a>
           </li>
         </ul>
-      </div>
+      </nav>
       <div class="copyright">
         © 2016-{{ new Date().getFullYear() }} みるめも
       </div>

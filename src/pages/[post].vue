@@ -1,6 +1,6 @@
 <template>
   <div class="post_view article_layout">
-    <main>
+    <main role="main">
       <header>
         <h1 class="title">
           {{ post.title }}
@@ -8,7 +8,7 @@
         <div class="thumbnail">
           <img :src="post.thumbnail_url.replace(/\.(png|jpg|jpeg)$/gmi, '.webp')" :alt="post.title" width="1200" height="630">
         </div>
-        <div class="meta">
+        <div class="meta" role="contentinfo">
           <div class="category">
             <span>かてごり: </span>
             <NuxtLink :to="`/category/${post.category_slug}`">{{ post.category_name }}</NuxtLink>

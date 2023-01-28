@@ -1,5 +1,5 @@
 <template>
-  <div class="index_view">
+  <div class="index_view" role="main">
     <div class="row">
       <PartsTopPageIndexBlock
         :blockTitle="'はじめましての 10 記事'"

@@ -1,6 +1,11 @@
-s<template>
+<template>
   <div class="search_box">
-    <input type="text" ref="search" class="input" placeholder="記事を検索..." 
+    <input
+      type="text"
+      ref="search"
+      class="input"
+      placeholder="記事を検索..."
+      role="search"
       v-model="_query"
       @keydown.enter.prevent="move"
     >
