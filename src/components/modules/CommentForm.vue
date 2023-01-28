@@ -47,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-import { useToast } from "vue-toastification"
+import { useToast } from "vue-toastification/dist/index.mjs"
 
 const p = withDefaults(defineProps<{
   reply_to?: string

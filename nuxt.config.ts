@@ -54,11 +54,6 @@ export default defineNuxtConfig({
   modules: [
     "@vueuse/nuxt",
   ],
-  nitro: {
-    // prerender: {  // for SSR + SSG
-    //   routes: []
-    // },
-  },
   pages: true,
   runtimeConfig: {
     public: {
