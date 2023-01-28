@@ -3,10 +3,10 @@
     <header>
       <div class="site_logo">
         <NuxtLink :to="{ path: '/', force: true, replace: true }">
-          <img src="@/assets/svgs/site-icon.svg" alt="site-icon">
+          <img src="@/assets/svgs/site-icon.svg" alt="site-icon" aria-label="みるめも">
         </NuxtLink>
       </div>
-      <nav aria-label="global-menu">
+      <nav aria-label="グローバルメニュー">
         <ul class="menu">
           <li>
             <NuxtLink to="/entries">
@@ -15,7 +15,7 @@
           </li>
           <li>
             <div class="category_menu_wrap" @mouseenter="(isHoveredCategory = true)" @mouseleave="(isHoveredCategory = false)" @click="onClick">
-              <span>
+              <span aria-label="カテゴリーメニュー">
                 かてごり
               </span>
               <PartsSvgIcon :icon="'angle_down'" :color="'var(--color-gray)'" :hoverOn="isHoveredCategory" :hoverColor="hoverStyle" :class="{ 'rotate': isShownCategoryMenu }" />
