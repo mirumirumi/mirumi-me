@@ -71,23 +71,17 @@ const others: Category[] = [
   { name: "Software Design", slug: "software-design" },
 ]
 
-await checkCurrentCategory()
+await setIsCurrentCategory()
 
 watch(() => p.isShown, () => {
   _isShown.value = p.isShown
 })
 
 watch(route, async () => {
-  await checkCurrentCategory()
+  await setIsCurrentCategory()
 })
 
-const interruptChoose = () => {
-  _isShown.value = false
-  isShownOthers.value = false
-  emit("interruptChoose")
-}
-
-async function checkCurrentCategory(): Promise<void> {
+async function setIsCurrentCategory(): Promise<void> {
   let categorySlug = ""
 
   if (route.params.categoryName) {
@@ -119,6 +113,12 @@ async function checkCurrentCategory(): Promise<void> {
       other.current = false
     }
   }
+}
+
+const interruptChoose = () => {
+  _isShown.value = false
+  isShownOthers.value = false
+  emit("interruptChoose")
 }
 </script>
 

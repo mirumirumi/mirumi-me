@@ -95,8 +95,7 @@ const route = useRoute()
 const LINKS_TO_SHOW = 3  // Only odd
 const BEFORE_AND_AFTER = [...Array((LINKS_TO_SHOW - 1) / 2).keys()].map((x) => x + 1)
 
-const basePath = ref("")
-basePath.value = route.path.replace(/\/page\/\d+/gmi, "")
+const basePath = ref(route.path.replace(/\/page\/\d+/gmi, ""))
 </script>
 
 <style lang="scss" scoped>

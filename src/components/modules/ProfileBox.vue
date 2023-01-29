@@ -26,7 +26,7 @@ const p = defineProps<{
 
 const appConfig = useAppConfig()
 
-const gray = ref("#bab9b9")  // --color-gray
+const gray = ref("var(--color-gray)")
 const contentBody = ref("この「みるめも」というブログの筆者です。")
 
 switch (p.category) {
