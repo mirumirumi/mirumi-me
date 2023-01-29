@@ -61,6 +61,9 @@ const appConfig = useAppConfig()
 
 const slug = route.params.post as string
 
+// To suppress a workload for WordPress server
+if (process.server) await delay(1000)
+
 const { data } = await useFetch(`/mirumi/post_data/${slug}`, {
   baseURL: appConfig.baseURL,
   parseResponse: JSON.parse,
