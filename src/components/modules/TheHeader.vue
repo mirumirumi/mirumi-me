@@ -1,12 +1,12 @@
 <template>
   <div class="header_wrap">
-    <header>
-      <div class="site_logo">
-        <NuxtLink :to="{ path: '/', force: true, replace: true }">
-          <img src="@/assets/svgs/site-icon.svg" alt="site-icon" aria-label="みるめも">
+    <header itemscope itemtype="https://schema.org/WPHeader">
+      <div class="site_logo" itemscope itemtype="https://schema.org/WebSite">
+        <NuxtLink :to="{ path: '/', force: true, replace: true }" itemprop="url">
+          <img src="@/assets/svgs/site-icon.svg" alt="site-icon" aria-label="みるめも" itemprop="name about">
         </NuxtLink>
       </div>
-      <nav role="navigation" aria-label="グローバルメニュー">
+      <nav role="navigation" aria-label="グローバルメニュー" itemscope itemtype="https://schema.org/SiteNavigationElement">
         <ul class="menu">
           <li>
             <NuxtLink to="/entries">

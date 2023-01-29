@@ -1,5 +1,5 @@
 <template>
-  <div class="index_view" role="main">
+  <div class="index_view" role="main" itemscope itemtype="https://schema.org/Blog">
     <div class="row">
       <PartsTopPageIndexBlock
         :blockTitle="'はじめましての 10 記事'"

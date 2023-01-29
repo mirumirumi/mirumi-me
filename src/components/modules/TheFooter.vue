@@ -1,6 +1,6 @@
 <template>
   <div class="footer_wrap">
-    <footer>
+    <footer itemscope itemtype="https://schema.org/WPFooter">
       <div class="search_wrap">
         <ModulesSearchBox :query="query" @onEnter="onEnter" />
       </div>

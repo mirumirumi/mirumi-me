@@ -1,16 +1,19 @@
 <template>
   <div class="page_base article_layout">
-    <main role="main">
-      <header>
-        <h1 class="title">
+    <main role="main" itemscope itemtype="https://schema.org/Blog">
+      <header itemscope itemprop="blogPost" itemtype="https://schema.org/BlogPosting">
+        <h1 class="title" itemprop="headline">
           {{ page.title }}
         </h1>
-        <div v-if="slug === 'nice-to-meet-you-10'" class="thumbnail">
+        <div v-if="slug === 'nice-to-meet-you-10'" class="thumbnail" itemprop="image" itemscope itemtype="https://schema.org/ImageObject">
           <img :src="page.thumbnail_url.replace(/\.(png|jpg|jpeg)$/gmi, '.webp')" :alt="page.title" width="1200" height="630">
+          <meta itemprop="url" :content="page.thumbnail_url" />
+          <meta itemprop="width" content="1200" />
+          <meta itemprop="height" content="630" />
         </div>
       </header>
       <article>
-        <div id="content" v-html="page.content" @click="clickHandle"></div>
+        <div id="content" v-html="page.content" @click="clickHandle" itemprop="mainEntityOfPage"></div>
       </article>
     </main>
     <Teleport to="body">

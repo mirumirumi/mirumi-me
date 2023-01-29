@@ -1,12 +1,15 @@
 <template>
   <div class="post_view article_layout">
-    <main role="main">
-      <header>
-        <h1 class="title">
+    <main role="main" itemscope itemtype="https://schema.org/Blog">
+      <header itemscope itemprop="blogPost" itemtype="https://schema.org/BlogPosting">
+        <h1 class="title" itemprop="headline">
           {{ post.title }}
         </h1>
-        <div class="thumbnail">
+        <div class="thumbnail" itemprop="image" itemscope itemtype="https://schema.org/ImageObject">
           <img :src="post.thumbnail_url.replace(/\.(png|jpg|jpeg)$/gmi, '.webp')" :alt="post.title" width="1200" height="630">
+          <meta itemprop="url" :content="post.thumbnail_url" />
+          <meta itemprop="width" content="1200" />
+          <meta itemprop="height" content="630" />
         </div>
         <div class="meta" role="contentinfo">
           <div class="category">
@@ -15,11 +18,11 @@
           </div>
           <div class="created_at">
             <span>投稿日: </span>
-            <time :datetime="post.date">{{ friendlyDatetime(post.date) }}</time>
+            <time :datetime="post.date" itemprop="datePublished">{{ friendlyDatetime(post.date) }}</time>
           </div>
           <div class="updated_at">
             <span>更新日: </span>
-            <time :datetime="post.modified">{{ friendlyDatetime(post.modified) }}</time>
+            <time :datetime="post.modified" itemprop="dateModified">{{ friendlyDatetime(post.modified) }}</time>
           </div>
           <div class="author">
             <span>書いた人: </span>
@@ -31,7 +34,7 @@
         </div>
       </header>
       <article>
-        <div id="content" v-html="post.content" @click="clickHandle"></div>
+        <div id="content" v-html="post.content" @click="clickHandle" itemprop="mainEntityOfPage"></div>
       </article>
       <footer>
         <div class="share">
