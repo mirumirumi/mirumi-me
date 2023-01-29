@@ -98,9 +98,9 @@ async function checkCurrentCategory(): Promise<void> {
     // In post page
 
     const pagePath = route.path.replace("/", "")
-    categorySlug = await $fetch<string>(`${appConfig.siteFullPath}/wp-json/mirumi/category_slug_with_post_slug/${pagePath}`, {
-      parseResponse: JSON.parse,
-    })  // https://github.com/nuxt/framework/discussions/1142
+    
+    // https://github.com/nuxt/nuxt/discussions/??? (The page is gone... (cause by unifying repos for Nuxt 2/3))
+    categorySlug = await $fetch<string>(`${appConfig.siteFullPath}/wp-json/mirumi/category_slug_with_post_slug/${pagePath}`)
   }
 
   for (const category of categories) {
