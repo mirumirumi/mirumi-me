@@ -3,7 +3,10 @@
     <div class="title">
       この記事へのコメント
     </div>
-    <div class="comments_wrap">
+    <div v-if="comments.length === 0" class="no_contents">
+      コメントはまだひとつもありません :)
+    </div>
+    <div v-else class="comments_wrap">
       <template v-for="c in comments" :key="c.comment_ID">
         <ModulesCommentBase :c="c" :depth="1" />
         <template v-if="1 <= c.children.length">
@@ -134,6 +137,10 @@ try {
     font-size: 1.09em;
     font-weight: bold;
     border-bottom: solid 1.3px #dedbd8;
+  }
+  .no_contents {
+    margin: 1.5em 1.3em 1em;
+    font-size: 0.95em;
   }
   .comments_wrap {
     margin: 1.7em 0 3em;
