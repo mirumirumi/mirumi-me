@@ -2,11 +2,11 @@
   <div class="contact_view article_layout">
     <main>
       <header>
-        <h1 class="title">
+        <h1 class="title page_transition_target">
           お問い合わせ
         </h1>
       </header>
-      <article>
+      <article class="page_transition_target">
         <div id="content">
           <p>各種サービスに関するお問い合わせ、広告掲載や PR 記事の執筆依頼などを受け付けています。<br />ご意見・ご感想などももちろん嬉しいです…！お気軽にどうぞ。</p>
           <p>よりフランクな連絡手段をご希望の場合は <a :href="`https://twitter.com/${appConfig.twitterName}`" target="_blank" rel="nofollow">Twitter</a> もご検討ください。</p>
@@ -65,6 +65,17 @@ import { useToast } from "vue-toastification/dist/index.mjs"
 const route = useRoute()
 const appConfig = useAppConfig()
 const toast = useToast()
+
+onMounted(async () => {
+  await delay(1)  // 🤔
+  const nodes = document.querySelectorAll(".page_transition_target")
+  let duration = 131.3
+  for (const n of nodes) {
+    n.classList.add("run")
+    await delay(duration)
+    duration *= 0.7
+  }
+})
 
 const isSubmitting = ref(false)
 const name = ref("")

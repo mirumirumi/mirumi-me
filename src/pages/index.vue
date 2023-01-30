@@ -1,6 +1,6 @@
 <template>
   <div class="index_view" role="main" itemscope itemtype="https://schema.org/Blog">
-    <div class="row">
+    <div class="row page_transition_target">
       <PartsTopPageIndexBlock
         :blockTitle="'はじめましての 10 記事'"
         :indexes="posts.slice(0, 4)"
@@ -82,6 +82,14 @@
 import { PageSummary } from "@/utils/defines"
 
 const appConfig = useAppConfig()
+
+onMounted(async () => {
+  await delay(1)  // 🤔
+  const nodes = document.querySelectorAll(".page_transition_target")
+  for (const n of nodes) {
+    n.classList.add("run")
+  }
+})
 
 let postIds: number[] = []
 

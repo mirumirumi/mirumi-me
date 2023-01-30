@@ -265,6 +265,15 @@ label {
     }
   }
 }
+.page_transition_target {
+  opacity: 0;
+  transform: translateY(19px);
+  transition: all 0.41s cubic-bezier(0.3, 0.34, 0.22, 0.97);
+  &.run {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 /**
  * modal series

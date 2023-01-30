@@ -1,7 +1,7 @@
 <template>
   <div class="post_indexes">
     <template v-for="p in posts" :key="p.slug">
-      <NuxtLink :to="`/${p.slug}`" class="post">
+      <NuxtLink :to="`/${p.slug}`" class="post page_transition_target">
         <div class="thumbnail">
           <img :src="p.thumbnailUrl" :alt="p.title" width="412" height="216" />
         </div>
@@ -31,6 +31,17 @@ import { PageSummary } from "@/utils/defines"
 defineProps<{
   posts: PageSummary[],
 }>()
+
+onMounted(async () => {
+  await delay(1)  // 🤔
+  const nodes = document.querySelectorAll(".page_transition_target")
+  let duration = 131.3
+  for (const n of nodes) {
+    n.classList.add("run")
+    await delay(duration)
+    duration *= 0.6
+  }
+})
 </script>
 
 <style lang="scss" scoped>

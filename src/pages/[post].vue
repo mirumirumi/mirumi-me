@@ -2,16 +2,16 @@
   <div class="post_view article_layout">
     <main role="main" itemscope itemtype="https://schema.org/Blog">
       <header itemscope itemprop="blogPost" itemtype="https://schema.org/BlogPosting">
-        <h1 class="title" itemprop="headline">
+        <h1 class="title page_transition_target" itemprop="headline">
           {{ post.title }}
         </h1>
-        <div class="thumbnail" itemprop="image" itemscope itemtype="https://schema.org/ImageObject">
+        <div class="thumbnail page_transition_target" itemprop="image" itemscope itemtype="https://schema.org/ImageObject">
           <img :src="post.thumbnail_url.replace(/\.(png|jpg|jpeg)$/gmi, '.webp')" :alt="post.title" width="1200" height="630">
           <meta itemprop="url" :content="post.thumbnail_url" />
           <meta itemprop="width" content="1200" />
           <meta itemprop="height" content="630" />
         </div>
-        <div class="meta" role="contentinfo">
+        <div class="meta page_transition_target" role="contentinfo">
           <div class="category">
             <span>かてごり: </span>
             <NuxtLink :to="`/category/${post.category_slug}`">{{ post.category_name }}</NuxtLink>
@@ -29,11 +29,11 @@
             <a :href="`https://twitter.com/${appConfig.twitterName}`" target="_blank" rel="nofollow">＠みるみ</a>
           </div>
         </div>
-        <div class="share">
+        <div class="share page_transition_target">
           <ModulesShareButtons :slug="slug" :title="post.title" :counts="counts" />
         </div>
       </header>
-      <article>
+      <article class="page_transition_target">
         <div id="content" v-html="post.content" @click="clickHandle" itemprop="mainEntityOfPage"></div>
       </article>
       <footer>
@@ -59,10 +59,21 @@
 const route = useRoute()
 const appConfig = useAppConfig()
 
-const slug = route.params.post as string
+onMounted(async () => {
+  await delay(1)  // 🤔
+  const nodes = document.querySelectorAll(".page_transition_target")
+  let duration = 131.3
+  for (const n of nodes) {
+    n.classList.add("run")
+    await delay(duration)
+    duration *= 0.7
+  }
+})
 
 // To suppress a workload for WordPress server
 if (process.server) await delay(1000)
+
+const slug = route.params.post as string
 
 const { data } = await useFetch(`/mirumi/post_data/${slug}`, {
   baseURL: appConfig.baseURL,
