@@ -59,6 +59,7 @@
 const route = useRoute()
 const appConfig = useAppConfig()
 
+// Page transition
 onMounted(async () => {
   await delay(1)  // 🤔
   const nodes = document.querySelectorAll(".page_transition_target")

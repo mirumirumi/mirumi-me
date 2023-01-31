@@ -32,6 +32,7 @@ defineProps<{
   posts: PageSummary[],
 }>()
 
+// Page transition
 onMounted(async () => {
   await delay(1)  // 🤔
   const nodes = document.querySelectorAll(".page_transition_target")
