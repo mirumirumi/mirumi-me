@@ -417,6 +417,12 @@
     margin: 2em 0;
     padding: 0;
     width: 100%;
+    a {
+      transition: 0.13s all ease;
+      &:hover {
+        filter: saturate(0.7);
+      }
+    }
     .product-item-thumb {
       width: 48%;
       margin: 0 auto 1em;
@@ -484,9 +490,9 @@
       transition: all 0.43s cubic-bezier(0.55, -0.07, 0.17, 0.77);
       .product-item-title a {
         display: inline-block;
-        line-height: 1.4;
         color: var(--color-link);
         font-weight: bold;
+        line-height: 1.4;
       }
       .product-item-snippet {
         .product-item-maker {
@@ -538,6 +544,12 @@
             text-align: center;
             box-shadow: 1.3px 1.3px 3.7px rgba(0, 0, 0, 0.21);
             transition: 0.17s all cubic-bezier(0.04, 0.62, 0.68, 0.97);
+            img {
+              // 1px image
+              position: absolute;
+              bottom: 0;
+              right: 0;
+            }
             &:hover {
               opacity: 1;
               box-shadow: none;

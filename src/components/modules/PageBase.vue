@@ -50,8 +50,7 @@ const page = data.value as Record<string, any>
 
 const clickHandle = (e: any) => {
   const link = e.target.closest("a")
-  if (!link)
-    return
+  if (!link) return
 
   const to = link.getAttribute("href")
   if (to.startsWith(appConfig.siteFullPath)) {
@@ -63,9 +62,10 @@ const clickHandle = (e: any) => {
     return    
   }
 
-  if (e.ctrlKey || e.shiftKey || e.altKey || e.metaKey)
+  if (e.ctrlKey || e.shiftKey || e.altKey || e.metaKey) {
     // For open new tab etc
     return
+  }
 
   // In case of start with `/slug` 
   e.preventDefault()

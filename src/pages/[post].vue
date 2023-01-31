@@ -72,7 +72,7 @@ onMounted(async () => {
 })
 
 // To suppress a workload for WordPress server
-if (process.server) await delay(1000)
+if (process.server) await delay(999)
 
 const slug = route.params.post as string
 
@@ -102,8 +102,7 @@ useHead({ script: [{ src: "/assets/prism.js", defer: true }] })
 
 const clickHandle = (e: any) => {
   const link = e.target.closest("a")
-  if (!link)
-    return
+  if (!link) return
 
   const to = link.getAttribute("href")
   if (to.startsWith(appConfig.siteFullPath)) {
@@ -115,9 +114,10 @@ const clickHandle = (e: any) => {
     return    
   }
 
-  if (e.ctrlKey || e.shiftKey || e.altKey || e.metaKey)
+  if (e.ctrlKey || e.shiftKey || e.altKey || e.metaKey) {
     // For open new tab etc
     return
+  }
 
   // In case of start with `/slug` 
   e.preventDefault()
