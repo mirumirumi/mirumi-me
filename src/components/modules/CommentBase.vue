@@ -3,8 +3,8 @@
     <div :class="`comment depth-${depth}`" :id="`comment-${_c.comment_ID}`">
       <div class="meta_data">
         <div class="icon">
-          <img v-if="_c.user_id === '1'" src="@/assets/images/mirumi.png" alt="みるみ">
-          <img v-else src="@/assets/images/profile_icon.png" class="default" alt="comment author">
+          <img v-if="_c.user_id === '1'" src="@/assets/images/mirumi.png" alt="みるみ" loading="lazy" width="48" height="48">
+          <img v-else src="@/assets/images/profile_icon.png" class="default" alt="comment author" loading="lazy" width="45" height="44">
         </div>
         <div class="info">
           <div class="name">

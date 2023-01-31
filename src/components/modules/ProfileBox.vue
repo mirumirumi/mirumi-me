@@ -1,7 +1,7 @@
 <template>
   <div class="profile_box">
     <div class="left">
-      <img loading="lazy" src="@/assets/images/mirumi.png" alt="みるみ" width="312" height="312">
+      <img src="@/assets/images/mirumi.png" alt="みるみ" loading="lazy" width="78" height="78">
     </div>
     <div class="right">
       <div class="author">
