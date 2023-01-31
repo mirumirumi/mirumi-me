@@ -7,6 +7,34 @@
 </template>
 
 <script setup lang="ts">
+onMounted(() => {
+  console.log(`
+ご訪問ありがとうございます :)
+
+MMMMMMMMWX0xoc:,,'''''',,:cox0XWMMMMMMMM
+MMMMMWNOo:,,,'''''''''''''''',:oONMMMMMM
+MMMMXxc;cdkOOkxdoc;,'''''''''''',cxXWMMM
+MMNOc,';OWMMMMMMWNKxoc,''''''''''',cONMM
+MXd;''',cxkOO0KNWMMWWXd,'''''''''''';dXM
+Xo,''''''''',,;cxXMMMMXo,'''''''''''',oX
+x;'''''''''''''',oNMMMWk;''''''''''''';x
+:'''''''''',,,,,'cKMMMMO;'''';odl,''''':
+,'''',:ldxkOOOOOk0NMMMMO:''';xWMNd,'''',
+''',ckXWMMMMMMMMMMMMMMMNKkdloXMMMO:'''''
+'''cKWMWXOkxxkkOXWMMMMMMMMWWNWMMM0:'''''
+,',xWMMXo,''''';kWMMMXkk0XWMMMMMMNkc,'',
+l,;kWMMWx,''',cONMMX0d,',:oKWMMMMMMNk:,l
+0:,oXMMMNkoodONMMWKo;,'''';OWMMWNWMMXoc0
+WO:;dXWMMMWWMMMWXk:,''''',xNMMWOclddllOW
+MW0l;cdOKXNNXKkd:,'''''''cKMMMKl''',l0WM
+MMMXkc,,;::::,,''''''''''c0NN0l,',ckXMMM
+MMMMWXkl;,''''''''''''''',:cc;,;lkXWMMMM
+MMMMMMMN0xo:,,'''''''''''',,:lx0NMMMMMMM
+MMMMMMMMMMWKkoc;,'''''',;cokKNMMMMMMMMMM
+
+© みるめも
+`)
+})
 </script>
 
 <style lang="scss">
