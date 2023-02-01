@@ -416,7 +416,7 @@
     width: 100%;
     max-width: 525px;
     font-size: 0.95em;
-    a {
+    > a {
       display: block;
       padding: 0.8em 1.3em 0.41em;
       border: solid 2px #d5d7d9;
@@ -462,6 +462,35 @@
           font-size: 0.95em;
           line-height: 1.5;
           border-bottom: solid 1px #d5d7d9;
+          .like_link {
+            color: var(--color-link);
+          }
+          .link_card {
+            margin: 0.7em auto auto;
+            padding: 0 0 0.7em;
+            border: solid 1px #d5d7d9;
+            border-radius: 10px;
+            .thumbnail {
+              img {
+                border-radius: 10px 10px 0 0;
+                border: none;
+              }
+            }
+            .content {
+              margin-top: 0.5em;
+              padding-left: 0.5em;
+              padding-right: 0.5em;
+              line-height: 1.4;
+              .title {
+                font-weight: bold;
+                font-size: 0.9em;
+              }
+              .description {
+                font-size: 0.82em;
+                color: #86898b;
+              }
+            }
+          }
         }
         .meta {
           display: flex;
