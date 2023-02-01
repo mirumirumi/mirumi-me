@@ -90,14 +90,6 @@ const counts = {
   like: Number(post.like),
 }
 
-post.content = post.content.replace(
-  /<pre( class=\"(.*?)\")?>/gmi,
-  "<pre class=\"language-$2\"><code class=\"$2 language-$2\">"
-).replace(
-  /<\/pre>/gmi,
-  "</code></pre>"
-)
-
 useHead({ script: [{ src: "/assets/prism.js", defer: true }] })
 
 const clickHandle = (e: any) => {
