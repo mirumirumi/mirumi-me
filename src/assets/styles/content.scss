@@ -410,6 +410,115 @@
       }
     }
   }
+  .static_tweet {
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    max-width: 525px;
+    font-size: 0.95em;
+    a {
+      display: block;
+      padding: 0.8em 1.3em 0.41em;
+      border: solid 2px #d5d7d9;
+      border-radius: 10px;
+      background-color: #ffffff;
+      color: var(--color-text);
+      text-decoration: none;
+      transition: 0.23s all ease;
+      .content_wrap {
+        .header {
+          display: flex;
+          align-items: center;
+          .icon {
+            img {
+              border: none;
+              border-radius: 50%;
+            }
+          }
+          .author {
+            margin-left: 1.1em;
+            margin-bottom: 1.3px;
+            font-size: 0.9em;
+            line-height: 1.2;
+            .name {
+              font-weight: bold;
+            }
+            .id {
+              font-size: 0.87em;
+              color: #86898b;
+            }
+          }
+          .twitter_icon {
+            margin-left: auto;
+            img {
+              margin-bottom: 0.6em;
+              border: none;
+            }
+          }
+        }
+        .body {
+          margin: 1em auto 0.3em;
+          padding-bottom: 1em;
+          font-size: 0.95em;
+          line-height: 1.5;
+          border-bottom: solid 1px #d5d7d9;
+        }
+        .meta {
+          display: flex;
+          font-size: 0.8em;
+          color: #86898b;
+          > * {
+            position: relative;
+            margin: auto 1.5em;
+            &::before {
+              position: absolute;
+              content: "";
+              mask-size: cover;
+              display: inline-block;
+              background-color: #86898b;
+              top: 1.7px;
+              left: -1.4em;
+              bottom: 0;
+              margin: auto;
+              padding: 0;
+              width: 13px;
+              height: 13px;
+              font-size: 13px;
+            }
+          }
+          .reply {
+            &::before {
+              mask: url("@/assets/svgs/comment.svg");
+            }
+          }
+          .retweet {
+            margin: auto 1.4em auto 1.6em;
+            &::before {
+              top: 3.3px;
+              left: -1.5em;
+              width: 15px;
+              height: 15px;
+              mask: url("@/assets/svgs/retweet.svg");
+            }
+          }
+          .like {
+            &::before {
+              mask: url("@/assets/svgs/heart.svg");
+            }
+          }
+          .timestamp {
+            margin-left: 0.3em;
+            &::before {
+              content: none;
+            }
+          }
+        }
+      }
+      &:hover {
+        background-color: #f3f5f7;
+      }
+    }
+  }
   .product-item-box {
     position: relative;
     display: flex;
