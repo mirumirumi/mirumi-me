@@ -292,7 +292,8 @@
     > * {
       margin: 0.7em auto;
     }
-    img {
+    > p > img,
+    > p > .wp-caption > img {
       margin: 1.5em auto;
     }
     .blogcard img {
