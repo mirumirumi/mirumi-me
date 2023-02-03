@@ -491,6 +491,36 @@
                 color: #86898b;
               }
             }
+            .ref_tweet {
+              padding: 0.5em 0.9em 0;
+              font-size: 0.9em;
+              line-height: 1.4;
+              .ref_header {
+                display: flex;
+                align-items: center;
+                gap: 0.15em;
+                font-size: 1.05em;
+                .ref_icon {
+                  img {
+                    display: inline;
+                    border: none;
+                  }
+                }
+                .ref_name {
+                  font-weight: bold;
+                }
+                .ref_badge {
+                  
+                }
+                .ref_id {
+                  font-size: 0.87em;
+                  color: #86898b;
+                }
+              }
+              .ref_body {
+                margin-top: 0.3em;
+              }
+            }
           }
           .media_wrap {
             margin: 0.7em auto auto;
