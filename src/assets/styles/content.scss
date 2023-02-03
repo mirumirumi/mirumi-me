@@ -443,6 +443,20 @@
             line-height: 1.2;
             .name {
               font-weight: bold;
+              .badge {
+                position: relative;
+                &::after {
+                  position: absolute;
+                  content: "";
+                  display: inline-block;
+                  top: 0.2em;
+                  left: 0.3em;
+                  width: 17px;
+                  height: 17px;
+                  background-image: url("@/assets/images/twitter-blue.png");
+                  background-size: cover;
+                }
+              }
             }
             .id {
               font-size: 0.87em;
@@ -507,10 +521,25 @@
                   }
                 }
                 .ref_name {
+                  font-size: 0.97em;
                   font-weight: bold;
                 }
                 .ref_badge {
-                  
+                  position: relative;
+                  width: 17px;
+                  margin-right: 3px;
+                  &::after {
+                    position: absolute;
+                    content: "";
+                    display: inline-block;
+                    top: 0.7px;
+                    bottom: 0;
+                    margin: auto;
+                    width: 17px;
+                    height: 17px;
+                    background-image: url("@/assets/images/twitter-blue.png");
+                    background-size: cover;
+                  }
                 }
                 .ref_id {
                   font-size: 0.87em;
