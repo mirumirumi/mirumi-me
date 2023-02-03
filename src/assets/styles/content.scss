@@ -492,6 +492,19 @@
               }
             }
           }
+          .media_wrap {
+            margin: 0.7em auto auto;
+            border: solid 1px #d5d7d9;
+            border-radius: 10px;
+            .thumbnails {
+              display: grid;
+              img {
+                object-fit: cover;
+                border-radius: 10px;
+                border: none;
+              }
+            }
+          }
         }
         .meta {
           display: flex;
