@@ -134,7 +134,6 @@ const interruptChoose = () => {
   border-radius: 13px;
   background-color: var(--color-background);
   box-shadow: 0px 2.9px 11px -4px rgb(0 0 0 / 23%);
-  transition: none;
   z-index: 14;
   ul {
     li {
