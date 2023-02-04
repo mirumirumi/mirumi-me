@@ -27,9 +27,9 @@ jobs:
       - name: Generate site
         run: |
           npm run generate
-          # curl https://mirumi.io/sitemap.xml > .output/public/sitemap.xml
-          # curl https://mirumi.io/feed > .output/public/feed.xml
-          # curl https://mirumi.io/comments/feed > .output/public/feed-comments.xml
+          # curl https://mirumi.in/sitemap.xml > .output/public/sitemap.xml
+          # curl https://mirumi.in/feed > .output/public/feed.xml
+          # curl https://mirumi.in/comments/feed > .output/public/feed-comments.xml
 
       - name: Sign in
         uses: aws-actions/configure-aws-credentials@v1
