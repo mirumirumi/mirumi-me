@@ -6,7 +6,13 @@
     <div class="indexes">
       <NuxtLink v-for="index in indexes" :to="`/${index.slug}`" class="index" :key="index.slug">
         <div class="thumbnail">
-          <img :src="index.thumbnailUrl" :alt="index.title" loading="lazy" width="412" height="216" />
+          <img
+            :src="index.thumbnailUrl.includes('412x216') ? index.thumbnailUrl : index.thumbnailUrl.replace(/(.*)(\..*?)$/gmi, '$1-412x216$2')"
+            :alt="index.title"
+            loading="lazy"
+            width="412"
+            height="216"
+          />
         </div>
         <div class="title">
           {{ index.title }}
