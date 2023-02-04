@@ -18,9 +18,10 @@ const p = defineProps<{
   }
 }>()
 
-if (p.error.statusCode !== "404") {
-  clearError({ redirect: "/" })
-}
+// ローカルサーバーモード(=SSR) では下記のコードで問題なく全てが動作する（404以外も含めて）が、S3 上に置いた状態だとどうやら 404 じゃないものが渡っている？らしく、すぐにリダイレクトされてしまうためこれは使わない。fatal: true が必須（クライアント扱い）なのも確認済み。
+// if (p.error.statusCode !== "404") {
+//   clearError({ redirect: "/" })
+// }
 </script>
 
 <style lang="scss" scoped>
