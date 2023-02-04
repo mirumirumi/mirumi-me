@@ -95,7 +95,7 @@ async function setIsCurrentCategory(): Promise<void> {
     
     // https://github.com/nuxt/nuxt/discussions/??? (The page is gone... (cause by unifying repos for Nuxt 2/3))
     categorySlug = await $fetch<string>(`${appConfig.siteFullPath}/wp-json/mirumi/category_slug_with_post_slug/${pagePath}`)
-    categorySlug = JSON.parse(categorySlug)
+    if (!categorySlug) categorySlug = JSON.parse(categorySlug)
   }
 
   for (const category of categories) {

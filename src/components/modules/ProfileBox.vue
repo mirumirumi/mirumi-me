@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
 const p = defineProps<{
-  category: string,
+  category: string
 }>()
 
 const appConfig = useAppConfig()
