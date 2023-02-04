@@ -42,6 +42,7 @@ usePageInfo({
 <style lang="scss" scoped>
 ._404_view {
   .title {
+    margin-top: 0.5em !important;
     text-align: center;
   }
   .image {
