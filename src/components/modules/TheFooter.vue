@@ -4,46 +4,52 @@
       <div class="search_wrap">
         <ModulesSearchBox :query="query" @onEnter="onEnter" />
       </div>
-      <nav class="link_group" role="navigation" aria-label="フッターメニュー">
-        <ul class="links">
+      <nav class="link_groups" role="navigation" aria-label="フッターメニュー">
+        <div class="links">
           <div class="group_title">
             Page
           </div>
-          <li>
-            <NuxtLink to="/entry-list">全記事一覧</NuxtLink>
-          </li>
-          <li>
-            <NuxtLink to="/nice-to-meet-you-10">はじめましての 10 記事</NuxtLink>
-          </li>
-        </ul>
-        <ul class="links">
+          <ul>
+            <li>
+              <NuxtLink to="/entry-list">全記事一覧</NuxtLink>
+            </li>
+            <li>
+              <NuxtLink to="/nice-to-meet-you-10">はじめましての 10 記事</NuxtLink>
+            </li>
+          </ul>
+        </div>
+        <div class="links">
           <div class="group_title">
             About
           </div>
-          <li>
-            <NuxtLink to="/about">運営者情報</NuxtLink>
-          </li>
-          <li>
-            <NuxtLink to="/privacy-policy">プライバシーポリシー</NuxtLink>
-          </li>
-          <li>
-            <NuxtLink to="/contact">お問い合わせ</NuxtLink>
-          </li>
-        </ul>
-        <ul class="links">
+          <ul>
+            <li>
+              <NuxtLink to="/about">運営者情報</NuxtLink>
+            </li>
+            <li>
+              <NuxtLink to="/privacy-policy">プライバシーポリシー</NuxtLink>
+            </li>
+            <li>
+              <NuxtLink to="/contact">お問い合わせ</NuxtLink>
+            </li>
+          </ul>
+        </div>
+        <div class="links">
           <div class="group_title">
             Tech
           </div>
-          <li>
-            <a href="https://github.com/mirumirumi" target="_blank">GitHub</a>
-          </li>
-          <li>
-            <a href="https://mirumi.tech" target="_blank">mirumi.tech (技術ブログ)</a>
-          </li>
-          <li>
-            <a href="https://zenn.dev/mirumi" target="_blank">Zenn</a>
-          </li>
-        </ul>
+          <ul>
+            <li>
+              <a href="https://github.com/mirumirumi" target="_blank">GitHub</a>
+            </li>
+            <li>
+              <a href="https://mirumi.tech" target="_blank">mirumi.tech (技術ブログ)</a>
+            </li>
+            <li>
+              <a href="https://zenn.dev/mirumi" target="_blank">Zenn</a>
+            </li>
+          </ul>
+        </div>
       </nav>
       <div class="copyright">
         © 2016-{{ new Date().getFullYear() }} みるめも
@@ -81,7 +87,7 @@ const onEnter = () => {
       margin: auto auto 2.3em;
       padding-left: 0.9em;
     }
-    .link_group {
+    .link_groups {
       display: flex;
       justify-content: center;
       align-items: flex-start;

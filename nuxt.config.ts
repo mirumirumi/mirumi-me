@@ -4,6 +4,9 @@ export default defineNuxtConfig({
   app: {
     baseURL: "/",  // can override by NUXT_APP_BASE_URL
     head: {
+      htmlAttrs: {
+        lang: "ja",
+      },
       charset: "utf-8",
       meta: [
         { name: "viewport", content: "width=device-width, initial-scale=1" },
