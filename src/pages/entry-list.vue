@@ -30,9 +30,7 @@ const { data } = await useFetch(`/mirumi/entry_list`, {
   baseURL: appConfig.baseURL,
   parseResponse: JSON.parse,
 })
-// ⚠️ Temporary!
-// const entries = data.value as 
-const entries: Record<string, any>[] = []
+const entries = data.value as Record<string, any>[]
 
 interface Entry {
   slug: string

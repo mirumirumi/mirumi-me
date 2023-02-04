@@ -40,6 +40,6 @@ jobs:
 
       - name: Copy files to S3
         run: |
-          aws s3 sync --region ap-northeast-1 .output/public/_nuxt/ s3://mirumime-prd-mirumi-me/_nuxt --cache-control "max-age=31536000"
-          aws s3 sync --region ap-northeast-1 .output/public/ s3://mirumime-prd-mirumi-me --cache-control "no-cache"
+          aws s3 sync --delete --region ap-northeast-1 .output/public/_nuxt/ s3://mirumime-prd-mirumi-me/_nuxt --cache-control "max-age=31536000"
+          aws s3 sync --delete --region ap-northeast-1 .output/public/ s3://mirumime-prd-mirumi-me --cache-control "no-cache"
           aws cloudfront create-invalidation --distribution-id E1UPWIMHFP5TEC --paths "/*"
