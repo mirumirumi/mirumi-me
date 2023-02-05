@@ -26,11 +26,6 @@ const p = defineProps<{
 // if (p.error.statusCode !== "404") {
 //   clearError({ redirect: "/" })
 // }
-
-// onMounted(() => {
-//   // このデプロイ方式では createError() したエラーを処理しきれないため、通常の id="app" が残ってしまう、ので消す
-//   document.getElementById("app")?.remove()
-// })
 </script>
 
 <style lang="scss" scoped>
