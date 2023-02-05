@@ -34,7 +34,7 @@
         </div>
       </header>
       <article class="page_transition_target">
-        <div id="content" v-html="post.content" @click="clickHandle" itemprop="mainEntityOfPage"></div>
+        <div id="content" v-html="post.content" @click="handleClick" itemprop="mainEntityOfPage"></div>
       </article>
       <footer>
         <div class="share">
@@ -71,7 +71,7 @@ onMounted(async () => {
   }
 })
 
-// To suppress a workload for WordPress server
+// To suppress workloads for the WordPress server
 if (process.server) await delay(999)
 
 const slug = route.params.post as string
@@ -93,7 +93,7 @@ const counts = {
 
 useHead({ script: [{ src: "/assets/prism.js", defer: true }] })
 
-const clickHandle = (e: any) => {
+const handleClick = (e: any) => {
   const link = e.target.closest("a")
   if (!link) return
 
