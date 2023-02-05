@@ -13,7 +13,7 @@
         </div>
       </header>
       <article class="page_transition_target">
-        <div id="content" v-html="page.content" @click="clickHandle" itemprop="mainEntityOfPage"></div>
+        <div id="content" v-html="page.content" @click="handleClick" itemprop="mainEntityOfPage"></div>
       </article>
     </main>
     <Teleport to="body">
@@ -48,7 +48,7 @@ const { data } = await useFetch(`/mirumi/page_data/${slug}`, {
 })
 const page = data.value as Record<string, any>
 
-const clickHandle = (e: any) => {
+const handleClick = (e: any) => {
   const link = e.target.closest("a")
   if (!link) return
 
