@@ -20,6 +20,10 @@ const p = defineProps<{
   }
 }>()
 
+onMounted(() => {
+  clearError()
+})
+
 // In local server mode (=SSR), the following code works fine (including non-404s), but when placed on S3, 
 // it seems that non - 404s are being passed? (Mystery!), so I don't use this because they are immediately redirected.
 // I have also confirmed that `fatal: true` is required (treated as a client).
@@ -30,6 +34,8 @@ const p = defineProps<{
 
 <style lang="scss" scoped>
 #error {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   background-color: var(--color-background);
 }
 </style>

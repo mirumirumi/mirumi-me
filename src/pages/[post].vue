@@ -81,7 +81,7 @@ const { data } = await useFetch(`/mirumi/post_data/${slug}`, {
   parseResponse: JSON.parse,
 })
 const post = data.value as Record<string, any>
-if (!post) throw createError({ statusCode: 404, statusMessage: "Invalid page fetched" })
+if (!post) throw createError({ statusCode: 404, statusMessage: "Invalid page fetched", fatal: true })
 
 const counts = {
   twitter: Number(post.twitter),
