@@ -1,6 +1,7 @@
 <template>
   <div class="profile_box" itemprop="editor author creator copyrightHolder" itemscope itemtype="https://schema.org/Person">
-    <div class="left" itemprop="img" itemscope itemtype="https://schema.org/ImageObject">
+    <meta itemprop="url" :content="appConfig.siteFullPath">
+    <div class="left" itemprop="logo" itemscope itemtype="https://schema.org/ImageObject">
       <img src="@/assets/images/mirumi.png" alt="みるみ" loading="lazy" width="78" height="78">
     </div>
     <div class="right">
