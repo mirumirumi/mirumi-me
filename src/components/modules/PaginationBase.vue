@@ -6,6 +6,7 @@
         ? { query: { ...$route.query, p: currentPage - 1 } }
         : { path: `${basePath}/page/${currentPage - 1}` }"
       class="arrow prev"
+      @click="toTop"
     >
       <PartsSvgIcon :icon="'arrow_left'" :color="'#727272'" />
     </NuxtLink>
@@ -20,6 +21,7 @@
           ? { query: { ...$route.query, p: 1 } }
           : { path: `${basePath}/page/${1}` }"
         class="page_latest"
+        @click="toTop"
       >
         {{ 1 }}
       </NuxtLink>
@@ -34,6 +36,7 @@
         :to="isCsr
           ? { query: { ...$route.query, p: currentPage - x } }
           : { path: `${basePath}/page/${currentPage - x}` }"
+        @click="toTop"
       >
         {{ currentPage - x }}
       </NuxtLink>
@@ -47,6 +50,7 @@
         :to="isCsr
           ? { query: { ...$route.query, p: currentPage + x } }
           : { path: `${basePath}/page/${currentPage + x}` }"
+        @click="toTop"
       >
         {{ currentPage + x }}
       </NuxtLink>
@@ -66,6 +70,7 @@
           ? { query: { ...$route.query, p: pageCount } }
           : { path: `${basePath}/page/${pageCount}` }"
         class="page_oldest"
+        @click="toTop"
       >
         {{ pageCount }}
       </NuxtLink>
@@ -76,6 +81,7 @@
         ? { query: { ...$route.query, p: currentPage + 1 } }
         : { path: `${basePath}/page/${currentPage + 1}` }"
       class="arrow next"
+      @click="toTop"
     >
       <PartsSvgIcon :icon="'arrow_right'" :color="'#727272'" />
     </NuxtLink>
@@ -83,7 +89,7 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
+const p = defineProps<{
   currentPage: number
   pageCount: number
   itemCount: number
@@ -96,6 +102,15 @@ const LINKS_TO_SHOW = 3  // Only odd
 const BEFORE_AND_AFTER = [...Array((LINKS_TO_SHOW - 1) / 2).keys()].map((x) => x + 1)
 
 const basePath = ref(route.path.replace(/\/page\/\d+/gmi, ""))
+
+const toTop = () => {
+  if (p.isCsr) {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+    })
+  }
+}
 </script>
 
 <style lang="scss" scoped>
