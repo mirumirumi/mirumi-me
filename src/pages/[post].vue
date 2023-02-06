@@ -32,6 +32,10 @@
         <div class="share page_transition_target">
           <ModulesShareButtons :slug="slug" :title="post.title" :counts="counts" />
         </div>
+        <div class="display_none" itemprop="editor author creator copyrightHolder" itemscope itemtype="https://schema.org/Person">
+          <meta itemprop="url" :content="appConfig.siteFullPath">
+          <div itemprop="name">みるみ</div>
+        </div>
       </header>
       <article class="page_transition_target">
         <div id="content" v-html="post.content" @click="handleClick" itemprop="mainEntityOfPage"></div>
