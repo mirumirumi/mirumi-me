@@ -81,7 +81,7 @@ const fillColor = ref("#cfc7c3")
 
 const heartWrapper = ref()
 const likeCount = ref(p.counts.like)
-const likeCountColor = ref("#d9d8d5")
+const likeCountColor = ref("#cfc7c3")
 
 onMounted(() => {
   if (isLikedThisSlug()) {
@@ -105,7 +105,7 @@ const onClickLike = async () => {
   if (_isLikedThisSlug) {
     heartWrapper.value.classList.remove("active")
     likeCount.value -= 1
-    likeCountColor.value = "#d9d8d5"
+    likeCountColor.value = "#cfc7c3"
     likeState.value = likeState.value.replace("," + p.slug, "")
   } else {
     heartWrapper.value.classList.add("active")
