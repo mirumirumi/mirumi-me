@@ -50,7 +50,8 @@ html, body {
 p a,
 span a,
 li a,
-table a {
+table a,
+#content a {
   color: var(--color-link);
   transition: 0.13s all ease;
   &:hover {
