@@ -95,6 +95,7 @@ const counts = {
 }
 
 useHead({ script: [{ src: "/assets/prism.js", defer: true }] })
+useHead({ script: [{ src: "/assets/content-scripts.js", defer: true }] })
 
 const handleClick = (e: any) => {
   const link = e.target.closest("a")
