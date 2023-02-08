@@ -165,8 +165,9 @@
   // Cocoon で入力されたボタンを BaseButton 仕様に合わせているが、CSS が完全に一致していないといけないつもりはない
   .btn-wrap {
     > a {
+      position: relative;
       display: inline-block;
-      padding: 0.7em 1.7em 0.79em;
+      padding: 0.7em 3.1em 0.79em 1.7em;
       color: #ffffff;
       font-size: 0.85em;
       font-weight: bold;
@@ -180,13 +181,30 @@
       cursor: pointer;
       user-select: none;
       &:hover {
-        opacity: 0.7;
-        filter: saturate(0.85);
+        box-shadow: none;
+        transform: translateY(0.7px);
+        filter: none;
+      }
+      &::after {
+        position: absolute;
+        top: 0;
+        bottom: 0.3px;
+        width: 0.5em;
+        height: 1em;
+        margin: auto auto auto 0.8em;
+        content: "";
+        mask: url("@/assets/svgs/angle-right.svg");
+        mask-size: cover;
+        background-color: #ffffff;
       }
     }
     &.btn-wrap-brown > a {
       border-color: var(--color-primary);
       background-color: var(--color-primary);
+    }
+    &.btn-wrap-orange > a {
+      border-color: #edb067;
+      background-color: #edb067;
     }
   }
   .toc {
@@ -985,6 +1003,41 @@
   }
   .alignnone {
     margin-left: 0;
+  }
+  .deep_shadow {
+    box-shadow: 1px 1.3px 8.9px 0 rgba(0, 0, 0, 0.7);
+  }
+  .youtube {
+    display: inline-block;
+    margin: 0;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    &::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      display: inline-block;
+      width: 65px;
+      height: 46px;
+      background-image: url("https://mirumi.media/YouTube-icon-full_color.png");
+      background-repeat: no-repeat;
+      transform: translate(-50%, -50%);
+      background-size: contain;
+      vertical-align: middle;
+      opacity: 0.91;
+      transition: all 0.3s;
+      &:hover {
+        &::after {
+          cursor: pointer;
+          opacity: 0.73;
+          transition: all 0.57s;
+          background-image: url("https://mirumi.media/YouTube-icon-dark_color.png");
+        }
+      }
+    }
   }
   img[width="1"][height="1"] {
     margin: 0 !important;
