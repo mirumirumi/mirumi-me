@@ -5,6 +5,9 @@
     margin: 2.3em auto;
     line-height: 1.8;
   }
+  p:has(> audio) {
+    margin: 0;
+  }
   h2,  h3,  h4,  h5,  h6 {
     margin-top: 1.8em;
     margin-bottom: 1.7em;
@@ -124,6 +127,23 @@
     color: #6d6d6d;
     border-left: 5px solid #c1bdb8;
   }
+  blockquote.img {
+    border: 0 !important;
+    background-color: #f0f0f0 !important;
+    padding: 0.5em 2.3em 0.1em !important;
+    > .wp-caption {
+      margin: 1em 0;
+      img {
+        border: none !important;
+        border-radius: 0 !important;
+      }
+      .wp-caption-text {
+        margin-bottom: 1.3em;
+        color: #a4a4a4;
+        font-size: 0.6em;
+      }
+    }
+  }
   hr {
     width: 97%;
     margin: 3.3em auto 2.3em;
@@ -205,6 +225,10 @@
     &.btn-wrap-orange > a {
       border-color: #edb067;
       background-color: #edb067;
+    }
+    &.btn-wrap-red > a {
+      border-color: #f48282;
+      background-color: #f48282;
     }
   }
   .toc {
@@ -991,11 +1015,16 @@
     margin: 44px auto -33px;
   }
   .micro-bottom {
-    margin-top: -2.9em;
+    margin-top: -3.3em;
     margin-bottom: 1em;
     color: #4e4e4e;
     font-size: 0.67em;
     text-align: center;
+    .red {
+      &::after {
+        background-color: #f48282;
+      }
+    }
   }
   .sss {
     box-shadow: none !important;
@@ -1014,6 +1043,34 @@
     width: 100%;
     height: 100%;
     cursor: pointer;
+    img {
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      border: solid 37px #1e1e1e;
+      border-left: none;
+      border-right: none;
+      @include mobile {
+        border-width: 23px;
+      }
+    }
+    &::before {
+      position: absolute;
+      top: 0.5em;
+      left: 1.3em;
+      width: 78px;
+      height: 18px;
+      content: "";
+      mask: url("@/assets/svgs/youtube-logo.svg");
+      mask-size: cover;
+      background-color: #ffffff;
+      @include mobile {
+        top: 0.34em;
+        left: 0.6em;
+        width: 47px;
+        height: 11px;
+      }
+    }
     &::after {
       content: "";
       position: absolute;
@@ -1029,13 +1086,12 @@
       vertical-align: middle;
       opacity: 0.91;
       transition: all 0.3s;
-      &:hover {
-        &::after {
-          cursor: pointer;
-          opacity: 0.73;
-          transition: all 0.57s;
-          background-image: url("https://mirumi.media/YouTube-icon-dark_color.png");
-        }
+    }
+    &:hover {
+      &::after {
+        cursor: pointer;
+        opacity: 0.73;
+        background-image: url("https://mirumi.media/YouTube-icon-dark_color.png");
       }
     }
   }
@@ -1044,5 +1100,54 @@
     padding: 0 !important;
     opacity: 0 !important;
     visibility: hidden !important;
+  }
+  i {
+    &.fa-hand-point-up,
+    &.fa-hand-point-right,
+    &.fa-hand-point-down,
+    &.fa-hand-point-left,
+    &.fa-check-circle {
+      position: relative;
+      margin-right: 1.5em !important;
+      &::after {
+        position: absolute;
+        top: 0.33em;
+        bottom: 0;
+        width: 1em;
+        height: 1em;
+        content: "";
+        mask-size: cover;
+        background-color: transparent;
+      }
+    }
+    &.fa-hand-point-up {
+      &::after {
+        mask: url("@/assets/svgs/hand-point-up.svg");
+        background-color: var(--color-text);
+      }
+    }
+    &.fa-hand-point-right {
+      &::after {
+        mask: url("@/assets/svgs/hand-point-right.svg");
+        background-color: var(--color-text);
+      }
+    }
+    &.fa-hand-point-down {
+      &::after {
+        mask: url("@/assets/svgs/hand-point-down.svg");
+        background-color: var(--color-text);
+      }
+    }
+    &.fa-hand-point-left {
+      &::after {
+        mask: url("@/assets/svgs/hand-point-left.svg");
+        background-color: var(--color-text);
+      }
+    }
+    &.fa-check-circle {
+      &::after {
+        mask: url("@/assets/svgs/circle-check.svg");
+      }
+    }
   }
 }
