@@ -5,6 +5,9 @@
     margin: 2.3em auto;
     line-height: 1.8;
   }
+  p:has(> audio) {
+    margin: 0;
+  }
   h2,  h3,  h4,  h5,  h6 {
     margin-top: 1.8em;
     margin-bottom: 1.7em;
@@ -124,6 +127,23 @@
     color: #6d6d6d;
     border-left: 5px solid #c1bdb8;
   }
+  blockquote.img {
+    border: 0 !important;
+    background-color: #f0f0f0 !important;
+    padding: 0.5em 2.3em 0.1em !important;
+    > .wp-caption {
+      margin: 1em 0;
+      img {
+        border: none !important;
+        border-radius: 0 !important;
+      }
+      .wp-caption-text {
+        margin-bottom: 1.3em;
+        color: #a4a4a4;
+        font-size: 0.6em;
+      }
+    }
+  }
   hr {
     width: 97%;
     margin: 3.3em auto 2.3em;
@@ -165,8 +185,9 @@
   // Cocoon で入力されたボタンを BaseButton 仕様に合わせているが、CSS が完全に一致していないといけないつもりはない
   .btn-wrap {
     > a {
+      position: relative;
       display: inline-block;
-      padding: 0.7em 1.7em 0.79em;
+      padding: 0.7em 3.1em 0.79em 1.7em;
       color: #ffffff;
       font-size: 0.85em;
       font-weight: bold;
@@ -180,13 +201,34 @@
       cursor: pointer;
       user-select: none;
       &:hover {
-        opacity: 0.7;
-        filter: saturate(0.85);
+        box-shadow: none;
+        transform: translateY(0.7px);
+        filter: none;
+      }
+      &::after {
+        position: absolute;
+        top: 0;
+        bottom: 0.3px;
+        width: 0.5em;
+        height: 1em;
+        margin: auto auto auto 0.8em;
+        content: "";
+        mask: url("@/assets/svgs/angle-right.svg");
+        mask-size: cover;
+        background-color: #ffffff;
       }
     }
     &.btn-wrap-brown > a {
       border-color: var(--color-primary);
       background-color: var(--color-primary);
+    }
+    &.btn-wrap-orange > a {
+      border-color: #edb067;
+      background-color: #edb067;
+    }
+    &.btn-wrap-red > a {
+      border-color: #f48282;
+      background-color: #f48282;
     }
   }
   .toc {
@@ -962,8 +1004,39 @@
       clear: both;
     }
   }
-  .color-red {
-    color: #ff5151;
+  .waku-common {
+    padding: 0 1.53em 0.17em;
+    background-color: #fffcf8;
+    border: solid 3px #e6dacd;
+    border-radius: 7px;
+    &.waku-gray {
+      background-color: #fbfbfb;
+      border-color: #dbdbdb;
+    }
+    .color-red {
+      color: #ff5151;
+    }
+    > ul, 
+    > ol {
+      margin-top: 1.7em;
+      margin-bottom: 1.87em;
+      padding-left: 1.5em;
+      > li {
+        margin: 0.67em 0 !important;
+      }
+    }
+  }
+  // Nuxt 3 乗り換え前に同様のものをインライン CSS で書いていたものはそのままになっています
+  .simple_table {
+    width: 97%;
+    margin: 0 auto;
+    font-size: 0.87em;
+    border-collapse: collapse;
+    border: solid 2.3px #f0eae1;
+    background-color: #fffcfa;
+    td {
+      border: 1.3px dashed #bfbfbf;
+    }
   }
   .dot-line-brown {
     border-color: #f5ebdc;
@@ -973,11 +1046,16 @@
     margin: 44px auto -33px;
   }
   .micro-bottom {
-    margin-top: -2.9em;
+    margin-top: -3.1em;
     margin-bottom: 1em;
     color: #4e4e4e;
     font-size: 0.67em;
     text-align: center;
+    .red {
+      &::after {
+        background-color: #f48282;
+      }
+    }
   }
   .sss {
     box-shadow: none !important;
@@ -986,10 +1064,121 @@
   .alignnone {
     margin-left: 0;
   }
+  .deep_shadow {
+    box-shadow: 1px 1.3px 8.9px 0 rgba(0, 0, 0, 0.7);
+  }
+  .youtube {
+    display: inline-block;
+    margin: 0;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    img {
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      border: solid 37px #1e1e1e;
+      border-left: none;
+      border-right: none;
+      @include mobile {
+        border-width: 23px;
+      }
+    }
+    &::before {
+      position: absolute;
+      top: 0.5em;
+      left: 1.3em;
+      width: 78px;
+      height: 18px;
+      content: "";
+      mask: url("@/assets/svgs/youtube-logo.svg");
+      mask-size: cover;
+      background-color: #ffffff;
+      @include mobile {
+        top: 0.34em;
+        left: 0.6em;
+        width: 47px;
+        height: 11px;
+      }
+    }
+    &::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      display: inline-block;
+      width: 65px;
+      height: 46px;
+      background-image: url("https://mirumi.media/YouTube-icon-full_color.png");
+      background-repeat: no-repeat;
+      transform: translate(-50%, -50%);
+      background-size: contain;
+      vertical-align: middle;
+      opacity: 0.91;
+      transition: all 0.3s;
+    }
+    &:hover {
+      &::after {
+        cursor: pointer;
+        opacity: 0.73;
+        background-image: url("https://mirumi.media/YouTube-icon-dark_color.png");
+      }
+    }
+  }
   img[width="1"][height="1"] {
     margin: 0 !important;
     padding: 0 !important;
     opacity: 0 !important;
     visibility: hidden !important;
+  }
+  i {
+    &.fa-hand-point-up,
+    &.fa-hand-point-right,
+    &.fa-hand-point-down,
+    &.fa-hand-point-left,
+    &.fa-check-circle {
+      position: relative;
+      margin-right: 1.5em !important;
+      &::after {
+        position: absolute;
+        top: 0.2em;
+        bottom: 0;
+        width: 1.15em;
+        height: 1.15em;
+        content: "";
+        mask-size: cover;
+        background-color: transparent;
+      }
+    }
+    &.fa-hand-point-up {
+      &::after {
+        mask: url("@/assets/svgs/hand-point-up.svg");
+        background-color: var(--color-text);
+      }
+    }
+    &.fa-hand-point-right {
+      &::after {
+        mask: url("@/assets/svgs/hand-point-right.svg");
+        background-color: var(--color-text);
+      }
+    }
+    &.fa-hand-point-down {
+      &::after {
+        mask: url("@/assets/svgs/hand-point-down.svg");
+        background-color: var(--color-text);
+      }
+    }
+    &.fa-hand-point-left {
+      &::after {
+        mask: url("@/assets/svgs/hand-point-left.svg");
+        background-color: var(--color-text);
+      }
+    }
+    &.fa-check-circle {
+      &::after {
+        mask: url("@/assets/svgs/circle-check.svg");
+      }
+    }
   }
 }

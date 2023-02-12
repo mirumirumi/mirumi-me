@@ -1,0 +1,59 @@
+<template>
+  <div class="adsense_base">
+
+    <Adsbygoogle
+      v-if="kind === 'Multiplex'"
+      :ad-slot="'4732944866'"
+      :ad-format="'autorelaxed'"
+      data-matched-content-ui-type="image_stacked,image_stacked" 
+      data-matched-content-rows-num="4,2" 
+      data-matched-content-columns-num="1,2"
+    />
+  </div>
+</template>
+
+<script setup lang="ts">
+// @ts-nocheck
+
+defineProps<{
+  kind: "目次上" | "h2" | "記事下ディスプレイ" | "Multiplex",
+}>()
+
+// <!-- 目次上 -->
+// <ins
+// class="adsbygoogle"
+// style="display:block"
+// data-ad-client="ca-pub-2873410957106428"
+// data-ad-slot="5220077443"
+// data-ad-format="auto"
+// data-full-width-responsive="true"></ins>
+
+// <!-- h2 -->
+// <ins 
+// class="adsbygoogle" 
+// style="display:block" 
+// data-ad-client="ca-pub-2873410957106428" 
+// data-ad-slot="2068327194" 
+// data-ad-format="auto" 
+// data-full-width-responsive="true"></ins>
+
+// <!-- 記事下ディスプレイ -->
+// <ins
+// class="adsbygoogle"
+// style="display:block"
+// data-ad-client="ca-pub-2873410957106428"
+// data-ad-slot="8302563051"
+// data-ad-format="auto"
+// data-full-width-responsive="true"></ins>
+
+// <!-- Multiplex -->
+// <ins
+// class="adsbygoogle" 
+// style="display:block" 
+// data-ad-format="autorelaxed" 
+// data-ad-client="ca-pub-2873410957106428" 
+// data-ad-slot="4732944866" 
+// data-matched-content-ui-type="image_stacked,image_stacked" 
+// data-matched-content-rows-num="4,2" 
+// data-matched-content-columns-num="1,2"></ins> 
+</script>

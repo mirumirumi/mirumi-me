@@ -67,7 +67,7 @@ onMounted(async () => {
       display: flex;
       flex-direction: row;
       align-items: center;
-      width: 15%;
+      width: 16%;
       img {
         width: 100%;
         height: auto;

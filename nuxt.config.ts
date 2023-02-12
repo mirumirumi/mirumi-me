@@ -59,6 +59,11 @@ export default defineNuxtConfig({
   },
   modules: [
     "@vueuse/nuxt",
+    ["@nuxtjs/google-adsense", {
+      id: "ca-pub-2873410957106428",
+      analyticsUacct: "UA-79701523-1",
+      analyticsDomainName: "mirumi.me",
+    }],
   ],
   pages: true,
   runtimeConfig: {

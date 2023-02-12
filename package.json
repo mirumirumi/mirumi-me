@@ -9,6 +9,7 @@
         "preview": "nuxt preview"
     },
     "dependencies": {
+        "@nuxtjs/google-adsense": "^2.1.0",
         "@vueuse/core": "^8.9.3",
         "@vueuse/nuxt": "^9.10.0",
         "eslint": "^6.7.2",

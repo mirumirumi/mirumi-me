@@ -50,6 +50,7 @@
       </footer>
       <ModulesCommentList />
       <ModulesCommentForm />
+      <PartsAdSenseBase :kind="'Multiplex'" />
     </main>
     <Teleport to="body">
       <ClientOnly>
@@ -94,7 +95,26 @@ const counts = {
   like: Number(post.like),
 }
 
-useHead({ script: [{ src: "/assets/prism.js", defer: true }] })
+// Content scripts
+onMounted(() => {
+  // Load YouTube Video iframe
+  const youtubes = document.querySelectorAll(".youtube") as NodeListOf<HTMLDivElement>
+
+  for (const target of youtubes) {
+    target.addEventListener("click", function () {
+      const iframe = document.createElement("iframe")
+      if (!target.dataset.video) return
+
+      iframe.src = target.dataset.video
+      iframe.style.width = "100%"
+      iframe.style.aspectRatio = "16/9"
+      iframe.style.margin = "0"
+      iframe.style.border = "solid 2.7px #dfd1c6"
+      iframe.style.borderRadius = "11px"
+      target.replaceWith(iframe)
+    })
+  }
+})
 
 const handleClick = (e: any) => {
   const link = e.target.closest("a")
@@ -119,6 +139,8 @@ const handleClick = (e: any) => {
   e.preventDefault()
   navigateTo(to)
 }
+
+useHead({ script: [{ src: "/assets/prism.js", defer: true }] })
 
 usePageInfo({
   title: post.title,
