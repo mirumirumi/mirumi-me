@@ -1004,8 +1004,39 @@
       clear: both;
     }
   }
-  .color-red {
-    color: #ff5151;
+  .waku-common {
+    padding: 0 1.53em 0.17em;
+    background-color: #fffcf8;
+    border: solid 3px #e6dacd;
+    border-radius: 7px;
+    &.waku-gray {
+      background-color: #fbfbfb;
+      border-color: #dbdbdb;
+    }
+    .color-red {
+      color: #ff5151;
+    }
+    > ul, 
+    > ol {
+      margin-top: 1.7em;
+      margin-bottom: 1.87em;
+      padding-left: 1.5em;
+      > li {
+        margin: 0.67em 0 !important;
+      }
+    }
+  }
+  // Nuxt 3 乗り換え前に同様のものをインライン CSS で書いていたものはそのままになっています
+  .simple_table {
+    width: 97%;
+    margin: 0 auto;
+    font-size: 0.87em;
+    border-collapse: collapse;
+    border: solid 2.3px #f0eae1;
+    background-color: #fffcfa;
+    td {
+      border: 1.3px dashed #bfbfbf;
+    }
   }
   .dot-line-brown {
     border-color: #f5ebdc;
@@ -1015,7 +1046,7 @@
     margin: 44px auto -33px;
   }
   .micro-bottom {
-    margin-top: -3.3em;
+    margin-top: -3.1em;
     margin-bottom: 1em;
     color: #4e4e4e;
     font-size: 0.67em;
@@ -1111,10 +1142,10 @@
       margin-right: 1.5em !important;
       &::after {
         position: absolute;
-        top: 0.33em;
+        top: 0.2em;
         bottom: 0;
-        width: 1em;
-        height: 1em;
+        width: 1.15em;
+        height: 1.15em;
         content: "";
         mask-size: cover;
         background-color: transparent;
