@@ -50,6 +50,7 @@
       </footer>
       <ModulesCommentList />
       <ModulesCommentForm />
+      <PartsAdSenseBase :kind="'Multiplex'" />
     </main>
     <Teleport to="body">
       <ClientOnly>
