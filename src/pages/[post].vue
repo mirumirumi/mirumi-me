@@ -48,6 +48,7 @@
           <ModulesProfileBox :category="post.category_slug" />
         </div>
       </footer>
+      <PartsAdSenseBase :kind="'記事下ディスプレイ'" />
       <ModulesCommentList />
       <ModulesCommentForm />
       <PartsAdSenseBase :kind="'Multiplex'" />
@@ -61,6 +62,9 @@
 </template>
 
 <script setup lang="ts">
+import * as cs from "@/assets/scripts/content-scripts"
+import { insertAdSense } from "@/assets/scripts/insert-adsense"
+
 const route = useRoute()
 const appConfig = useAppConfig()
 
@@ -87,6 +91,9 @@ const { data } = await useFetch(`/mirumi/post_data/${slug}`, {
 })
 const post = data.value as Record<string, any>
 
+// Insert Google AdSense before each h2
+post.content = insertAdSense(post.content)
+
 const counts = {
   twitter: Number(post.twitter),
   hatebu: Number(post.hatebu),
@@ -95,25 +102,9 @@ const counts = {
   like: Number(post.like),
 }
 
-// Content scripts
+// Exec content scripts
 onMounted(() => {
-  // Load YouTube Video iframe
-  const youtubes = document.querySelectorAll(".youtube") as NodeListOf<HTMLDivElement>
-
-  for (const target of youtubes) {
-    target.addEventListener("click", function () {
-      const iframe = document.createElement("iframe")
-      if (!target.dataset.video) return
-
-      iframe.src = target.dataset.video
-      iframe.style.width = "100%"
-      iframe.style.aspectRatio = "16/9"
-      iframe.style.margin = "0"
-      iframe.style.border = "solid 2.7px #dfd1c6"
-      iframe.style.borderRadius = "11px"
-      target.replaceWith(iframe)
-    })
-  }
+  cs.loadYouTube()
 })
 
 const handleClick = (e: any) => {
