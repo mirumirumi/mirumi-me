@@ -1,8 +1,6 @@
 // Load YouTube Video iframe
 export function loadYouTube(): void {
-  const youtubes = document.querySelectorAll(".youtube") as NodeListOf<HTMLDivElement>
-
-  for (const target of youtubes) {
+  (document.querySelectorAll(".youtube") as NodeListOf<HTMLDivElement>).forEach((target) => {
     target.addEventListener("click", function () {
       const iframe = document.createElement("iframe")
       if (!target.dataset.video) return
@@ -15,5 +13,5 @@ export function loadYouTube(): void {
       iframe.style.borderRadius = "11px"
       target.replaceWith(iframe)
     })
-  }
+  })
 }
