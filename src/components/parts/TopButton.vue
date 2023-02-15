@@ -58,6 +58,7 @@ const scrollToTop = () => {
     height: 2.6em;
     right: 0.8em;
     bottom: 0.8em;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 </style>

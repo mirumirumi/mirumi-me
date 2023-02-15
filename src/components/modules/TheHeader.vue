@@ -135,6 +135,7 @@ const interruptChooseCategory = () => {
             @include mobile {
               margin-left: 0.3em;
               margin-right: -0.4em;
+              -webkit-tap-highlight-color: transparent;
             }
           }
           &:has(.category_menu_wrap) {
