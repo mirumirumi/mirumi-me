@@ -9,6 +9,9 @@ export function insertAdSense(contentHtml: string): string {
     // The first h2 is below the TOC
     if (i === 0) continue
 
+    // The before last h2 is also hidden
+    if (i === h2s.length - 1) continue
+
     if (Math.random() <= PROBABILITY) {
       contentHtml = contentHtml.replace(h2, AD_TAG + h2)
     }

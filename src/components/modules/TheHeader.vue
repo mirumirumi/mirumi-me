@@ -22,7 +22,7 @@
               <ModulesTheCategoryMenu :isShown="isShownCategoryMenu" @interruptChoose="interruptChooseCategory" />
             </div>
           </li>
-          <li>
+          <li class="display_none_mobile">
             <NuxtLink to="/what-is-this-blog">
               みるめも について
             </NuxtLink>
@@ -77,9 +77,8 @@ const interruptChooseCategory = () => {
           width: 48px;
           height: 48px;
           @include mobile {
-            --mobile-logo-size: 43px;
-            width: var(--mobile-logo-size);
-            height: var(--mobile-logo-size);
+            width: 43px;
+            height: 43px;
           }
         }
       }
@@ -128,21 +127,35 @@ const interruptChooseCategory = () => {
               &.rotate {
                 transform: scale(0.4) rotate(180deg);
               }
+              @include mobile {
+                width: 1.2em;
+                transform: scale(0.55);
+              }
+            }
+            @include mobile {
+              margin-left: 0.3em;
+              margin-right: -0.4em;
+              -webkit-tap-highlight-color: transparent;
             }
           }
-          @include mobile {
-            width: 40px;
+          &:has(.category_menu_wrap) {
+            @include mobile {
+              margin-right: -0.5em;
+            }
           }
         }
         @include mobile {
-          width: 220px;
+          justify-content: space-evenly;
+          gap: 0;
+          width: 100%;
         }
       }
       @include mobile {
-        --padding-top: 17px;
-        height: calc(var(--mobile-logo-size) + var(--padding-top));
-        padding: var(--padding-top) 13px 0;
+        margin-top: 0.3em;
       }
+    }
+    @include mobile {
+      padding: 1.1em 0.7em 0;
     }
   }
 }

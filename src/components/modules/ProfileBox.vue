@@ -75,12 +75,13 @@ switch (p.category) {
       aspect-ratio: 312/312;
       border: solid 2.3px #f8f5f2;
       border-radius: 50%;
+      @include mobile {
+        width: 55.5px;
+        padding-right: 0.3em;
+      }
     }
   }
   .right {
-    .author {
-
-    }
     .content {
       margin: 1.1em auto;
       font-size: 0.97em;
@@ -106,6 +107,11 @@ switch (p.category) {
         }
       }
     }
+  }
+  @include mobile {
+    width: 99%;
+    margin-top: 3.7em;
+    padding: 1em 1em 1.3em 0.5em;
   }
 }
 </style>

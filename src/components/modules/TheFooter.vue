@@ -6,9 +6,7 @@
       </div>
       <nav class="link_groups" role="navigation" aria-label="フッターメニュー">
         <div class="links">
-          <div class="group_title">
-            Page
-          </div>
+          <div class="group_title">Page</div>
           <ul>
             <li>
               <NuxtLink to="/entry-list">全記事一覧</NuxtLink>
@@ -19,9 +17,7 @@
           </ul>
         </div>
         <div class="links">
-          <div class="group_title">
-            About
-          </div>
+          <div class="group_title">About</div>
           <ul>
             <li>
               <NuxtLink to="/about">運営者情報</NuxtLink>
@@ -35,9 +31,7 @@
           </ul>
         </div>
         <div class="links">
-          <div class="group_title">
-            Tech
-          </div>
+          <div class="group_title">Tech</div>
           <ul>
             <li>
               <a href="https://github.com/mirumirumi" target="_blank">GitHub</a>
@@ -100,26 +94,43 @@ const onEnter = () => {
           font-weight: bold;
           font-size: 1.05em;
           line-height: 1.8;
+          @include mobile {
+            width: 5em;
+          }
         }
-        li {
-          display: block;
-          line-height: 1.7;
-          a {
-            color: var(--color);
-            font-size: 0.95em;
-            text-decoration: none;
+        ul {
+          li {
+            display: block;
+            line-height: 1.7;
+            a {
+              color: var(--color);
+              font-size: 0.95em;
+              text-decoration: none;
+            }
           }
           @include mobile {
-            display: block;
-            margin: 0.1em 1.3em;
+            width: 12em;
           }
         }
+        @include mobile {
+          display: flex;
+          align-items: baseline;
+          margin: auto;
+        }
+      }
+      @include mobile {
+        flex-direction: column;
+        gap: 1em;
+        padding-left: 0;
       }
     }
     .copyright {
       margin-top: 3em;
       font-size: 0.83em;
       text-align: center;
+    }
+    @include mobile {
+      padding-top: 2.3em;
     }
   }
 }

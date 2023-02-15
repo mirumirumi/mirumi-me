@@ -73,6 +73,13 @@ onMounted(async () => {
         height: auto;
         border-radius: 5px;
         aspect-ratio: 412 / 216;
+        @include mobile {
+          aspect-ratio: 1/0.93;
+          object-fit: cover;
+        }
+      }
+      @include mobile {
+        width: 19%;
       }
     }
     .content {
@@ -105,11 +112,23 @@ onMounted(async () => {
           }
         }
       }
+      @include mobile {
+        margin-left: 1.1em;
+        padding: 0.9em 0;
+      }
     }
     &:hover {
       box-shadow: none;
       transform: translateY(0.9px);
     }
+    @include mobile {
+      max-width: 100%;
+      height: auto;
+      padding: 0 0.7em;
+    }
+  }
+  @include mobile {
+    padding: 0 0.7em;
   }
 }
 </style>

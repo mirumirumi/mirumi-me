@@ -48,6 +48,9 @@ defineProps<{
     font-weight: bold;
     text-align: center;
     user-select: none;
+    @include mobile {
+      padding: 0 0 0.9em;
+    }
   }
   .indexes {
     display: grid;
