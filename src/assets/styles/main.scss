@@ -215,6 +215,9 @@ label {
 .indexes_single_column {
   width: 785px !important;
   margin: auto !important;
+  @include mobile {
+    width: 100% !important;
+  }
 }
 .article_layout {
   main {
@@ -230,6 +233,11 @@ label {
         line-height: 1.5;
         font-size: 1.4em;
         font-weight: bold;
+        @include mobile {
+          margin-bottom: 0.9em;
+          font-size: 1.2em;
+          line-height: 1.4;
+        }
       }
       .thumbnail {
         position: relative;
@@ -246,17 +254,47 @@ label {
         margin: 0.9em auto 1.9em;
         font-size: 0.78em;
         text-align: center;
-        > * {
-          display: inline-block;
-          margin: auto 1.3em;
-          a, span, time {
-            color: var(--color-gray);
+        .grid_container {
+          > * {
+            display: inline-block;
+            margin: auto 1.3em;
+            a, span, time {
+              color: var(--color-gray);
+            }
+            &:nth-child(3) {
+              @include mobile {
+                grid-column: 2/3;
+              }
+            }
+            &:nth-child(4) {
+              @include mobile {
+                grid-row: 2/3;
+              }
+            }
+            @include mobile {
+              margin: 0;
+              text-align: left;
+            }
           }
+          @include mobile {
+            display: inline-grid;
+            grid-template-columns: repeat(2, max-content);
+            grid-column-gap: 1.3em;
+          }
+          @include mobile {
+            text-align: center;
+          }
+        }
+        @include mobile {
+          margin: 0.7em auto 1.1em;
         }
       }
     }
     footer {
       margin-top: 6.3em;
+      @include mobile {
+        margin-top: 5em;
+      }
     }
     @include mobile {
       padding-left: 0;
@@ -312,6 +350,9 @@ label {
 .fadedown-enter-from {
   opacity: 0;
   transform: translateY(-11px);
+  @include mobile {
+    transform: translateY(-11px) translateX(-50%) translateX(0.3em);
+  }
 }
 .fadedown-leave-to {
   opacity: 0;
@@ -319,6 +360,9 @@ label {
 .fadedown-enter-to {
   opacity: 1;
   transform: translateY(0px);
+  @include mobile {
+    transform: translateY(0px) translateX(-50%) translateX(0.3em);
+  }
 }
 .fadedown-leave-from {
   opacity: 1;

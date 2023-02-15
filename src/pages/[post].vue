@@ -12,21 +12,23 @@
           <meta itemprop="height" content="630" />
         </div>
         <div class="meta page_transition_target" role="contentinfo">
-          <div class="category">
-            <span>かてごり: </span>
-            <NuxtLink :to="`/category/${post.category_slug}`">{{ post.category_name }}</NuxtLink>
-          </div>
-          <div class="created_at">
-            <span>投稿日: </span>
-            <time :datetime="post.date" itemprop="datePublished">{{ friendlyDatetime(post.date) }}</time>
-          </div>
-          <div class="updated_at">
-            <span>更新日: </span>
-            <time :datetime="post.modified" itemprop="dateModified">{{ friendlyDatetime(post.modified) }}</time>
-          </div>
-          <div class="author">
-            <span>書いた人: </span>
-            <a :href="`https://twitter.com/${appConfig.twitterName}`" target="_blank" rel="nofollow">＠みるみ</a>
+          <div class="grid_container">
+            <div class="category">
+              <span>かてごり: </span>
+              <NuxtLink :to="`/category/${post.category_slug}`">{{ post.category_name }}</NuxtLink>
+            </div>
+            <div class="created_at">
+              <span>投稿日: </span>
+              <time :datetime="post.date" itemprop="datePublished">{{ friendlyDatetime(post.date) }}</time>
+            </div>
+            <div class="updated_at">
+              <span>更新日: </span>
+              <time :datetime="post.modified" itemprop="dateModified">{{ friendlyDatetime(post.modified) }}</time>
+            </div>
+            <div class="author">
+              <span>書いた人: </span>
+              <a :href="`https://twitter.com/${appConfig.twitterName}`" target="_blank" rel="nofollow">＠みるみ</a>
+            </div>
           </div>
         </div>
         <div class="share page_transition_target">
@@ -41,16 +43,16 @@
         <div id="content" v-html="post.content" @click="handleClick" itemprop="mainEntityOfPage"></div>
       </article>
       <footer>
-        <div class="share">
+        <div class="share page_transition_target">
           <ModulesShareButtons :slug="slug" :title="post.title" :counts="counts" />
         </div>
-        <div class="profile">
+        <div class="profile page_transition_target">
           <ModulesProfileBox :category="post.category_slug" />
         </div>
       </footer>
       <PartsAdSenseBase :kind="'記事下ディスプレイ'" />
-      <ModulesCommentList />
-      <ModulesCommentForm />
+      <ModulesCommentList class="page_transition_target" />
+      <ModulesCommentForm class="page_transition_target" />
       <PartsAdSenseBase :kind="'Multiplex'" />
     </main>
     <Teleport to="body">

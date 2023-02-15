@@ -51,7 +51,7 @@ MMMMMMMMMMWKkoc;,'''''',;cokKNMMMMMMMMMM
     }
     @include mobile {
       width: 100%;
-      padding: 1.7em 0.87em 1em;
+      padding: 1em 0.87em;
     }
   }
 }

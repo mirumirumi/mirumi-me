@@ -53,5 +53,11 @@ const scrollToTop = () => {
       transition: 0.29s all ease;
     }
   }
+  @include mobile {
+    width: 2.6em;
+    height: 2.6em;
+    right: 0.8em;
+    bottom: 0.8em;
+  }
 }
 </style>

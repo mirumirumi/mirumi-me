@@ -146,6 +146,10 @@ function isLikedThisSlug(): boolean {
       border-color: transparent;
       background-color: transparent;
       transition: 0.47s all cubic-bezier(0.24, 0.35, 0.57, 0.89);
+      @include mobile {
+        width: 43px;
+        transform: scale(0.75);
+      }
     }
     .like_button {
       padding-bottom: 1.5px;
@@ -163,7 +167,14 @@ function isLikedThisSlug(): boolean {
       text-align: center;
       line-height: 1.8;
       user-select: none;
+      @include mobile {
+        font-size: 0.8em;
+        line-height: 1.5;
+      }
     }
+  }
+  @include mobile {
+    margin: 0.7em auto 2.3em;
   }
 }
 .heart_wrapper {

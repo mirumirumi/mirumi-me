@@ -83,7 +83,16 @@ const formatTimestamp = (timestamp: string) => {
           border-radius: 50%;
           &.default {
             transform: scale(0.93);
+            @include mobile {
+              transform: scale(0.87);
+            }
           }
+          @include mobile {
+            transform: scale(0.9);
+          }
+        }
+        @include mobile {
+          margin-right: 0.7em;
         }
       }
       .info {

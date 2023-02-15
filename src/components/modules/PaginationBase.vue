@@ -136,6 +136,13 @@ const toTop = () => {
     &:hover {
       background-color: #f5efeb;
     }
+    @include mobile {
+      width: 36px;
+      height: 35.7px;
+      margin: 0;
+      font-size: 0.87em;
+      line-height: 35.1px;
+    }
   }
   a {
     color: #727272;
@@ -159,6 +166,11 @@ const toTop = () => {
     }
     &:hover {
       background-color: transparent;
+    }
+    @include mobile {
+      width: 20px;
+      height: 20px;
+      line-height: 20px;
     }
   }
 }

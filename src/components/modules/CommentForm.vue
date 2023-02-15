@@ -123,6 +123,9 @@ const submit = async () => {
         margin: 0.5em 0;
         list-style: disc;
       }
+      @include mobile {
+        padding-left: 1.2em;
+      }
     }
   }
   form {
@@ -140,6 +143,9 @@ const submit = async () => {
       margin-top: 2.3em;
       text-align: center;
     }
+  }
+  @include mobile {
+    padding: 0 0.3em;
   }
 }
 </style>

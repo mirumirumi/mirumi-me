@@ -327,6 +327,12 @@ usePageInfo({
     justify-content: space-between;
     > * {
       width: 45%;
+      @include mobile {
+        width: 100%;
+      }
+    }
+    @include mobile {
+      flex-direction: column;
     }
   }
 }
