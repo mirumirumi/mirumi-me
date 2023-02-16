@@ -208,6 +208,10 @@ label {
   border-radius: 9999px;
   background-color: #c7bfba;
 }
+::selection {
+  color: #ffffff;
+  background-color: var(--color-primary);
+}
 
 /**
  * globals
