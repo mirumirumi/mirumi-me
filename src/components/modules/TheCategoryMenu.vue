@@ -196,10 +196,11 @@ const interruptChoose = () => {
       }
     }
   }
+  @include tablet {
+    left: -50%;
+  }
   @include mobile {
-    left: 50%;
-    // // Note: The transition definitions in main.scss also has following styles
-    // transform: translateX(-50%) translateX(0.3em);
+    left: -71%;
   }
 }
 </style>
