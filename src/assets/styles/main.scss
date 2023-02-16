@@ -350,9 +350,9 @@ label {
 .fadedown-enter-from {
   opacity: 0;
   transform: translateY(-11px);
-  @include mobile {
-    transform: translateY(-11px) translateX(-50%) translateX(0.3em);
-  }
+  // @include mobile {
+  //   transform: translateY(-11px) translateX(-50%) translateX(0.3em);
+  // }
 }
 .fadedown-leave-to {
   opacity: 0;
@@ -360,9 +360,9 @@ label {
 .fadedown-enter-to {
   opacity: 1;
   transform: translateY(0px);
-  @include mobile {
-    transform: translateY(0px) translateX(-50%) translateX(0.3em);
-  }
+  // @include mobile {
+  //   transform: translateY(0px) translateX(-50%) translateX(0.3em);
+  // }
 }
 .fadedown-leave-from {
   opacity: 1;
