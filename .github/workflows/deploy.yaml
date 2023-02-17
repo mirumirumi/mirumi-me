@@ -21,6 +21,8 @@ jobs:
       - name: Decrypt secrets with gpg
         run: |
           echo "${{ secrets.GPG_PASSPHRASE }}" \
+           | sudo gpg --batch --passphrase-fd 0 --output "src/secrets/secret.dev.js" --decrypt "src/secrets/secret.dev.js.gpg" 
+          echo "${{ secrets.GPG_PASSPHRASE }}" \
            | sudo gpg --batch --passphrase-fd 0 --output "src/secrets/secret.prd.js" --decrypt "src/secrets/secret.prd.js.gpg" 
 
       - name: Generate site
