@@ -20,16 +20,15 @@
           </a>
         </div>
       </div>
-      <div class="content" v-html="formatContent(_c.comment_content)">
+      <div class="content" v-html="formatContent(_c.comment_content)"></div>
+      <div class="reply_button">
+        <PartsBaseButton
+          :type="'outline'"
+          @click="_c.isOpenReply = !_c.isOpenReply"
+        >
+          {{ _c.isOpenReply ? "やめる" : "返信する" }}
+        </PartsBaseButton>
       </div>
-    </div>
-    <div class="reply_button">
-      <PartsBaseButton
-        :type="'outline'"
-        @click="_c.isOpenReply = !_c.isOpenReply"
-      >
-        {{ _c.isOpenReply ? "やめる" : "返信する" }}
-      </PartsBaseButton>
     </div>
     <div v-if="_c.isOpenReply" class="reply">
       <ModulesCommentForm :reply_to="_c.comment_ID" />
@@ -134,14 +133,14 @@ const formatTimestamp = (timestamp: string) => {
     &.depth-4 {
       padding-left: calc(1.07em * 3);
     }
-  }
-  .reply_button {
-    text-align: right;
-    button {
-      margin-right: 3em;
-      padding: 0.2em 1em 0.3em;
-      font-size: 0.73em;
-      box-shadow: none;
+    .reply_button {
+      text-align: right;
+      button {
+        margin-right: 1em;
+        padding: 0.25em 1em 0.3em;
+        font-size: 0.73em;
+        box-shadow: none;
+      }
     }
   }
   .reply {
