@@ -2,7 +2,7 @@ import secret from "./src/secrets"
 
 export default defineNuxtConfig({
   app: {
-    baseURL: "/",  // can override by NUXT_APP_BASE_URL
+    baseURL: "/",
     head: {
       htmlAttrs: {
         lang: "ja",
@@ -52,10 +52,6 @@ export default defineNuxtConfig({
       style: [],
       script: [],
     },
-    // pageTransition: {
-    //   name: "page",
-    //   mode: "out-in",
-    // },
   },
   modules: [
     "@vueuse/nuxt",
@@ -96,11 +92,7 @@ export default defineNuxtConfig({
       },
     },
   },
-  vue: {
-    compilerOptions: {
-      isCustomElement: (tag) => {
-        return tag.startsWith("Script")
-      },
-    },
-  },
+
+  // CAUTION!: The following comment are used by CI to re-generate specified post
+  // ### nitro: { prerender: { crawlLinks: false, routes: [###] } },
 })
