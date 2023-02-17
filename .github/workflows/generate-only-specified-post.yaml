@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       slug:
-        description: The slug to generate
+        description: The slug to generate (no `/` as prefix required)
         required: true
         type: string
 
@@ -35,7 +35,7 @@ jobs:
       - name: Re-generate a specified post
         run: |
           sed -irz "s/\/\/ ### //g" nuxt.config.ts
-          sed -irz "s/\[###\]/['${{ env.ROUTE_TO_GENERATE }}']/g" nuxt.config.ts
+          sed -irz "s/\[###\]/['\/${{ env.ROUTE_TO_GENERATE }}']/g" nuxt.config.ts
           npm run generate
           # curl https://mirumi.in/sitemap.xml > .output/public/sitemap.xml
  
