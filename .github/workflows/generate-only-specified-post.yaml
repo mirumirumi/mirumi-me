@@ -53,6 +53,9 @@ jobs:
             --region ap-northeast-1 \
             --cache-control "no-cache" \
             .output/public/${{ env.ROUTE_TO_GENERATE }}/ s3://mirumime-prd-mirumi-me/${{ env.ROUTE_TO_GENERATE }}/
+
+      - name: Purge CDN caches
+        run: |
           aws cloudfront create-invalidation \
             --distribution-id E1UPWIMHFP5TEC \
             --paths "/${{ env.ROUTE_TO_GENERATE }}/*"
