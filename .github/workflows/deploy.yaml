@@ -51,6 +51,9 @@ jobs:
             --region ap-northeast-1 \
             --cache-control "no-cache" \
             .output/public/ s3://mirumime-prd-mirumi-me
+
+      - name: Purge CDN caches
+        run: |
           aws cloudfront create-invalidation \
             --distribution-id E1UPWIMHFP5TEC \
             --paths "/*"

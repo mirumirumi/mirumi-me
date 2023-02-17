@@ -1,0 +1,17 @@
+[
+    {
+        "Condition": {
+            "KeyPrefixEquals": "post-A/"
+        },
+        "Redirect": {
+            "HostName": "mirumi.me",
+            "Protocol": "https",
+            "ReplaceKeyPrefixWith": "post-B/"
+        }
+    }
+]
+// https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/how-to-page-redirect.html
+
+// Don't use IaC to define above redirect rules, because there is no dedicated repositry
+
+// Note: The limit of rules is 50, if it is exceeded, "object redirection" must be considered...
