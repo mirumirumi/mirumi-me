@@ -22,9 +22,9 @@
               <ModulesTheCategoryMenu :isShown="isShownCategoryMenu" @interruptChoose="interruptChooseCategory" />
             </div>
           </li>
-          <li class="display_none_mobile">
+          <li>
             <NuxtLink to="/what-is-this-blog">
-              みるめも について
+              みるめも？
             </NuxtLink>
           </li>
           <li>
@@ -141,12 +141,14 @@ const interruptChooseCategory = () => {
           &:has(.category_menu_wrap) {
             @include mobile {
               margin-right: -0.5em;
+              ~ * {
+                transform: translateX(7%);
+              }
             }
           }
         }
         @include mobile {
-          justify-content: space-evenly;
-          gap: 0;
+          gap: 1.3em;
           width: 100%;
         }
       }
