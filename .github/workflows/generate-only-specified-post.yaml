@@ -1,0 +1,56 @@
+name: generate-only-specified-post
+
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: The slug to generate
+        required: true
+        type: string
+
+jobs:
+  generate-only-specified-post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+    
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.9.1
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Decrypt secrets with gpg
+        run: |
+          echo "${{ secrets.GPG_PASSPHRASE }}" \
+           | sudo gpg --batch --passphrase-fd 0 --output "src/secrets/secret.prd.js" --decrypt "src/secrets/secret.prd.js.gpg" 
+
+      - name: Set a post to specify
+        run: |
+          echo ROUTE_TO_GENERATE=${{ github.event.inputs.slug }} >> $GITHUB_ENV
+
+      - name: Re-generate a specified post
+        run: |
+          sed -irz "s/\/\/ ### //g" nuxt.config.ts
+          sed -irz "s/\[###\]/['${{ env.ROUTE_TO_GENERATE }}']/g" nuxt.config.ts
+          npm run generate
+          # curl https://mirumi.in/sitemap.xml > .output/public/sitemap.xml
+ 
+      - name: Sign in
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: ap-northeast-1
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Copy files to S3
+        run: |
+          aws s3 sync \
+            --delete \
+            --region ap-northeast-1 \
+            --cache-control "no-cache" \
+            .output/public/${{ env.ROUTE_TO_GENERATE }}/ s3://mirumime-prd-mirumi-me/${{ env.ROUTE_TO_GENERATE }}/
+          aws cloudfront create-invalidation \
+            --distribution-id E1UPWIMHFP5TEC \
+            --paths "/${{ env.ROUTE_TO_GENERATE }}/*"

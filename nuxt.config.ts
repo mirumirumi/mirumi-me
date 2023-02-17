@@ -92,4 +92,7 @@ export default defineNuxtConfig({
       },
     },
   },
+
+  // CAUTION!: The following comment are used by CI to re-generate specified post
+  // ### nitro: { prerender: { crawlLinks: false, routes: [###] } },
 })
