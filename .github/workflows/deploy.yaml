@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - release/prd
-  workflow_dispatch:
 
 jobs:
   deploy:
@@ -21,8 +20,8 @@ jobs:
 
       - name: Decrypt secrets with gpg
         run: |
-          echo "${{ secrets.GPG_PASSPHRASE }}" | sudo gpg --batch --passphrase-fd 0 --output "src/secrets/secret.dev.js" --decrypt "src/secrets/secret.dev.js.gpg" 
-          echo "${{ secrets.GPG_PASSPHRASE }}" | sudo gpg --batch --passphrase-fd 0 --output "src/secrets/secret.prd.js" --decrypt "src/secrets/secret.prd.js.gpg" 
+          echo "${{ secrets.GPG_PASSPHRASE }}" \
+           | sudo gpg --batch --passphrase-fd 0 --output "src/secrets/secret.prd.js" --decrypt "src/secrets/secret.prd.js.gpg" 
 
       - name: Generate site
         run: |
@@ -40,6 +39,16 @@ jobs:
 
       - name: Copy files to S3
         run: |
-          aws s3 sync --delete --region ap-northeast-1 .output/public/_nuxt/ s3://mirumime-prd-mirumi-me/_nuxt --cache-control "max-age=31536000"
-          aws s3 sync --delete --region ap-northeast-1 .output/public/ s3://mirumime-prd-mirumi-me --cache-control "no-cache"
-          aws cloudfront create-invalidation --distribution-id E1UPWIMHFP5TEC --paths "/*"
+          aws s3 sync \
+            --delete \
+            --region ap-northeast-1 \
+            --cache-control "max-age=31536000" \
+            .output/public/_nuxt/ s3://mirumime-prd-mirumi-me/_nuxt
+          aws s3 sync \
+            --delete \
+            --region ap-northeast-1 \
+            --cache-control "no-cache" \
+            .output/public/ s3://mirumime-prd-mirumi-me
+          aws cloudfront create-invalidation \
+            --distribution-id E1UPWIMHFP5TEC \
+            --paths "/*"
