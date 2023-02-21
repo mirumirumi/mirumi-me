@@ -2,7 +2,7 @@ export function insertAdSense(contentHtml: string): string {
   const PROBABILITY = 0.7
   const AD_TAG = '<ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2873410957106428" data-ad-slot="2068327194" data-ad-format="auto" data-full-width-responsive="true"></ins>'
 
-  const h2s = contentHtml.match(/<h2.*?<\/h2>/gmi)
+  const h2s = contentHtml.match(/<h2.*?<\/h2>/gim)
   if (!h2s) return contentHtml
 
   for (const [i, h2] of h2s.entries()) {

@@ -1,6 +1,6 @@
 // Load YouTube Video iframe
 export function loadYouTube(): void {
-  (document.querySelectorAll(".youtube") as NodeListOf<HTMLDivElement>).forEach((target) => {
+  ;(document.querySelectorAll(".youtube") as NodeListOf<HTMLDivElement>).forEach((target) => {
     target.addEventListener("click", function () {
       const iframe = document.createElement("iframe")
       if (!target.dataset.video) return
