@@ -7,33 +7,12 @@
 </template>
 
 <script setup lang="ts">
+const router = useRouter()
 const appConfig = useAppConfig()
 
-onMounted(() => {
-  // Add an access counter
-  const postId = "12717"
-  const postType = "page"
+const app = ref()
 
-  const div = document.createElement("div")
-  div.style.cssText = `
-    content: url("${appConfig.siteFullPath}/wp-content/themes/cocoon-master/lib/analytics/access.php?post_id=${postId}&post_type=${postType}");
-    display: inline !important;
-    position: absolute !important;
-    bottom: 0 !important;
-    right: 0 !important;
-    width: 1px !important;
-    height: 1px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-    box-shadow: none !important;
-    visibility: hidden !important;
-    overflow: hidden !important;
-  `
-  const app = templateRef("app")
-  app.value?.appendChild(div)
-
-  // 😽
+onMounted(async () => {
   console.log(`
 ご訪問ありがとうございます :)
 
@@ -60,7 +39,57 @@ MMMMMMMMMMWKkoc;,'''''',;cokKNMMMMMMMMMM
 
 © みるめも
 `)
+
+  const slug = shapeSlug(router.currentRoute.value.path)
+  await incrementAccessCounter(slug)
 })
+
+watch(() => router.currentRoute.value, async (newValue) => {
+  const slug = shapeSlug(newValue.path)
+  await incrementAccessCounter(slug)
+})
+
+async function incrementAccessCounter(slug: string): Promise<void> {
+  if (/.*?\/.*?/gim.test(slug)) return
+
+  let postId = "0"
+
+  if (slug.length === 0) {
+    // In case of the top page
+    postId = "12717"
+  } else {
+    postId = await $fetch(`/mirumi/post_id_with_post_slug/${slug}`, {
+      baseURL: appConfig.baseURL,
+      parseResponse: JSON.parse,
+    })
+  }
+  if (!postId) return
+
+  // Set only to satisfy PHP function of Cocoon, it doesn't matter if it's A or B
+  const postType = "post"
+
+  const div = document.createElement("div")
+  div.style.cssText = `
+    content: url("${appConfig.siteFullPath}/wp-content/themes/cocoon-master/lib/analytics/access.php?post_id=${postId}&post_type=${postType}");
+    display: inline !important;
+    position: absolute !important;
+    bottom: 0 !important;
+    right: 0 !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    visibility: hidden !important;
+    overflow: hidden !important;
+  `
+  app.value.appendChild(div)
+}
+
+function shapeSlug(path: string): string {
+  return path.slice(1).replace(/(.*?)\/$/gim, "$1")
+}
 </script>
 
 <style lang="scss">
