@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div id="app" ref="app">
     <ModulesTheHeader />
     <NuxtPage id="container" />
     <ModulesTheFooter />
@@ -7,7 +7,33 @@
 </template>
 
 <script setup lang="ts">
+const appConfig = useAppConfig()
+
 onMounted(() => {
+  // Add an access counter
+  const postId = "12717"
+  const postType = "page"
+
+  const div = document.createElement("div")
+  div.style.cssText = `
+    content: url("${appConfig.siteFullPath}/wp-content/themes/cocoon-master/lib/analytics/access.php?post_id=${postId}&post_type=${postType}");
+    display: inline !important;
+    position: absolute !important;
+    bottom: 0 !important;
+    right: 0 !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    visibility: hidden !important;
+    overflow: hidden !important;
+  `
+  const app = templateRef("app")
+  app.value?.appendChild(div)
+
+  // 😽
   console.log(`
 ご訪問ありがとうございます :)
 
