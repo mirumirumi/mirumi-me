@@ -51,6 +51,8 @@ watch(() => router.currentRoute.value, async (newValue) => {
 
 async function incrementAccessCounter(slug: string): Promise<void> {
   if (/.*?\/.*?/gim.test(slug)) return
+  if (slug === "entries") return
+  if (slug === "s") return
 
   let postId = "0"
 
@@ -65,26 +67,9 @@ async function incrementAccessCounter(slug: string): Promise<void> {
   }
   if (!postId) return
 
-  // Set only to satisfy PHP function of Cocoon, it doesn't matter if it's A or B
-  const postType = "post"
-
-  const div = document.createElement("div")
-  div.style.cssText = `
-    content: url("${appConfig.siteFullPath}/wp-content/themes/cocoon-master/lib/analytics/access.php?post_id=${postId}&post_type=${postType}");
-    display: inline !important;
-    position: absolute !important;
-    bottom: 0 !important;
-    right: 0 !important;
-    width: 1px !important;
-    height: 1px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-    box-shadow: none !important;
-    visibility: hidden !important;
-    overflow: hidden !important;
-  `
-  app.value.appendChild(div)
+  await $fetch(`/mirumi/increment_access_counter/${postId}`, {
+    baseURL: appConfig.baseURL,
+  })
 }
 
 function shapeSlug(path: string): string {
