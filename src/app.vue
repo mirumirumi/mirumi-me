@@ -51,6 +51,8 @@ watch(() => router.currentRoute.value, async (newValue) => {
 
 async function incrementAccessCounter(slug: string): Promise<void> {
   if (/.*?\/.*?/gim.test(slug)) return
+  if (slug === "entries") return
+  if (slug === "s") return
 
   let postId = "0"
 
