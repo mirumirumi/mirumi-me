@@ -10,7 +10,7 @@ on:
       is_updated:
         description: Whether the post is updated or created
         required: true
-        type: boolean       
+        type: boolean
 
 jobs:
   generate-only-specified-post:
@@ -41,7 +41,7 @@ jobs:
           sed -irz "s/\/\/ ### //g" nuxt.config.ts
           sed -irz "s/\[###\]/['\/${{ env.ROUTE_TO_GENERATE }}']/g" nuxt.config.ts
           npm run generate
-          # curl https://mirumi.in/sitemap.xml > .output/public/sitemap.xml
+          curl https://mirumi.in/sitemap.xml > .output/public/sitemap.xml
  
       - name: Sign in
         uses: aws-actions/configure-aws-credentials@v1
@@ -59,7 +59,7 @@ jobs:
             .output/public/${{ env.ROUTE_TO_GENERATE }}/ s3://mirumime-prd-mirumi-me/${{ env.ROUTE_TO_GENERATE }}/
 
       - name: Purge CDN caches
-        if: ${{ github.event.inputs.is_updated == "true" }}
+        if: ${{ github.event.inputs.is_updated }} == "true"
         run: |
           aws cloudfront create-invalidation \
             --distribution-id E1UPWIMHFP5TEC \

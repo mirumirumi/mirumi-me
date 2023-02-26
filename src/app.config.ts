@@ -10,7 +10,7 @@ export default defineAppConfig({
   // About APIs
   apiFullPath,
   apiDomain: apiFullPath.replace("https://", ""),
-  baseURL: siteFullPath + "/wp-json",
+  baseURL: apiFullPath + "/wp-json",
   perPage: 13,
 
   // Profiles
