@@ -101,22 +101,22 @@ let posts: PageSummary[] = [
   {
     slug: "pc-freesoft",
     title: "Windows にまず入れるべきおすすめフリーソフト/便利アプリ 40 選",
-    thumbnailUrl: "https://mirumi.me/wp-content/uploads/windows-freesoft-recommend-list-412x216-1.webp",
+    thumbnailUrl: "https://mirumi.media/windows-freesoft-recommend-list-412x216-1.webp",
   },
   {
     slug: "good-goods",
     title: "これまでの人生で「本当に買ってよかった」と思えるもの 40 選",
-    thumbnailUrl: "https://mirumi.me/wp-content/uploads/good-recommend-goods-milmemo-412x216.webp",
+    thumbnailUrl: "https://mirumi.media/good-recommend-goods-milmemo-412x216.webp",
   },
   {
     slug: "out-of-body",
     title: "この記事で人生変わるかも？体外離脱 (幽体離脱) 総まとめ",
-    thumbnailUrl: "https://mirumi.me/wp-content/uploads/taigai-ridatsu-lucid-dreaming-milmemo-412x216-1.webp",
+    thumbnailUrl: "https://mirumi.media/taigai-ridatsu-lucid-dreaming-milmemo-412x216-1.webp",
   },
   {
     slug: "blog-for-you",
     title: "「みるめも」のような雑記ブログで副業したい人のために頑張って書いた記事",
-    thumbnailUrl: "https://mirumi.me/wp-content/uploads/blog-for-you-only-start-412x216.webp",
+    thumbnailUrl: "https://mirumi.media/blog-for-you-only-start-412x216.webp",
   },
 ]
 
