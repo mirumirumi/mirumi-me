@@ -28,9 +28,9 @@ jobs:
       - name: Decrypt secrets with gpg
         run: |
           echo "${{ secrets.GPG_PASSPHRASE }}" \
-           | sudo gpg --batch --passphrase-fd 0 --output "src/secrets/secret.dev.js" --decrypt "src/secrets/secret.dev.js.gpg" 
+            | sudo gpg --batch --passphrase-fd 0 --output "src/secrets/secret.dev.js" --decrypt "src/secrets/secret.dev.js.gpg" 
           echo "${{ secrets.GPG_PASSPHRASE }}" \
-           | sudo gpg --batch --passphrase-fd 0 --output "src/secrets/secret.prd.js" --decrypt "src/secrets/secret.prd.js.gpg" 
+            | sudo gpg --batch --passphrase-fd 0 --output "src/secrets/secret.prd.js" --decrypt "src/secrets/secret.prd.js.gpg" 
 
       - name: Set a post to specify
         run: |
@@ -41,7 +41,10 @@ jobs:
           sed -irz "s/\/\/ ### //g" nuxt.config.ts
           sed -irz "s/\[###\]/['\/${{ env.ROUTE_TO_GENERATE }}']/g" nuxt.config.ts
           npm run generate
-          curl https://mirumi.in/sitemap.xml | tr -d "\n" | sed -e "s/^.\{2\}//" > .output/public/sitemap.xml
+          curl https://mirumi.in/sitemap.xml \
+            | tr -d "\n" | sed -e "s/^.\{2\}//" \
+            | sed -r "s/<\?xml-stylesheet.*?\?>//" \
+            > .output/public/sitemap.xml
  
       - name: Sign in
         uses: aws-actions/configure-aws-credentials@v1
