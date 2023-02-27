@@ -21,16 +21,27 @@ jobs:
       - name: Decrypt secrets with gpg
         run: |
           echo "${{ secrets.GPG_PASSPHRASE }}" \
-           | sudo gpg --batch --passphrase-fd 0 --output "src/secrets/secret.dev.js" --decrypt "src/secrets/secret.dev.js.gpg" 
+            | sudo gpg --batch --passphrase-fd 0 --output "src/secrets/secret.dev.js" --decrypt "src/secrets/secret.dev.js.gpg" 
           echo "${{ secrets.GPG_PASSPHRASE }}" \
-           | sudo gpg --batch --passphrase-fd 0 --output "src/secrets/secret.prd.js" --decrypt "src/secrets/secret.prd.js.gpg" 
+            | sudo gpg --batch --passphrase-fd 0 --output "src/secrets/secret.prd.js" --decrypt "src/secrets/secret.prd.js.gpg" 
 
       - name: Generate site
         run: |
           npm run generate
-          curl https://mirumi.in/sitemap.xml | tr -d "\n" | sed -e "s/^.\{2\}//" > .output/public/sitemap.xml
-          curl https://mirumi.in/feed | tr -d "\n" | sed -e "s/^.\{2\}//" > .output/public/feed.xml
-          curl https://mirumi.in/comments/feed | tr -d "\n" | sed -e "s/^.\{2\}//" > .output/public/feed-comments.xml
+          curl https://mirumi.in/sitemap.xml \
+            | tr -d "\n" | sed -e "s/^.\{2\}//" \
+            | sed -r "s/<\?xml-stylesheet.*?\?>//" \
+            > .output/public/sitemap.xml
+          mkdir .output/public/feed
+          mkdir .output/public/feed-comments
+          curl https://mirumi.in/feed \
+            | tr -d "\n" \
+            | sed -e "s/^.\{2\}//" \
+            > .output/public/feed/index.xml
+          curl https://mirumi.in/comments/feed \
+            | tr -d "\n" \
+            | sed -e "s/^.\{2\}//" \
+            > .output/public/feed-comments/index.xml
 
       - name: Sign in
         uses: aws-actions/configure-aws-credentials@v1
