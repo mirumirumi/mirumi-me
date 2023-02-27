@@ -50,16 +50,24 @@ jobs:
 
       - name: Copy files to S3
         run: |
-          aws s3 sync \
-            --delete \
+          aws s3 rm \
             --region ap-northeast-1 \
+            --recursive \
+            --exclude "apps/*" \
+            --exclude "assets/components/*" \
+            s3://mirumime-prd-mirumi-me/
+          aws s3 cp \
+            --region ap-northeast-1 \
+            --recursive \
             --cache-control "max-age=31536000" \
-            .output/public/_nuxt/ s3://mirumime-prd-mirumi-me/_nuxt
-          aws s3 sync \
-            --delete \
+            .output/public/_nuxt/ s3://mirumime-prd-mirumi-me/_nuxt/
+          aws s3 cp \
             --region ap-northeast-1 \
+            --recursive \
             --cache-control "no-cache" \
-            .output/public/ s3://mirumime-prd-mirumi-me
+            --exclude "_nuxt/*" \
+            --exclude "assets/components/*" \
+            .output/public/ s3://mirumime-prd-mirumi-me/
 
       - name: Purge CDN caches
         run: |
