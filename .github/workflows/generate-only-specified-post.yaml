@@ -41,7 +41,7 @@ jobs:
           sed -irz "s/\/\/ ### //g" nuxt.config.ts
           sed -irz "s/\[###\]/['\/${{ env.ROUTE_TO_GENERATE }}']/g" nuxt.config.ts
           npm run generate
-          curl https://mirumi.in/sitemap.xml > .output/public/sitemap.xml
+          curl https://mirumi.in/sitemap.xml | tr -d "\n" | sed -e "s/^.\{2\}//" > .output/public/sitemap.xml
  
       - name: Sign in
         uses: aws-actions/configure-aws-credentials@v1
