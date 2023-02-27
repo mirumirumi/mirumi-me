@@ -22,9 +22,6 @@
       v-if="kind === 'Multiplex'"
       :ad-slot="'4732944866'"
       :ad-format="'autorelaxed'"
-      data-matched-content-ui-type="image_stacked,image_stacked" 
-      data-matched-content-rows-num="4,2" 
-      data-matched-content-columns-num="1,2"
     />
   </div>
 </template>
@@ -71,6 +68,8 @@ defineProps<{
 // data-ad-format="autorelaxed" 
 // data-ad-client="ca-pub-2873410957106428" 
 // data-ad-slot="4732944866" 
+// 公式ヘルプに「本カスタマイズはサポートを終了した」との記述があり、一度も表示されない問題と関連があるかも不明なので
+// 念のためレンダリングからもなくしている。データは別で残っているとはいえテストした結果ではあるのでコード部分もコメント状態で保管。
 // data-matched-content-ui-type="image_stacked,image_stacked" 
 // data-matched-content-rows-num="4,2" 
 // data-matched-content-columns-num="1,2"></ins> 
