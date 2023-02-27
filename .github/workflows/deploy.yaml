@@ -32,16 +32,14 @@ jobs:
             | tr -d "\n" | sed -e "s/^.\{2\}//" \
             | sed -r "s/<\?xml-stylesheet.*?\?>//" \
             > .output/public/sitemap.xml
-          mkdir .output/public/feed
-          mkdir .output/public/feed-comments
           curl https://mirumi.in/feed \
             | tr -d "\n" \
             | sed -e "s/^.\{2\}//" \
-            > .output/public/feed/index.xml
+            > .output/public/feed.xml
           curl https://mirumi.in/comments/feed \
             | tr -d "\n" \
             | sed -e "s/^.\{2\}//" \
-            > .output/public/feed-comments/index.xml
+            > .output/public/feed-comments.xml
 
       - name: Sign in
         uses: aws-actions/configure-aws-credentials@v1
