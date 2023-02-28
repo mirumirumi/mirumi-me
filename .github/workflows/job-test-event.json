@@ -1,0 +1,7 @@
+{
+  "action": "workflow_dispatch",
+  "inputs": {
+      "slug": "1password",
+      "is_updated": true
+  }
+}
