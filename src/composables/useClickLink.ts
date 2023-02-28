@@ -9,7 +9,7 @@ export default (e: any) => {
     // In case of `https://mirumi.me/slug`
 
     e.preventDefault()
-    navigateTo(to.replace(appConfig.siteFullPath, ""))
+    return navigateTo(to.replace(appConfig.siteFullPath, ""))
   } else if (!to.startsWith("/")) {
     // In case of normal external links
 
@@ -24,5 +24,5 @@ export default (e: any) => {
 
   // In case of start with `/slug`
   e.preventDefault()
-  navigateTo(to)
+  return navigateTo(to)
 }
