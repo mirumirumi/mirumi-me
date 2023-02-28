@@ -15,8 +15,15 @@ jobs:
         with:
           node-version: 18.9.1
 
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
       - name: Install dependencies
         run: npm ci
+
+      - name: Install Python modules
+        run: pip3 install httpx
 
       - name: Decrypt secrets with gpg
         run: |
@@ -28,10 +35,7 @@ jobs:
       - name: Generate site
         run: |
           npm run generate
-          curl https://mirumi.in/sitemap.xml \
-            | tr -d "\n" | sed -e "s/^.\{2\}//" \
-            | sed -r "s/<\?xml-stylesheet.*?\?>//" \
-            > .output/public/sitemap.xml
+          python3 .github/workflows/generate_sitemaps.py
           curl https://mirumi.in/feed \
             | tr -d "\n" \
             | sed -e "s/^.\{2\}//" \
