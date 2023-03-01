@@ -29,7 +29,7 @@ export default (p: PageMeta) => {
     "@type": "WebPage",
     "@id": "${p.url}"
   },
-  "headline": "${p.title}",
+  "headline": "${p.title.replaceAll('"', "")}",
   "image": {
     "@type": "ImageObject",
     "url": "${p.thumbnail ?? "https://mirumi.media/blog-milmemo.png"}",
@@ -53,7 +53,7 @@ export default (p: PageMeta) => {
       "height": 60
     }
   },
-  "description": "${p.description}"
+  "description": "${p.description.replaceAll('"', "")}"
 }
 `
 

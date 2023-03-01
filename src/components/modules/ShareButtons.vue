@@ -87,6 +87,7 @@ onMounted(() => {
   if (isLikedThisSlug()) {
     likeCountColor.value = "#ed7e8e"
     heartWrapper.value.classList.add("active")
+    likeCount.value += 1
   }
 })
 
