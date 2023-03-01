@@ -49,10 +49,7 @@ jobs:
           sed -irz "s/\[###\]/['\/${{ env.ROUTE_TO_GENERATE }}']/g" nuxt.config.ts
           npm run generate
           python3 .github/workflows/generate_sitemaps.py
-          curl https://mirumi.in/feed \
-            | tr -d "\n" \
-            | sed -e "s/^.\{2\}//" \
-            > .output/public/feed.xml
+          python3 .github/workflows/generate_feeds.py
  
       - name: Sign in
         uses: aws-actions/configure-aws-credentials@v1
