@@ -9,24 +9,25 @@ from xml.etree import ElementTree
 
 
 def main() -> None:
-    # sitemap.xml
+    # Generate sitemap.xml
     res_main: Final[Response] = httpx.get("https://mirumi.in/sitemap.xml")
     save_file(".output/public/", "sitemap.xml", res_main.text[2:])
 
-    # sitemap-misc.xml
+    # Generate sitemap-misc.xml
     res_misc: Final[Response] = httpx.get("https://mirumi.in/sitemap-misc.xml")
     save_file(".output/public/", "sitemap-misc.xml", res_misc.text[2:])
 
-    # each post sitemap
+    # Generate for each post
     xml = ElementTree.fromstring(res_main.text[2:])
     for sitemap in xml:
         for node in sitemap:
             if not node.tag.endswith("loc"):
                 continue
-            fullpath = cast(str, node.text).replace("mirumi.me", "mirumi.in")
+            fullpath = cast(str, node.text)
             res_post: Final[Response] = httpx.get(fullpath)
             save_file(".output/public/", url_to_filename(fullpath), res_post.text[2:])
 
+    # Exec to do
     format_xmls()
 
     return
@@ -45,9 +46,26 @@ def format_xmls() -> None:
         if not filename.startswith("sitemap"):
             continue
         with open(".output/public/" + filename, mode="r+") as f:
-            content = f.read()
+            to_write = f.read()
             f.seek(0)
-            f.write(re.sub(r"<\?xml-stylesheet.*?\?>", "", content))
+
+            # Replace `mirumi.in` -> `mirumi.me`
+            to_write = to_write.replace("mirumi.in", "mirumi.me")
+
+            # Add trailing slash
+            if re.match("sitemap-.{2}-post-.*?$", filename):
+                xml = ElementTree.fromstring(to_write)
+                for url in xml:
+                    for node in url:
+                        if not node.tag.endswith("loc"):
+                            continue
+                        url = cast(str, node.text)
+                        to_write = to_write.replace(url, url + "/")
+
+            # Remove an invalid style spcecification
+            to_write = re.sub(r"<\?xml-stylesheet.*?\?>", "", to_write)
+
+            f.write(to_write)
             f.truncate()
 
     return
