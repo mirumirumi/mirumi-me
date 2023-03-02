@@ -1,5 +1,3 @@
-// constants and typings
-
 export interface PageMeta {
   title: string,
   description: string,
