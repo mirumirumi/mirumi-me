@@ -11,21 +11,21 @@ from xml.etree import ElementTree
 def main() -> None:
     # Generate sitemap.xml
     res_main: Final[Response] = httpx.get("https://mirumi.in/sitemap.xml")
-    save_file(".output/public/", "sitemap.xml", res_main.text[2:])
+    save_file(".output/public/", "sitemap.xml", res_main.text)
 
     # Generate sitemap-misc.xml
     res_misc: Final[Response] = httpx.get("https://mirumi.in/sitemap-misc.xml")
-    save_file(".output/public/", "sitemap-misc.xml", res_misc.text[2:])
+    save_file(".output/public/", "sitemap-misc.xml", res_misc.text)
 
     # Generate for each post
-    xml = ElementTree.fromstring(res_main.text[2:])
+    xml = ElementTree.fromstring(res_main.text)
     for sitemap in xml:
         for node in sitemap:
             if not node.tag.endswith("loc"):
                 continue
             fullpath = cast(str, node.text)
             res_post: Final[Response] = httpx.get(fullpath)
-            save_file(".output/public/", url_to_filename(fullpath), res_post.text[2:])
+            save_file(".output/public/", url_to_filename(fullpath), res_post.text)
 
     # Exec to do
     format_xmls()
