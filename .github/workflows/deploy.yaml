@@ -36,14 +36,7 @@ jobs:
         run: |
           npm run generate
           python3 .github/workflows/generate_sitemaps.py
-          curl https://mirumi.in/feed \
-            | tr -d "\n" \
-            | sed -e "s/^.\{2\}//" \
-            > .output/public/feed.xml
-          curl https://mirumi.in/comments/feed \
-            | tr -d "\n" \
-            | sed -e "s/^.\{2\}//" \
-            > .output/public/feed-comments.xml
+          python3 .github/workflows/generate_feeds.py
 
       - name: Sign in
         uses: aws-actions/configure-aws-credentials@v1

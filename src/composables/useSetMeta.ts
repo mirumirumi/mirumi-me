@@ -1,6 +1,13 @@
 import { PageMeta } from "@/utils/defines"
 
 export default (p: PageMeta) => {
+  const url = new URL(p.url)
+  const pureFullpath = url.origin + url.pathname
+  let urlWithTrailingSlash = pureFullpath
+  if (!pureFullpath.endsWith("/")) {
+    urlWithTrailingSlash += "/"
+  }
+
   useHead({
     title: "みるめも",
     titleTemplate: (title) => {
@@ -20,7 +27,7 @@ export default (p: PageMeta) => {
       { property: "twitter:description", content: p.description },
     ],
     link: [
-      { rel: "canonical", href: p.url },
+      { rel: "canonical", href: urlWithTrailingSlash },
     ],
   })
 }
