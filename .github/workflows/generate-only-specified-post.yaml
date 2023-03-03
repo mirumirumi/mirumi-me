@@ -67,7 +67,7 @@ jobs:
             .output/public/${{ env.ROUTE_TO_GENERATE }}/ s3://mirumime-prd-mirumi-me/${{ env.ROUTE_TO_GENERATE }}/
 
       - name: Purge CDN caches
-        if: ${{ github.event.inputs.kind }} == "update"
+        if: github.event.inputs.kind == 'update'
         run: |
           aws cloudfront create-invalidation \
             --distribution-id E1UPWIMHFP5TEC \
