@@ -542,6 +542,9 @@
           }
         }
       }
+      .blogcard-snippet, .blogcard-footer {
+        display: none;
+      }
       @include mobile {
         height: auto;
         min-height: 4.7em;
