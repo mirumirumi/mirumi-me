@@ -48,6 +48,9 @@ jobs:
           sed -irz "s/\/\/ ### //g" nuxt.config.ts
           sed -irz "s/\[###\]/['\/${{ env.ROUTE_TO_GENERATE }}']/g" nuxt.config.ts
           npm run generate
+
+      - name: Generate XMLs
+        run: |
           python3 .github/workflows/generate_sitemaps.py
           python3 .github/workflows/generate_feeds.py
  
@@ -65,6 +68,13 @@ jobs:
             --region ap-northeast-1 \
             --cache-control "no-cache" \
             .output/public/${{ env.ROUTE_TO_GENERATE }}/ s3://mirumime-prd-mirumi-me/${{ env.ROUTE_TO_GENERATE }}/
+          aws s3 sync \
+            --delete \
+            --region ap-northeast-1 \
+            --cache-control "no-cache" \
+            --exclude "*" \
+            --include ".output/public/sitemap*" \
+            .output/public/ s3://mirumime-prd-mirumi-me/
 
       - name: Purge CDN caches
         if: github.event.inputs.kind == 'update'
@@ -72,3 +82,9 @@ jobs:
           aws cloudfront create-invalidation \
             --distribution-id E1UPWIMHFP5TEC \
             --paths "/${{ env.ROUTE_TO_GENERATE }}/*"
+
+      - name: Purge sitemap caches
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id E1UPWIMHFP5TEC \
+            --paths "/sitemap*"
