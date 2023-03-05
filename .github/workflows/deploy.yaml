@@ -35,6 +35,9 @@ jobs:
       - name: Generate site
         run: |
           npm run generate
+
+      - name: Generate XMLs
+        run: |
           python3 .github/workflows/generate_sitemaps.py
           python3 .github/workflows/generate_feeds.py
 

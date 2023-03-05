@@ -7,6 +7,11 @@ import httpx
 from httpx import Response
 from xml.etree import ElementTree
 
+# 記事が更新された場合には <lastmod> も書き換わるため事実上再生成する必要がある
+# ただし今回の記事がどの月に含まれているかを受け取らないといけないため、手間が増える
+# もともと全体再生成で特にデメリットはなかったため（わずかに時間がかかる程度）、何も変えない
+# 記事が作成された場合には、当然今月分のサイトマップは再生成すべきなので同じく全体再生成でカバーできる
+
 
 def main() -> None:
     # Generate sitemap.xml
