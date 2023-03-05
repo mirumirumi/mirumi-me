@@ -32,7 +32,7 @@ export default (p: PageMeta) => {
   "headline": "${p.title.replaceAll('"', "")}",
   "image": {
     "@type": "ImageObject",
-    "url": "${p.thumbnail ?? "https://mirumi.media/blog-milmemo.png"}",
+    "url": "${p.thumbnail ?? "https://mirumi.media/main-visual.png"}",
     "width": 1200,
     "height": 630
   },
@@ -48,7 +48,7 @@ export default (p: PageMeta) => {
     "name": "みるめも",
     "logo": {
       "@type": "ImageObject",
-      "url": "https://mirumi.media/blog-milmemo.png",
+      "url": "https://mirumi.media/main-visual.png",
       "width": 114,
       "height": 60
     }
