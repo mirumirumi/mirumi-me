@@ -83,13 +83,8 @@ import { PageSummary } from "@/utils/defines"
 
 const appConfig = useAppConfig()
 
-// Page transition
 onMounted(async () => {
-  await delay(1)  // 🤔
-  const nodes = document.querySelectorAll(".page_transition_target")
-  for (const n of nodes) {
-    n.classList.add("run")
-  }
+  await usePageTransition(null)
 })
 
 let postIds: number[] = []

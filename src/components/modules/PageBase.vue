@@ -28,16 +28,8 @@
 const route = useRoute()
 const appConfig = useAppConfig()
 
-// Page transition
 onMounted(async () => {
-  await delay(1)  // 🤔
-  const nodes = document.querySelectorAll(".page_transition_target")
-  let duration = 131.3
-  for (const n of nodes) {
-    n.classList.add("run")
-    await delay(duration)
-    duration *= 0.7
-  }
+  await usePageTransition(0.7)
 })
 
 const slug = route.name as string
