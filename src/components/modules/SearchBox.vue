@@ -58,7 +58,8 @@ const move = async () => {
   width: 100%;
   height: 100%;
   input {
-    padding: 0.395em 3.3em 0.355em 1.3em;
+    padding-left: 1.3em;
+    padding-right: 3.3em;
     font-size: 0.9em;
     line-height: 1.5;
     border: 1.9px solid #e5e5e5;

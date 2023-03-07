@@ -31,6 +31,7 @@
   --width-max-base: 1188px;
   --width-scrollbar: 16px;
   --width-max-screen: calc(var(--width-max-base) - var(--width-scrollbar));
+  --font-family: "Custom Noto Sans", "Open Sans", helvetica, "Lucida Sans Unicode", "Lucida Grande", arial, verdana, sans-serif;
 }
 * {
   box-sizing: border-box;
@@ -40,7 +41,7 @@ html, body {
   margin: 0;
   padding: 0;
   font-size: 18px;
-  font-family: "Custom Noto Sans", "Open Sans", Helvetica, "Lucida Sans Unicode", "Lucida Grande", Arial, Verdana, sans-serif;
+  font-family: var(--font-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: var(--color-text);
@@ -87,10 +88,11 @@ textarea:focus-visible {
 .input {
   display: block;
   width: 100%;
-  padding: 0.375em 0.75em;
+  padding: 0.36em 0.75em 0.45em;
   color: #5b5b5b;
   font-size: 1em;
   font-weight: 400;
+  font-family: var(--font-family);
   line-height: 1.5;
   background-color: #ffffff;
   background-clip: padding-box;
@@ -107,7 +109,7 @@ textarea:focus-visible {
     opacity: 1;
   }
   &::placeholder {
-    font-family: "Custom Noto Sans", "Open Sans", Helvetica, "Lucida Sans Unicode", "Lucida Grande", Arial, Verdana, sans-serif;
+    font-family: var(--font-family);
   }
 }
 label {
