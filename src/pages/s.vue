@@ -15,7 +15,7 @@
         <PartsLoadSpinner :kind="'long'" />
       </div>
       <template v-else>
-        <ModulesPostIndexes v-if="posts && 1 <= posts.length" :posts="posts" />
+        <ModulesPostIndexes v-if="posts && 1 <= posts.length" :posts="posts" :loaded="!isLoading" />
         <div v-else class="no_contents">
           ちょっと見つけられませんでした :)
         </div>

@@ -28,19 +28,32 @@
 <script setup lang="ts">
 import { PageSummary } from "@/utils/defines"
 
-defineProps<{
+const p = defineProps<{
   posts: PageSummary[],
+
+  // For search page
+  loaded?: boolean,
 }>()
 
-// Page transition
+const route = useRoute()
+
+const _loaded = ref(p.loaded)
+
 onMounted(async () => {
-  await delay(1)  // 🤔
-  const nodes = document.querySelectorAll(".page_transition_target")
-  let duration = 131.3
-  for (const n of nodes) {
-    n.classList.add("run")
-    await delay(duration)
-    duration *= 0.6
+  // Wait for search page (untill all post indexes are prepared)
+  if (route.path === "/s") {
+    do {
+      await delay(100)
+    } while (!_loaded)
+  }
+  await delay(100)
+
+  await usePageTransition(0.6)
+})
+
+watch(() => p.loaded, (newValue) => {
+  if (newValue === true) {
+    _loaded.value = true
   }
 })
 </script>
