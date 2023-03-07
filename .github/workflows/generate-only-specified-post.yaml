@@ -71,9 +71,14 @@ jobs:
           aws s3 sync \
             --delete \
             --region ap-northeast-1 \
-            --cache-control "no-cache" \
             --exclude "*" \
-            --include ".output/public/sitemap*" \
+            --include "index.html" \
+            --include "_payload.js" \
+            --include "entries/*" \
+            --include "entry-list/*" \
+            --include "category/*" \
+            --include "sitemap*" \
+            --cache-control "no-cache" \
             .output/public/ s3://mirumime-prd-mirumi-me/
 
       - name: Purge CDN caches
