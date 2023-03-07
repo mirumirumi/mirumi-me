@@ -38,7 +38,7 @@ switch (p.category) {
     contentBody.value = "1 歳でコントローラーを持つ。ここ数年はインディーズゲームにお熱。"
     break
   case "blog":
-    contentBody.value = "雑記ブロガー。文章を書くのが好きです。サイトは全部自分でつくっています。"
+    contentBody.value = "文章を書くのが好きです。サイトは全部自分でつくっています。"
     break
   case "car-navigation-system":
     contentBody.value = "数百人分の車/カーナビ/取り付け事情を見てきた元カーナビ販売員。どこよりも詳しいカーナビ情報を書いています。"
