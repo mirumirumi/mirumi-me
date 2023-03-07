@@ -1,7 +1,7 @@
 <template>
   <div class="post_indexes">
     <template v-for="p in posts" :key="p.slug">
-      <NuxtLink :to="`/${p.slug}`" class="post page_transition_target">
+      <NuxtLink :to="`/${p.slug}/`" class="post page_transition_target">
         <div class="thumbnail">
           <img :src="p.thumbnailUrl" :alt="p.title" loading="lazy" width="412" height="216" />
         </div>

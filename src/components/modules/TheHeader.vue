@@ -9,7 +9,7 @@
       <nav role="navigation" aria-label="グローバルメニュー" itemscope itemtype="https://schema.org/SiteNavigationElement">
         <ul class="menu">
           <li>
-            <NuxtLink to="/entries">
+            <NuxtLink to="/entries/">
               記事一覧
             </NuxtLink>
           </li>
@@ -23,12 +23,12 @@
             </div>
           </li>
           <li>
-            <NuxtLink to="/what-is-this-blog">
+            <NuxtLink to="/what-is-this-blog/">
               みるめも？
             </NuxtLink>
           </li>
           <li>
-            <NuxtLink to="/profile">
+            <NuxtLink to="/profile/">
               書いている人
             </NuxtLink>
           </li>

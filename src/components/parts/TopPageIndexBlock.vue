@@ -4,7 +4,7 @@
       {{ blockTitle }}
     </h3>
     <div class="indexes">
-      <NuxtLink v-for="index in indexes" :to="`/${index.slug}`" class="index" :key="index.slug">
+      <NuxtLink v-for="index in indexes" :to="`/${index.slug}/`" class="index" :key="index.slug">
         <div class="thumbnail">
           <img
             :src="index.thumbnailUrl.includes('412x216') ? index.thumbnailUrl : index.thumbnailUrl.replace(/(.*)(\..*?)$/gmi, '$1-412x216$2')"
@@ -20,7 +20,7 @@
       </NuxtLink>
     </div>
     <div class="link">
-      <NuxtLink :to="linkTo">
+      <NuxtLink :to="`${linkTo}/`">
         <span class="text">{{ linkText }}</span><span class="arrow">&nbsp;→</span>
       </NuxtLink>
     </div>
