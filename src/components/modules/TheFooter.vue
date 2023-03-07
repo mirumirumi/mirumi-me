@@ -9,10 +9,10 @@
           <div class="group_title">Page</div>
           <ul>
             <li>
-              <NuxtLink to="/entry-list">全記事一覧</NuxtLink>
+              <NuxtLink to="/entry-list/">全記事一覧</NuxtLink>
             </li>
             <li>
-              <NuxtLink to="/nice-to-meet-you-10">はじめましての 10 記事</NuxtLink>
+              <NuxtLink to="/nice-to-meet-you-10/">はじめましての 10 記事</NuxtLink>
             </li>
           </ul>
         </div>
@@ -20,13 +20,13 @@
           <div class="group_title">About</div>
           <ul>
             <li>
-              <NuxtLink to="/about">運営者情報</NuxtLink>
+              <NuxtLink to="/about/">運営者情報</NuxtLink>
             </li>
             <li>
-              <NuxtLink to="/privacy-policy">プライバシーポリシー</NuxtLink>
+              <NuxtLink to="/privacy-policy/">プライバシーポリシー</NuxtLink>
             </li>
             <li>
-              <NuxtLink to="/contact">お問い合わせ</NuxtLink>
+              <NuxtLink to="/contact/">お問い合わせ</NuxtLink>
             </li>
           </ul>
         </div>

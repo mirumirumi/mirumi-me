@@ -4,7 +4,7 @@
       v-if="1 < currentPage"
       :to="isCsr
         ? { query: { ...$route.query, p: currentPage - 1 } }
-        : { path: `${basePath}/page/${currentPage - 1}` }"
+        : { path: `${basePath}/page/${currentPage - 1}/` }"
       class="arrow prev"
       @click="toTop"
     >
@@ -19,7 +19,7 @@
       <NuxtLink
         :to="isCsr
           ? { query: { ...$route.query, p: 1 } }
-          : { path: `${basePath}/page/${1}` }"
+          : { path: `${basePath}/page/${1}/` }"
         class="page_latest"
         @click="toTop"
       >
@@ -35,7 +35,7 @@
         v-if="1 < currentPage - x"
         :to="isCsr
           ? { query: { ...$route.query, p: currentPage - x } }
-          : { path: `${basePath}/page/${currentPage - x}` }"
+          : { path: `${basePath}/page/${currentPage - x}/` }"
         @click="toTop"
       >
         {{ currentPage - x }}
@@ -49,7 +49,7 @@
         v-if="currentPage + x < pageCount"
         :to="isCsr
           ? { query: { ...$route.query, p: currentPage + x } }
-          : { path: `${basePath}/page/${currentPage + x}` }"
+          : { path: `${basePath}/page/${currentPage + x}/` }"
         @click="toTop"
       >
         {{ currentPage + x }}
@@ -68,7 +68,7 @@
       <NuxtLink
         :to="isCsr
           ? { query: { ...$route.query, p: pageCount } }
-          : { path: `${basePath}/page/${pageCount}` }"
+          : { path: `${basePath}/page/${pageCount}/` }"
         class="page_oldest"
         @click="toTop"
       >
@@ -79,7 +79,7 @@
       v-if="currentPage < pageCount"
       :to="isCsr
         ? { query: { ...$route.query, p: currentPage + 1 } }
-        : { path: `${basePath}/page/${currentPage + 1}` }"
+        : { path: `${basePath}/page/${currentPage + 1}/` }"
       class="arrow next"
       @click="toTop"
     >
@@ -101,7 +101,8 @@ const route = useRoute()
 const LINKS_TO_SHOW = 3  // Only odd
 const BEFORE_AND_AFTER = [...Array((LINKS_TO_SHOW - 1) / 2).keys()].map((x) => x + 1)
 
-const basePath = ref(route.path.replace(/\/page\/\d+/gmi, ""))
+// Create "/xxx": https://regex101.com/r/cebdMM/1
+const basePath = ref(route.path.replace(/(\/.*?)?\/(page\/\d+\/?)?$/gmi, "$1"))
 
 const toTop = () => {
   if (p.isCsr) {

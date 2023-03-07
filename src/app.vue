@@ -58,7 +58,12 @@ async function incrementAccessCounter(slug: string): Promise<void> {
 
   if (slug.length === 0) {
     // In case of the top page
+
     postId = "12717"
+  } else if (slug === "entry-list") {
+    // In case of the entry list page
+
+    postId = "17582"
   } else {
     postId = await $fetch(`/mirumi/post_id_with_post_slug/${slug}`, {
       baseURL: appConfig.baseURL,

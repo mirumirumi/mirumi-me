@@ -1,13 +1,13 @@
 <template>
   <div class="entry_list_view indexes_single_column">
     <ul>
-      <li v-for="[i, entries] in entriesByCategories.entries()" class="category" :key="i">
-        <NuxtLink :to="`/category/${entries.categorySlug}`">
+      <li v-for="entries in entriesByCategories" class="category" :key="entries.categorySlug">
+        <NuxtLink :to="`/category/${entries.categorySlug}/`">
           {{ entries.categoryName }}
         </NuxtLink>
         <ul>
           <li v-for="e in entries.entries" class="entry" :key="e.slug">
-            <NuxtLink :to="`/${e.slug}`">
+            <NuxtLink :to="`/${e.slug}/`">
               {{ e.title }}
             </NuxtLink>
           </li>

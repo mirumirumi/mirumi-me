@@ -13,14 +13,14 @@
             <Transition name="fade" appear>
               <ul v-if="isShownOthers">
                 <li v-for="other in others" :key="other.name">
-                  <NuxtLink :to="`/category/${other.slug}`" :class="{ 'current': other.current }" @click="interruptChoose">
+                  <NuxtLink :to="`/category/${other.slug}/`" :class="{ 'current': other.current }" @click="interruptChoose">
                     {{ other.name }}
                   </NuxtLink>
                 </li>
               </ul>
             </Transition>
           </div>
-          <NuxtLink v-else :to="`/category/${category.slug}`" :class="{ 'current': category.current }">
+          <NuxtLink v-else :to="`/category/${category.slug}/`" :class="{ 'current': category.current }">
             {{ category.name }}
           </NuxtLink>
         </li>
