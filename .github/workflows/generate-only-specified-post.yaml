@@ -86,10 +86,10 @@ jobs:
         run: |
           aws cloudfront create-invalidation \
             --distribution-id E1UPWIMHFP5TEC \
-            --paths "/${{ env.ROUTE_TO_GENERATE }}/*"
-
-      - name: Purge sitemap caches
-        run: |
-          aws cloudfront create-invalidation \
-            --distribution-id E1UPWIMHFP5TEC \
-            --paths "/sitemap*"
+            --paths "/${{ env.ROUTE_TO_GENERATE }}/*" \
+              "/index.html" \
+              "/_payload.js" \
+              "/entries/*" \
+              "/entry-list/*" \
+              "/category/*" \
+              "/sitemap*"
