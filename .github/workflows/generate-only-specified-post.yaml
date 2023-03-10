@@ -76,7 +76,6 @@ jobs:
             --include "_payload.js" \
             --include "entries/*" \
             --include "entry-list/*" \
-            --include "category/*" \
             --include "sitemap*" \
             --cache-control "no-cache" \
             .output/public/ s3://mirumime-prd-mirumi-me/
@@ -91,5 +90,4 @@ jobs:
               "/_payload.js" \
               "/entries/*" \
               "/entry-list/*" \
-              "/category/*" \
               "/sitemap*"
