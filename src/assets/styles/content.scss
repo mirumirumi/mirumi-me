@@ -1090,9 +1090,6 @@
       background-color: #fbfbfb;
       border-color: #dbdbdb;
     }
-    .color-red {
-      color: #ff5151;
-    }
     > ul, 
     > ol {
       margin-top: 1.7em;
@@ -1146,6 +1143,9 @@
       margin-left: 1em;
       margin-right: 1em;
     }
+  }
+  .color-red {
+    color: #ff5151;
   }
   .sss {
     box-shadow: none !important;
