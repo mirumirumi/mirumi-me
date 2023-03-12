@@ -236,9 +236,29 @@
       border-color: #edb067;
       background-color: #edb067;
     }
+    &.btn-wrap-deep-orange > a {
+      border-color: #ec8e5d;
+      background-color: #ec8e5d;
+    }
     &.btn-wrap-red > a {
       border-color: #f48282;
       background-color: #f48282;
+    }
+    &.btn-wrap-green > a {
+      border-color: #6fc775;
+      background-color: #6fc775;
+    }
+    &.btn-wrap-light-green > a {
+      border-color: #8bc34a;
+      background-color: #8bc34a;
+    }
+    &.btn-wrap-indigo > a {
+      border-color: #5e83c1;
+      background-color: #5e83c1;
+    }
+    &.btn-wrap-cyan > a {
+      border-color: #76c7cd;
+      background-color: #76c7cd;
     }
   }
   .toc {
