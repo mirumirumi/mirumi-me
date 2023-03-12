@@ -15,10 +15,12 @@ from xml.etree import ElementTree
 
 def main() -> None:
     # Generate sitemap.xml
+    print("Generating sitemap.xml\n")
     res_main: Final[Response] = httpx.get("https://mirumi.in/sitemap.xml")
     save_file(".output/public/", "sitemap.xml", res_main.text)
 
     # Generate sitemap-misc.xml
+    print("Generating sitemap-misc.xml\n")
     res_misc: Final[Response] = httpx.get("https://mirumi.in/sitemap-misc.xml")
     save_file(".output/public/", "sitemap-misc.xml", res_misc.text)
 
@@ -29,6 +31,7 @@ def main() -> None:
             if not node.tag.endswith("loc"):
                 continue
             fullpath = cast(str, node.text)
+            print(f"Generating {url_to_filename(fullpath)}.xml\n")
             res_post: Final[Response] = httpx.get(fullpath)
             save_file(".output/public/", url_to_filename(fullpath), res_post.text)
 
@@ -50,6 +53,8 @@ def format_xmls() -> None:
     for filename in sitemap_files:
         if not filename.startswith("sitemap"):
             continue
+
+        print(f"Formatting {filename}\n")
         with open(".output/public/" + filename, mode="r+") as f:
             to_write = f.read()
             f.seek(0)
