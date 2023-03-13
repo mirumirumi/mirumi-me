@@ -8,8 +8,12 @@ on:
         required: true
         type: string
       kind:
-        description: Whether the post is updated or created
+        description: "Choose from 3 kinds: `post updated`, `post created`, `comment approved`"
         required: true
+        type: string
+      category:
+        description: The category name (slug) includes a specific post
+        required: false
         type: string
 
 jobs:
@@ -25,6 +29,9 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: "3.9"
+
+      - name: Print job kind
+        run: echo ${{ github.event.inputs.kind }}
 
       - name: Install dependencies
         run: npm ci
@@ -43,17 +50,31 @@ jobs:
         run: |
           echo ROUTE_TO_GENERATE=${{ github.event.inputs.slug }} >> $GITHUB_ENV
 
-      - name: Re-generate a specified post
+      - name: Replace to ROUTE_TO_GENERATE
         run: |
           sed -irz "s/\/\/ ### //g" nuxt.config.ts
           sed -irz "s/\[###\]/['\/${{ env.ROUTE_TO_GENERATE }}']/g" nuxt.config.ts
+
+      - name: Replace to category pages
+        if: github.event.inputs.kind == 'post created'
+        run: |
+          echo CATEGORY=${{ github.event.inputs.category }} >> $GITHUB_ENV
+          python3 .github/workflows/sed_nuxtconfig_to_category_configs.py --category ${{ env.CATEGORY }}
+
+      - name: Re-generate specified routes
+        run: |
           npm run generate
 
-      - name: Generate XMLs
+      - name: Generate sitemaps
+        if: github.event.inputs.kind != 'comment approved'
         run: |
           python3 .github/workflows/generate_sitemaps.py
+
+      - name: Generate feeds
+        if: github.event.inputs.kind != 'post updated'
+        run: |
           python3 .github/workflows/generate_feeds.py
- 
+
       - name: Sign in
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -61,13 +82,18 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Copy files to S3
+      - name: Copy specified route files to S3
         run: |
           aws s3 sync \
             --delete \
             --region ap-northeast-1 \
             --cache-control "no-cache" \
             .output/public/${{ env.ROUTE_TO_GENERATE }}/ s3://mirumime-prd-mirumi-me/${{ env.ROUTE_TO_GENERATE }}/
+
+      # 3 つのパターン全てで過不足なく必要なファイルをマッチさせているわけではない
+      # （例えば以下のステップでは記事更新時の場合は固定ページ類は不要だし、コメント承認時は feed 以外不要）
+      - name: Copy other files to S3
+        run: |
           aws s3 sync \
             --delete \
             --region ap-northeast-1 \
@@ -77,11 +103,20 @@ jobs:
             --include "entries/*" \
             --include "entry-list/*" \
             --include "sitemap*" \
+            --include "feed*" \
             --cache-control "no-cache" \
             .output/public/ s3://mirumime-prd-mirumi-me/
 
+      - name: Copy category pages to S3
+        if: github.event.inputs.kind == 'post created'
+        run: |
+          aws s3 sync \
+            --delete \
+            --region ap-northeast-1 \
+            --cache-control "no-cache" \
+            .output/public/category/${{ env.CATEGORY }} s3://mirumime-prd-mirumi-me/category/${{ env.CATEGORY }}
+
       - name: Purge CDN caches
-        if: github.event.inputs.kind == 'update'
         run: |
           aws cloudfront create-invalidation \
             --distribution-id E1UPWIMHFP5TEC \
@@ -90,4 +125,5 @@ jobs:
               "/_payload.js" \
               "/entries/*" \
               "/entry-list/*" \
-              "/sitemap*"
+              "/sitemap*" \
+              "/feed*"
