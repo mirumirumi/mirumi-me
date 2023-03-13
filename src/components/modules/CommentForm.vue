@@ -86,8 +86,8 @@ const submit = async () => {
       "Authorization": `Basic ${window.btoa(runtimeConfig.userName + ":" + runtimeConfig.applicationPassword)}`,
     },
     body: {
-      author_email: email.value !== "" ? email.value : null,
-      author_name: name.value,
+      author_email: email.value !== "" ? email.value : "",
+      author_name: name.value !== "" ? name.value : "匿名",
       content: {
         raw: comment.value,
       },
