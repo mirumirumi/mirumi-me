@@ -127,3 +127,10 @@ jobs:
               "/entry-list/*" \
               "/sitemap*" \
               "/feed*"
+
+      - name: Purge CDN caches for category pages
+        if: github.event.inputs.kind == 'post created'
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id E1UPWIMHFP5TEC \
+            --paths "/category/${{ env.CATEGORY }}/*"
