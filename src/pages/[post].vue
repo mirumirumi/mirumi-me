@@ -88,17 +88,25 @@ const post = data.value as Record<string, any>
 // Insert Google AdSense before each h2
 post.content = insertAdSense(post.content)
 
-const counts = {
+const counts = ref({
   twitter: Number(post.twitter),
   hatebu: Number(post.hatebu),
   feedly: Number(post.feedly),
   pocket: Number(post.pocket),
   like: Number(post.like),
-}
+})
 
 // Exec content scripts
 onMounted(() => {
   cs.loadYouTube()
+})
+
+// Re-fetch page contents
+onMounted(async () => {
+  counts.value = await $fetch(`/mirumi/share_counts/${slug}`, {
+    baseURL: appConfig.baseURL,
+    parseResponse: JSON.parse,
+  })
 })
 
 useHead({ script: [{ src: "/assets/prism.js", defer: true }] })
