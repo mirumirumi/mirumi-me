@@ -57,9 +57,10 @@ jobs:
 
       - name: Replace to category pages
         if: github.event.inputs.kind == 'post created'
+        # Note that writes to environment variables are not reflected within the same step
         run: |
           echo CATEGORY=${{ github.event.inputs.category }} >> $GITHUB_ENV
-          python3 .github/workflows/sed_nuxtconfig_to_category_configs.py --category ${{ env.CATEGORY }}
+          python3 .github/workflows/sed_nuxtconfig_to_category_configs.py --category ${{ github.event.inputs.category }}
 
       - name: Re-generate specified routes
         run: |
