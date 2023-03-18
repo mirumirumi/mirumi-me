@@ -31,7 +31,7 @@ watch(() => p.query, () => {
 })
 
 const move = async () => {
-  router.push({ name: "s", query: { q: _query.value } })
+  router.push({ path: "/s/", query: { q: _query.value } })
   emit("onEnter")
   search.value.blur()
 
