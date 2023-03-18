@@ -4,8 +4,15 @@ export default (p: PageMeta) => {
   const url = new URL(p.url)
   const pureFullpath = url.origin + url.pathname
   let urlWithTrailingSlash = pureFullpath
+
+  // One of for trailing slash issue
   if (!pureFullpath.endsWith("/")) {
     urlWithTrailingSlash += "/"
+  }
+
+  // Avoid duplicates for between `/page/1` and `/index.html`
+  if (urlWithTrailingSlash.includes("/page/1")) {
+    urlWithTrailingSlash = urlWithTrailingSlash.replace("/page/1", "")
   }
 
   useHead({
