@@ -91,9 +91,8 @@ jobs:
             --cache-control "no-cache" \
             .output/public/${{ env.ROUTE_TO_GENERATE }}/ s3://mirumime-prd-mirumi-me/${{ env.ROUTE_TO_GENERATE }}/
 
-      # 3 つのパターン全てで過不足なく必要なファイルをマッチさせているわけではない
-      # （例えば以下のステップでは記事更新時の場合は固定ページ類は不要だし、コメント承認時は feed 以外不要）
-      - name: Copy other files to S3
+      - name: Copy indexes pages and category pages to S3
+        if: github.event.inputs.kind == 'post created'
         run: |
           aws s3 sync \
             --delete \
@@ -103,20 +102,33 @@ jobs:
             --include "_payload.js" \
             --include "entries/*" \
             --include "entry-list/*" \
-            --include "sitemap*" \
-            --include "feed*" \
+            --include "category/${{ env.CATEGORY }}/*" \
             --cache-control "no-cache" \
             .output/public/ s3://mirumime-prd-mirumi-me/
 
-      - name: Copy category pages to S3
-        if: github.event.inputs.kind == 'post created'
+      - name: Copy sitemaps to S3
+        if: github.event.inputs.kind != 'comment approved'
         run: |
           aws s3 sync \
             --delete \
             --region ap-northeast-1 \
+            --exclude "*" \
+            --include "sitemap*" \
             --cache-control "no-cache" \
-            .output/public/category/${{ env.CATEGORY }} s3://mirumime-prd-mirumi-me/category/${{ env.CATEGORY }}
+            .output/public/ s3://mirumime-prd-mirumi-me/
 
+      - name: Copy feeds to S3
+        if: github.event.inputs.kind != 'post updated'
+        run: |
+          aws s3 sync \
+            --delete \
+            --region ap-northeast-1 \
+            --exclude "*" \
+            --include "feed*" \
+            --cache-control "no-cache" \
+            .output/public/ s3://mirumime-prd-mirumi-me/
+
+      # キャッシュ削除はある程度広くても問題ないのでパターンで細かく区切っていない（あとリクエスト数増やすとエラーの確率が上がってしまう）
       - name: Purge CDN caches
         run: |
           aws cloudfront create-invalidation \
