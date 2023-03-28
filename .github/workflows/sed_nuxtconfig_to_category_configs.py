@@ -29,7 +29,7 @@ def main() -> None:
         },
     ).headers["x-wp-totalpages"]
 
-    category_pages = f', "/category/{args.category}'
+    category_pages = f', "/category/{args.category}"'
     for x in range(1, int(page_count) + 1):
         category_pages += f', "/category/{args.category}/page/{x}"'
 
