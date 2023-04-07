@@ -5,8 +5,21 @@
         <h1 class="title page_transition_target" itemprop="headline">
           {{ post.title }}
         </h1>
-        <div class="thumbnail page_transition_target" itemprop="image" itemscope itemtype="https://schema.org/ImageObject">
-          <img :src="post.thumbnail_url.replace(/\.(png|jpg|jpeg)$/gmi, '.webp')" :alt="post.title" width="1200" height="630">
+        <div
+          class="thumbnail page_transition_target"
+          itemprop="image"
+          itemscope
+          itemtype="https://schema.org/ImageObject"
+        >
+          <picture>
+            <source
+              :media="'(max-width: 428px)'"
+              :srcset="thumbnailUrl.replace('.webp', '') + '-600.webp 600w'"
+              :sizes="'600w'"
+            />
+            <source :srcset="thumbnailUrl + ' 1200w'" :sizes="'1200w'" />
+            <img :src="thumbnailUrl" :alt="post.title" width="1200" height="630" />
+          </picture>
           <meta itemprop="url" :content="post.thumbnail_url" />
           <meta itemprop="width" content="1200" />
           <meta itemprop="height" content="630" />
@@ -34,8 +47,13 @@
         <div class="share page_transition_target">
           <ModulesShareButtons :slug="slug" :title="post.title" :counts="counts" />
         </div>
-        <div class="display_none" itemprop="editor author creator copyrightHolder" itemscope itemtype="https://schema.org/Person">
-          <meta itemprop="url" :content="appConfig.siteFullPath">
+        <div
+          class="display_none"
+          itemprop="editor author creator copyrightHolder"
+          itemscope
+          itemtype="https://schema.org/Person"
+        >
+          <meta itemprop="url" :content="appConfig.siteFullPath" />
           <div itemprop="name">みるみ</div>
         </div>
       </header>
@@ -84,6 +102,8 @@ const { data } = await useFetch(`/mirumi/post_data/${slug}`, {
   parseResponse: JSON.parse,
 })
 const post = data.value as Record<string, any>
+
+const thumbnailUrl = post.thumbnail_url.replace(/\.(png|jpg|jpeg)$/gim, ".webp")
 
 // Insert Google AdSense before each h2
 post.content = insertAdSense(post.content)

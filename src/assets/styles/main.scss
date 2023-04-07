@@ -31,7 +31,7 @@
   --width-max-base: 1188px;
   --width-scrollbar: 16px;
   --width-max-screen: calc(var(--width-max-base) - var(--width-scrollbar));
-  --font-family: "Custom Noto Sans", "Open Sans", helvetica, "Lucida Sans Unicode", "Lucida Grande", arial, verdana, sans-serif;
+  --font-family: "Custom Noto Sans", helvetica, arial, verdana, sans-serif;
 }
 * {
   box-sizing: border-box;

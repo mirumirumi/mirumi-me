@@ -3,7 +3,13 @@
     <template v-for="p in posts" :key="p.slug">
       <NuxtLink :to="`/${p.slug}/`" class="post page_transition_target">
         <div class="thumbnail">
-          <img :src="p.thumbnailUrl" :alt="p.title" loading="lazy" width="412" height="216" />
+          <img
+            :src="p.thumbnailUrl.replace(/(.*?)\.([^\.]+)$/, '$1-412x216.$2')"
+            :alt="p.title"
+            loading="lazy"
+            width="412"
+            height="216"
+          />
         </div>
         <div class="content">
           <h2 class="title">
@@ -29,10 +35,10 @@
 import { PageSummary } from "@/utils/defines"
 
 const p = defineProps<{
-  posts: PageSummary[],
+  posts: PageSummary[]
 
   // For search page
-  loaded?: boolean,
+  loaded?: boolean
 }>()
 
 const route = useRoute()
@@ -51,11 +57,14 @@ onMounted(async () => {
   await usePageTransition(0.6)
 })
 
-watch(() => p.loaded, (newValue) => {
-  if (newValue === true) {
-    _loaded.value = true
+watch(
+  () => p.loaded,
+  (newValue) => {
+    if (newValue === true) {
+      _loaded.value = true
+    }
   }
-})
+)
 </script>
 
 <style lang="scss" scoped>
@@ -112,7 +121,8 @@ watch(() => p.loaded, (newValue) => {
       .meta {
         margin-top: 0.17em;
         line-height: 1;
-        .created_at, .updated_at {
+        .created_at,
+        .updated_at {
           position: relative;
           display: inline-block;
           margin: auto 1.3em;
