@@ -11,7 +11,7 @@ export default (p: PageMeta) => {
   }
 
   // Avoid duplicates for between `/page/1` and `/index.html`
-  if (urlWithTrailingSlash.includes("/page/1")) {
+  if (/\/page\/1\/?$/.test(urlWithTrailingSlash)) {
     urlWithTrailingSlash = urlWithTrailingSlash.replace("/page/1", "")
   }
 
