@@ -93,15 +93,16 @@ onMounted(async () => {
 })
 
 // To suppress workloads for the WordPress server
-if (process.server) await delay(999)
+if (process.server) await delay(100)
 
 const slug = route.params.post as string
 
 const { data } = await useFetch(`/mirumi/post_data/${slug}`, {
   baseURL: appConfig.baseURL,
-  parseResponse: JSON.parse,
 })
-const post = data.value as Record<string, any>
+
+// Hack for JSON parse error (unexpected token)
+const post = JSON.parse(JSON.stringify(data.value as any))
 
 const thumbnailUrl = post.thumbnail_url.replace(/\.(png|jpg|jpeg)$/gim, ".webp")
 

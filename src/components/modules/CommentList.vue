@@ -1,11 +1,7 @@
 <template>
   <div class="comment_list">
-    <div class="title">
-      この記事へのコメント
-    </div>
-    <div v-if="comments.length === 0" class="no_contents">
-      コメントはまだひとつもありません :)
-    </div>
+    <div class="title"> この記事へのコメント </div>
+    <div v-if="comments.length === 0" class="no_contents"> コメントはまだひとつもありません :) </div>
     <div v-else class="comments_wrap">
       <template v-for="c in comments" :key="c.comment_ID">
         <ModulesCommentBase :c="c" :depth="1" />
@@ -37,9 +33,11 @@ const slug = route.params.post as string
 
 const { data } = await useFetch(`/mirumi/comments_per_post/${slug}`, {
   baseURL: appConfig.baseURL,
-  parseResponse: JSON.parse,
 })
-const res = data.value as Record<string, any>[]
+
+// Hack for JSON parse error (unexpected token)
+const res = JSON.parse(JSON.stringify(data.value as any))
+
 const comments: Record<string, any>[] = []
 const used: number[] = []
 
@@ -79,7 +77,7 @@ for (const [i, r] of res.entries()) {
 
 // Compare the comment_ID of the `comments` with the comment_parent of the remaining comments
 // This will always be depth 4, so put all in the parent found here (this would also limit indentation to 4 times)
-const remainingIndecies: number[] = [...Array(res.length).keys()].filter(i => used.indexOf(i) == -1)
+const remainingIndecies: number[] = [...Array(res.length).keys()].filter((i) => used.indexOf(i) == -1)
 const remainingComments: Record<string, any>[] = []
 for (const index of remainingIndecies) {
   remainingComments.push(res[index])
@@ -90,7 +88,7 @@ const _toDelete: number[] = []
 for (const r of remainingComments) {
   for (const other of remainingComments) {
     if (r.comment_ID === other.comment_ID) continue
-    
+
     if (r.comment_ID === other.comment_parent) {
       r.children = []
       r.children.push(other)
@@ -98,7 +96,7 @@ for (const r of remainingComments) {
     }
   }
 }
-const cleanRemainingComments: Record<string, any>[] = remainingComments.filter(x => !_toDelete.includes(x.comment_ID))
+const cleanRemainingComments: Record<string, any>[] = remainingComments.filter((x) => !_toDelete.includes(x.comment_ID))
 
 // Merge them!
 for (const [i, c] of comments.entries()) {

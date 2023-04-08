@@ -8,15 +8,10 @@
       :pageCount="pageCount"
       :itemCount="itemCount"
       :isCsr="false"
-      style="margin-top: 0;"
+      style="margin-top: 0"
     />
     <ModulesPostIndexes :posts="posts" />
-    <ModulesPaginationBase
-      :currentPage="page"
-      :pageCount="pageCount"
-      :itemCount="itemCount"
-      :isCsr="false"
-    />
+    <ModulesPaginationBase :currentPage="page" :pageCount="pageCount" :itemCount="itemCount" :isCsr="false" />
     <Teleport to="body">
       <ClientOnly>
         <PartsTopButton />
@@ -45,9 +40,10 @@ const itemCount = ref(0)
 
 const { data: resCategory } = await useFetch(`/mirumi/category_id_with_category_slug/${route.params.categoryName}`, {
   baseURL: appConfig.baseURL,
-  parseResponse: JSON.parse,
 })
-const category = resCategory.value as Record<string, string>
+
+// Hack for JSON parse error (unexpected token)
+const category = JSON.parse(JSON.stringify(resCategory.value as any))
 
 const { data, refresh } = await useFetch(`/wp/v2/posts`, {
   baseURL: appConfig.baseURL,
@@ -80,10 +76,13 @@ for (const p of postIdObjs) {
   postIds.push(p.id)
 }
 
-const { data: postSummaries } = await useFetch(`/mirumi/post_summaries_with_post_ids/${(postIds as number[]).join(",")}`, {
-  baseURL: appConfig.baseURL,
-  parseResponse: JSON.parse,
-})
+const { data: postSummaries } = await useFetch(
+  `/mirumi/post_summaries_with_post_ids/${(postIds as number[]).join(",")}`,
+  {
+    baseURL: appConfig.baseURL,
+    parseResponse: JSON.parse,
+  }
+)
 posts.value = postSummaries.value as PageSummary[]
 
 /**
