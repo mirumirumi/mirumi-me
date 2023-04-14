@@ -1,65 +1,78 @@
 <template>
   <div class="comment_base">
-    <div :class="`comment depth-${depth}`" :id="`comment-${_c.comment_ID}`">
+    <div :class="`comment depth-${depth}`" :id="`comment-${c.comment_ID}`">
       <div class="meta_data">
         <div class="icon">
-          <img v-if="_c.user_id === '1'" src="@/assets/images/mirumi.png" alt="みるみ" loading="lazy" width="48" height="48">
-          <img v-else src="@/assets/images/profile_icon.png" class="default" alt="comment author" loading="lazy" width="45" height="44">
+          <img
+            v-if="c.user_id === '1'"
+            src="@/assets/images/mirumi.png"
+            alt="みるみ"
+            loading="lazy"
+            width="48"
+            height="48"
+          />
+          <img
+            v-else
+            src="@/assets/images/profile_icon.png"
+            class="default"
+            alt="comment author"
+            loading="lazy"
+            width="45"
+            height="44"
+          />
         </div>
         <div class="info">
           <div class="name">
-            {{ _c.comment_author === "" ? "匿名" : _c.comment_author }}
+            {{ c.comment_author === "" ? "匿名" : c.comment_author }}
           </div>
           <div class="timestamp">
-            {{ formatTimestamp(_c.comment_date) }}
+            {{ formatTimestamp(c.comment_date) }}
           </div>
         </div>
         <div class="link">
-          <a :href="`#comment-${_c.comment_ID}`">
+          <a :href="`#comment-${c.comment_ID}`">
             <PartsSvgIcon :icon="'link'" :color="'#9b9b9b'" />
           </a>
         </div>
       </div>
-      <div class="content" v-html="formatContent(_c.comment_content)"></div>
+      <div class="content" v-html="formatContent(c.comment_content)"></div>
       <div class="reply_button">
-        <PartsBaseButton
-          :type="'outline'"
-          @click="_c.isOpenReply = !_c.isOpenReply"
-        >
-          {{ _c.isOpenReply ? "やめる" : "返信する" }}
+        <PartsBaseButton :type="'outline'" @click="isOpenReply = !isOpenReply">
+          {{ isOpenReply ? "やめる" : "返信する" }}
         </PartsBaseButton>
       </div>
     </div>
-    <div v-if="_c.isOpenReply" class="reply">
-      <ModulesCommentForm :reply_to="_c.comment_ID" />
+    <div v-if="isOpenReply" class="reply">
+      <ModulesCommentForm :reply_to="c.comment_ID" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-const p = defineProps<{
+defineProps<{
   c: Record<string, any>
   depth: number
 }>()
 
-const _c = p.c
-_c.isOpenReply = ref(false)
+const isOpenReply = ref(false)
 
 const formatContent = (content: string) => {
-  return content
-    // https://regex101.com/r/DWX3oZ/1
-    .replace(/(([^\r\n]+(\r?\n)?)+)/gmi, "<p>$1</p>")
-    // https://regex101.com/r/lUK6Rc/1
-    .replaceAll(/\r?\n([^<])/gmi, "<br />$1")
-    // https://regex101.com/r/bjsDHH/1
-    .replaceAll(
-      /((<p>)|<br \/>)?(https?:\/\/[\w\/:;%#\$&\?\(\)~\.=\+\-]+)(\r?\n)?((<\/p>)|<br \/>)/gmi,
-      '$1<a href="$3" rel="nofollow ugc">$3</a>$5'
-    )
+  return (
+    content
+      // https://regex101.com/r/DWX3oZ/1
+      .replace(/(([^\r\n]+(\r?\n)?)+)/gim, "<p>$1</p>")
+      // https://regex101.com/r/lUK6Rc/1
+      .replaceAll(/\r?\n([^<])/gim, "<br />$1")
+      // https://regex101.com/r/bjsDHH/1
+      .replaceAll(
+        /((<p>)|<br \/>)?(https?:\/\/[\w\/:;%#\$&\?\(\)~\.=\+\-]+)(\r?\n)?((<\/p>)|<br \/>)/gim,
+        '$1<a href="$3" rel="nofollow ugc">$3</a>$5'
+      )
+  )
 }
 
 const formatTimestamp = (timestamp: string) => {
-  return timestamp.replace(/(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2}):\d{2}/gmi, "$1/$2/$3 $4")
+  return timestamp.replace(/(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2}):\d{2}/gim, "$1/$2/$3 $4")
 }
 </script>
 
