@@ -97,22 +97,22 @@ if (process.server) await delay(100)
 
 const slug = route.params.post as string
 
-const dataWrapper = ref()
+let post: any = undefined
 do {
+  post = undefined
+
   const { data } = await useFetch(`/mirumi/post_data/${slug}`, {
     baseURL: appConfig.baseURL,
   })
 
-  dataWrapper.value = data.value
+  // Hack for JSON parse error (unexpected token)
+  post = JSON.parse(JSON.stringify(data.value as any))
 
-  if (!dataWrapper.value) {
-    console.log("Failed to fetch the post, will retry.")
-    await delay(3000)
+  if (typeof post === "string") {
+    console.log("Failed to fetch the post, will retry. The post slug is:", slug)
+    await delay(10000)
   }
-} while (!dataWrapper.value)
-
-// Hack for JSON parse error (unexpected token)
-const post = JSON.parse(JSON.stringify(dataWrapper.value as any))
+} while (typeof post === "string")
 
 const thumbnailUrl = post.thumbnail_url.replace(/\.(png|jpg|jpeg)$/gim, ".webp")
 
