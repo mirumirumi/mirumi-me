@@ -260,6 +260,10 @@
       border-color: #76c7cd;
       background-color: #76c7cd;
     }
+    &.btn-wrap-purple > a {
+      border-color: #a370af;
+      background-color: #a370af;
+    }
   }
   .toc {
     display: table;
@@ -1129,6 +1133,94 @@
       padding-right: 0.9em;
     }
   }
+  .voice_wrap {
+    display: flex;
+    figure {
+      .voice_icon {
+        margin: 0;
+        width: 87%;
+        border: solid 1.1px rgb(230, 230, 230) !important;
+        box-shadow: 1px 1px 3px rgba(0.3, 0.3, 0.3, 0.31);
+        border-radius: 50% !important;
+        object-fit: cover;
+        @include mobile {
+          width: 76%;
+        }
+      }
+      @include mobile {
+        margin: 0;
+      }
+    }
+    .voice_main {
+      position: relative;
+      width: 78%;
+      height: 100%;
+      float: right;
+      padding: 0.79em 0.91em;
+      border: 1px solid #dddddd;
+      border-radius: 11px;
+      box-shadow: 2px 4px 5px rgba(130, 130, 130, 0.23);
+      z-index: 0;
+      &::before {
+        content: "";
+        position: absolute;
+        top: 1em;
+        left: -8px;
+        margin-top: -9px;
+        display: block;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 9px 9px 9px 0;
+        border-color: transparent #ffffff transparent transparent;
+        z-index: 0;
+      }
+      &::after {
+        content: "";
+        position: absolute;
+        top: 1em;
+        left: -10px;
+        margin-top: -10px;
+        display: block;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 10px 10px 10px 0;
+        border-color: transparent #dddddd transparent transparent;
+        z-index: -1;
+      }
+      .voice_title {
+        font-size: 1.1em;
+        border-bottom: 1px solid #dddddd;
+        padding-bottom: 7px;
+        line-height: 1;
+        .voice_title_p {
+          line-height: 1.5;
+        }
+        p {
+          margin: 0;
+          padding: 0;
+        }
+        .rating-star {
+          font-size: 0.79em;
+        }
+      }
+      .voice_content {
+        line-height: 1.5;
+        padding: 5px 0;
+        font-size: 0.9em;
+      }
+      .voice_link {
+        font-size: 0.9em;
+        text-align: right;
+        line-height: 1;
+        margin-top: 7px;
+      }
+      @include mobile {
+        width: 100%;
+      }
+    }
+  }
   // Nuxt 3 乗り換え前に同様のものをインライン CSS で書いていたものはそのままになっています
   .simple_table {
     width: 97%;
@@ -1299,6 +1391,34 @@
     &.fa-check-circle {
       &::after {
         mask: url("@/assets/svgs/circle-check.svg");
+      }
+    }
+  }
+  span {
+    &.fas.fa-star,
+    &.far.fa-star {
+      position: relative;
+      margin-right: 1.5em;
+      &::before {
+        position: absolute;
+        top: 0.2em;
+        bottom: 0;
+        width: 1.15em;
+        height: 0.98em;
+        content: "";
+        mask-size: cover;
+        font-size: 1.1em;
+        background-color: #f5bc55;
+      }
+    }
+    &.fas.fa-star {
+      &::before {
+        mask: url("@/assets/svgs/star.svg");
+      }
+    }
+    &.far.fa-star {
+      &::before {
+        mask: url("@/assets/svgs/star-line.svg");
       }
     }
   }
