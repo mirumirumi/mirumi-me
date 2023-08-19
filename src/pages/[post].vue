@@ -14,7 +14,7 @@
           <picture>
             <source
               :media="'(max-width: 428px)'"
-              :srcset="thumbnailUrl.replace('.webp', '') + '-600.webp 600w'"
+              :srcset="thumbnailUrl.replace('.webp', '') + '-600x315.webp 600w'"
               :sizes="'600w'"
             />
             <source :srcset="thumbnailUrl + ' 1200w'" :sizes="'1200w'" />
