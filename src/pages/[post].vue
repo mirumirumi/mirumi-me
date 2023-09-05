@@ -141,6 +141,7 @@ onMounted(async () => {
 })
 
 useHead({ script: [{ src: "/assets/prism.js", defer: true }] })
+useHead({ script: [{ src: "https://platform.twitter.com/widgets.js", async: true }] })
 
 usePageInfo({
   title: post.title,
