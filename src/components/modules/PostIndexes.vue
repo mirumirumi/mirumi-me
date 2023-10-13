@@ -112,6 +112,7 @@ watch(
       margin-left: 2em;
       transform: translateY(-2.3px);
       .title {
+        min-height: 2.4em;
         margin: 0;
         color: #545454;
         line-height: 1.2;
