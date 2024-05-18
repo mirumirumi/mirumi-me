@@ -7,18 +7,18 @@
       :itemCount="itemCount"
       :isCsr="true"
     />
-    <div v-if="!keyword" class="no_keywords">
-      検索ワードを入力してください :)
-    </div>
+    <div v-if="!keyword" class="no_keywords"> 検索ワードを入力してください :) </div>
     <template v-else>
       <div v-if="isLoading || !posts" class="loading">
         <PartsLoadSpinner :kind="'long'" />
       </div>
       <template v-else>
-        <ModulesPostIndexes v-if="posts && 1 <= posts.length" :posts="posts" :loaded="!isLoading" />
-        <div v-else class="no_contents">
-          ちょっと見つけられませんでした :)
-        </div>
+        <ModulesPostIndexes
+          v-if="posts && 1 <= posts.length"
+          :posts="posts"
+          :loaded="!isLoading"
+        />
+        <div v-else class="no_contents"> ちょっと見つけられませんでした :) </div>
       </template>
     </template>
     <ModulesPaginationBase
@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import { PageSummary } from "@/utils/defines"
+import type { PageSummary } from "@/utils/defines"
 
 const router = useRouter()
 const appConfig = useAppConfig()
@@ -48,16 +48,19 @@ onMounted(async () => {
   await search()
 })
 
-watch(() => router.currentRoute.value, async (newValue, oldValue) => {
-  if (newValue.query.q !== oldValue.query.q) {
-    keyword.value = newValue.query.q
-    page.value = 1
-    await search()
-  } else if (newValue.query.p !== oldValue.query.p) {
-    page.value = Number(newValue.query.p ?? 1)
-    await search()
+watch(
+  () => router.currentRoute.value,
+  async (newValue, oldValue) => {
+    if (newValue.query.q !== oldValue.query.q) {
+      keyword.value = newValue.query.q
+      page.value = 1
+      await search()
+    } else if (newValue.query.p !== oldValue.query.p) {
+      page.value = Number(newValue.query.p ?? 1)
+      await search()
+    }
   }
-})
+)
 
 const onEnter = async () => {
   keyword.value = router.currentRoute.value.query.q
@@ -98,16 +101,19 @@ async function search() {
     postIds.push(p.id)
   }
 
-  posts.value = await $fetch<PageSummary[]>(`/mirumi/post_summaries_with_post_ids/${(postIds as number[]).join(",")}`, {
-    baseURL: appConfig.baseURL,
-    parseResponse: JSON.parse,
-  })
+  posts.value = await $fetch<PageSummary[]>(
+    `/mirumi/post_summaries_with_post_ids/${(postIds as number[]).join(",")}`,
+    {
+      baseURL: appConfig.baseURL,
+      parseResponse: JSON.parse,
+    }
+  )
 
   isLoading.value = false
 }
 
 useHead({
-  meta: [{ name: "robots", content: "noindex" }]
+  meta: [{ name: "robots", content: "noindex" }],
 })
 
 usePageInfo({

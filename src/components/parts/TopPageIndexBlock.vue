@@ -4,10 +4,19 @@
       {{ blockTitle }}
     </h3>
     <div class="indexes">
-      <NuxtLink v-for="index in indexes" :to="`/${index.slug}/`" class="index" :key="index.slug">
+      <NuxtLink
+        v-for="index in indexes"
+        :to="`/${index.slug}/`"
+        class="index"
+        :key="index.slug"
+      >
         <div class="thumbnail">
           <img
-            :src="index.thumbnailUrl.includes('412x216') ? index.thumbnailUrl : index.thumbnailUrl.replace(/(.*)(\..*?)$/gmi, '$1-412x216$2')"
+            :src="
+              index.thumbnailUrl.includes('412x216')
+                ? index.thumbnailUrl
+                : index.thumbnailUrl.replace(/(.*)(\..*?)$/gim, '$1-412x216$2')
+            "
             :alt="index.title"
             loading="lazy"
             width="412"
@@ -21,14 +30,15 @@
     </div>
     <div class="link">
       <NuxtLink :to="`${linkTo}/`">
-        <span class="text">{{ linkText }}</span><span class="arrow">&nbsp;→</span>
+        <span class="text">{{ linkText }}</span
+        ><span class="arrow">&nbsp;→</span>
       </NuxtLink>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { PageSummary } from "@/utils/defines"
+import type { PageSummary } from "@/utils/defines"
 
 defineProps<{
   blockTitle: string

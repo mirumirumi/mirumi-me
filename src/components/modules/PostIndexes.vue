@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { PageSummary } from "@/utils/defines"
+import type { PageSummary } from "@/utils/defines"
 
 const p = defineProps<{
   posts: PageSummary[]

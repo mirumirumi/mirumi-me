@@ -1,7 +1,8 @@
 <template>
   <div class="category_view indexes_single_column">
     <h1 class="title">
-      {{ category.categoryName }} {{ category.categoryName === "雑記" ? "&nbsp;&nbsp;...です" : "に関する記事" }}
+      {{ category.categoryName }}
+      {{ category.categoryName === "雑記" ? "&nbsp;&nbsp;...です" : "に関する記事" }}
     </h1>
     <ModulesPaginationBase
       :currentPage="page"
@@ -11,7 +12,12 @@
       style="margin-top: 0"
     />
     <ModulesPostIndexes :posts="posts" />
-    <ModulesPaginationBase :currentPage="page" :pageCount="pageCount" :itemCount="itemCount" :isCsr="false" />
+    <ModulesPaginationBase
+      :currentPage="page"
+      :pageCount="pageCount"
+      :itemCount="itemCount"
+      :isCsr="false"
+    />
     <Teleport to="body">
       <ClientOnly>
         <PartsTopButton />
@@ -21,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-import { PageSummary } from "@/utils/defines"
+import type { PageSummary } from "@/utils/defines"
 
 const p = defineProps<{
   pageNumber?: number
@@ -38,9 +44,12 @@ const posts = ref<PageSummary[]>([])
 const pageCount = ref(0)
 const itemCount = ref(0)
 
-const { data: resCategory } = await useFetch(`/mirumi/category_id_with_category_slug/${route.params.categoryName}`, {
-  baseURL: appConfig.baseURL,
-})
+const { data: resCategory } = await useFetch(
+  `/mirumi/category_id_with_category_slug/${route.params.categoryName}`,
+  {
+    baseURL: appConfig.baseURL,
+  }
+)
 
 // Hack for JSON parse error (unexpected token)
 const category = JSON.parse(JSON.stringify(resCategory.value as any))
@@ -88,10 +97,13 @@ posts.value = postSummaries.value as PageSummary[]
 /**
  * Prepare category page content body
  */
-const { data: resCategoryContent } = await useFetch(`/mirumi/category_content/${category.categoryId}`, {
-  baseURL: appConfig.baseURL,
-  parseResponse: JSON.parse,
-})
+const { data: resCategoryContent } = await useFetch(
+  `/mirumi/category_content/${category.categoryId}`,
+  {
+    baseURL: appConfig.baseURL,
+    parseResponse: JSON.parse,
+  }
+)
 const content = resCategoryContent.value as Record<string, string>
 
 /**
