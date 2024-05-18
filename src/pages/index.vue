@@ -79,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { PageSummary } from "@/utils/defines"
+import type { PageSummary } from "@/utils/defines"
 
 const appConfig = useAppConfig()
 
@@ -106,7 +106,8 @@ let posts: PageSummary[] = [
   {
     slug: "out-of-body",
     title: "この記事で人生変わるかも？体外離脱 (幽体離脱) 総まとめ",
-    thumbnailUrl: "https://mirumi.media/taigai-ridatsu-lucid-dreaming-milmemo-412x216-1.webp",
+    thumbnailUrl:
+      "https://mirumi.media/taigai-ridatsu-lucid-dreaming-milmemo-412x216-1.webp",
   },
   {
     slug: "blog-for-you",
@@ -127,7 +128,7 @@ const { data: resNewEntries } = await useFetch(`/wp/v2/posts`, {
     type: "post",
     subtype: "post",
     status: ["publish"],
-    categories_exclude: [1877],  // Software Design
+    categories_exclude: [1877], // Software Design
     _fields: "id",
   },
   parseResponse: JSON.parse,
@@ -299,10 +300,13 @@ for (const p of resNotes.value as Record<string, number>[]) {
 /**
  * Merge them
  */
-const { data: postSummaries } = await useFetch(`/mirumi/post_summaries_with_post_ids/${postIds.join(",")}`, {
-  baseURL: appConfig.baseURL,
-  parseResponse: JSON.parse,
-})
+const { data: postSummaries } = await useFetch(
+  `/mirumi/post_summaries_with_post_ids/${postIds.join(",")}`,
+  {
+    baseURL: appConfig.baseURL,
+    parseResponse: JSON.parse,
+  }
+)
 posts = posts.concat(postSummaries.value as PageSummary[])
 
 usePageInfo({

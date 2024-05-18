@@ -86,11 +86,6 @@ export default defineNuxtConfig({
         },
       },
     },
-    server: {
-      watch: {
-        usePolling: true,  // maybe only in WSL2
-      },
-    },
   },
 
   // CAUTION!: The following comment are used by CI to re-generate specified post

@@ -1,0 +1,35 @@
+{
+    "formatter": {
+        "indentStyle": "space",
+        "lineWidth": 90
+    },
+    "linter": {
+        "rules": {
+            "style": {
+                "noNonNullAssertion": "off",
+                "useTemplate": "off",
+                "noUselessElse": "off",
+                "useImportType": "off"
+            },
+            "complexity": {
+                "noForEach": "off"
+            }
+        }
+    },
+    "organizeImports": {
+        "enabled": true
+    },
+    "javascript": {
+        "formatter": {
+            "semicolons": "asNeeded"
+        },
+        "parser": {
+            "unsafeParameterDecoratorsEnabled": true
+        }
+    },
+    "json": {
+        "parser": {
+            "allowComments": true
+        }
+    }
+}

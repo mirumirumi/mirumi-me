@@ -5,7 +5,7 @@
       :pageCount="pageCount"
       :itemCount="itemCount"
       :isCsr="false"
-      style="margin-top: 0;"
+      style="margin-top: 0"
     />
     <ModulesPostIndexes :posts="posts" />
     <ModulesPaginationBase
@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { PageSummary } from "@/utils/defines"
+import type { PageSummary } from "@/utils/defines"
 
 const p = defineProps<{
   pageNumber?: number
@@ -45,7 +45,7 @@ const { data, refresh } = await useFetch(`/wp/v2/posts`, {
     type: "post",
     subtype: "post",
     status: ["publish"],
-    categories_exclude: [1877],  // Software Design
+    categories_exclude: [1877], // Software Design
     _fields: "id",
   },
   parseResponse: JSON.parse,
@@ -68,10 +68,13 @@ for (const p of postIdObjs) {
   postIds.push(p.id)
 }
 
-const { data: postSummaries } = await useFetch(`/mirumi/post_summaries_with_post_ids/${(postIds as number[]).join(",")}`, {
-  baseURL: appConfig.baseURL,
-  parseResponse: JSON.parse,
-})
+const { data: postSummaries } = await useFetch(
+  `/mirumi/post_summaries_with_post_ids/${(postIds as number[]).join(",")}`,
+  {
+    baseURL: appConfig.baseURL,
+    parseResponse: JSON.parse,
+  }
+)
 posts.value = postSummaries.value as PageSummary[]
 
 usePageInfo({

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - release/prd
+      - main
 
 jobs:
   deploy:
@@ -14,7 +14,7 @@ jobs:
     
       - uses: actions/setup-node@v3
         with:
-          node-version: 18.9.1
+          node-version: 20.12.2
 
       - uses: actions/setup-python@v4
         with:
