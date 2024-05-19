@@ -1,4 +1,7 @@
 {
+    "files": {
+        "ignore": ["nuxt.config.ts"]
+    },
     "formatter": {
         "indentStyle": "space",
         "lineWidth": 90
