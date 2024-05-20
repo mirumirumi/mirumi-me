@@ -110,22 +110,16 @@ onMounted(async () => {
 
 const slug = route.params.post as string
 
-let post: any = undefined
-do {
-  post = undefined
-
-  const { data } = await useFetch(`/mirumi/post_data/${slug}`, {
-    baseURL: appConfig.baseURL,
-  })
-
-  // Hack for JSON parse error (unexpected token)
-  post = JSON.parse(JSON.stringify(data.value as any))
-
-  if (typeof post === "string") {
-    console.log("Failed to fetch the post, will retry. The post slug is:", slug)
-    await delay(10000)
-  }
-} while (typeof post === "string")
+const { data } = await useFetch(`/mirumi/post_data/${slug}`, {
+  baseURL: appConfig.baseURL,
+  retry: 100,
+  retryDelay: 1000,
+  parseResponse: JSON.parse,
+}).catch((err) => {
+  console.log(err)
+  return { data: err }
+})
+const post = data.value
 
 const thumbnailUrl = post.thumbnail_url.replace(/\.(png|jpg|jpeg)$/gim, ".webp")
 
