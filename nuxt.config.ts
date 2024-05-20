@@ -92,7 +92,7 @@ export default defineNuxtConfig({
       retry: 80,
       retryDelay: 10_000,
       concurrency: 1,
-      interval: 1000,
+      interval: 5_000,
 
       // CAUTION!: The following comment are used by CI to re-generate specified post
       // ### crawlLinks: false, routes: [###],
