@@ -1,4 +1,7 @@
 {
+    "files": {
+        "ignore": ["nuxt.config.ts"]
+    },
     "formatter": {
         "indentStyle": "space",
         "lineWidth": 90
@@ -9,7 +12,8 @@
                 "noNonNullAssertion": "off",
                 "useTemplate": "off",
                 "noUselessElse": "off",
-                "useImportType": "off"
+                "useImportType": "off",
+                "noUnusedTemplateLiteral": "off"
             },
             "complexity": {
                 "noForEach": "off"

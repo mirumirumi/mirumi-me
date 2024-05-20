@@ -1,4 +1,4 @@
-import { PageMeta } from "@/utils/defines"
+import type { PageMeta } from "@/utils/defines"
 
 export default (p: PageMeta) => {
   const appConfig = useAppConfig()
@@ -6,7 +6,7 @@ export default (p: PageMeta) => {
   if (!p.createdAt) {
     p.createdAt = appConfig.createdAt
   }
-  p.createdAt = p.createdAt.replace(" ", "T")  // For data from WordPress
+  p.createdAt = p.createdAt.replace(" ", "T") // For data from WordPress
   if (!p.createdAt.includes("+09:00") && !p.createdAt.includes("Z")) {
     p.createdAt = p.createdAt + "+09:00"
   }
@@ -14,7 +14,7 @@ export default (p: PageMeta) => {
   if (!p.updatedAt) {
     p.updatedAt = today()
   }
-  p.updatedAt = p.updatedAt.replace(" ", "T")  // For data from WordPress
+  p.updatedAt = p.updatedAt.replace(" ", "T") // For data from WordPress
   if (!p.updatedAt.includes("+09:00") && !p.updatedAt.includes("Z")) {
     p.updatedAt = p.updatedAt + "+09:00"
   }
@@ -58,8 +58,6 @@ export default (p: PageMeta) => {
 `
 
   useHead({
-    script: [
-      { type: "application/ld+json", children: schema }
-    ]
+    script: [{ type: "application/ld+json", children: schema }],
   })
 }

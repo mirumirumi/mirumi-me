@@ -28,19 +28,30 @@
           <div class="grid_container">
             <div class="category">
               <span>かてごり: </span>
-              <NuxtLink :to="`/category/${post.category_slug}`">{{ post.category_name }}</NuxtLink>
+              <NuxtLink :to="`/category/${post.category_slug}`">{{
+                post.category_name
+              }}</NuxtLink>
             </div>
             <div class="created_at">
               <span>投稿日: </span>
-              <time :datetime="post.date" itemprop="datePublished">{{ friendlyDatetime(post.date) }}</time>
+              <time :datetime="post.date" itemprop="datePublished">{{
+                friendlyDatetime(post.date)
+              }}</time>
             </div>
             <div class="updated_at">
               <span>更新日: </span>
-              <time :datetime="post.modified" itemprop="dateModified">{{ friendlyDatetime(post.modified) }}</time>
+              <time :datetime="post.modified" itemprop="dateModified">{{
+                friendlyDatetime(post.modified)
+              }}</time>
             </div>
             <div class="author">
               <span>書いた人: </span>
-              <a :href="`https://twitter.com/${appConfig.twitterName}`" target="_blank" rel="nofollow">＠みるみ</a>
+              <a
+                :href="`https://twitter.com/${appConfig.twitterName}`"
+                target="_blank"
+                rel="nofollow"
+                >＠みるみ</a
+              >
             </div>
           </div>
         </div>
@@ -58,7 +69,12 @@
         </div>
       </header>
       <article class="page_transition_target">
-        <div id="content" v-html="post.content" @click="useClickLink" itemprop="mainEntityOfPage"></div>
+        <div
+          id="content"
+          v-html="post.content"
+          @click="useClickLink"
+          itemprop="mainEntityOfPage"
+        ></div>
       </article>
       <footer>
         <div class="share page_transition_target">
@@ -92,27 +108,18 @@ onMounted(async () => {
   await usePageTransition(0.7)
 })
 
-// To suppress workloads for the WordPress server
-if (process.server) await delay(100)
-
 const slug = route.params.post as string
 
-let post: any = undefined
-do {
-  post = undefined
-
-  const { data } = await useFetch(`/mirumi/post_data/${slug}`, {
-    baseURL: appConfig.baseURL,
-  })
-
-  // Hack for JSON parse error (unexpected token)
-  post = JSON.parse(JSON.stringify(data.value as any))
-
-  if (typeof post === "string") {
-    console.log("Failed to fetch the post, will retry. The post slug is:", slug)
-    await delay(10000)
-  }
-} while (typeof post === "string")
+const { data } = await useFetch(`/mirumi/post_data/${slug}`, {
+  baseURL: appConfig.baseURL,
+  retry: 100,
+  retryDelay: 1000,
+  parseResponse: JSON.parse,
+}).catch((err) => {
+  console.log(err)
+  return { data: err }
+})
+const post = data.value
 
 const thumbnailUrl = post.thumbnail_url.replace(/\.(png|jpg|jpeg)$/gim, ".webp")
 
