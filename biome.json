@@ -12,7 +12,8 @@
                 "noNonNullAssertion": "off",
                 "useTemplate": "off",
                 "noUselessElse": "off",
-                "useImportType": "off"
+                "useImportType": "off",
+                "noUnusedTemplateLiteral": "off"
             },
             "complexity": {
                 "noForEach": "off"

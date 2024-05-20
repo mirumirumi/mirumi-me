@@ -1,4 +1,4 @@
-import { PageMeta } from "@/utils/defines"
+import type { PageMeta } from "@/utils/defines"
 
 export default (p: PageMeta) => {
   const url = new URL(p.url)
@@ -36,8 +36,6 @@ export default (p: PageMeta) => {
       { name: "twitter:description", content: p.description },
       { name: "twitter:image", content: p.thumbnail },
     ],
-    link: [
-      { rel: "canonical", href: urlWithTrailingSlash },
-    ],
+    link: [{ rel: "canonical", href: urlWithTrailingSlash }],
   })
 }
