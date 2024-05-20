@@ -90,7 +90,7 @@ export default defineNuxtConfig({
   nitro: {
     prerender: {
       retry: 80,
-      retryDelay: 1000,
+      retryDelay: 10_000,
       concurrency: 1,
       interval: 1000,
 

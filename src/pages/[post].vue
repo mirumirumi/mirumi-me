@@ -113,7 +113,7 @@ const slug = route.params.post as string
 const { data } = await useFetch(`/mirumi/post_data/${slug}`, {
   baseURL: appConfig.baseURL,
   retry: 100,
-  retryDelay: 1000,
+  retryDelay: 10_000,
   parseResponse: JSON.parse,
 }).catch((err) => {
   console.log(err)
