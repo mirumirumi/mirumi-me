@@ -99,7 +99,7 @@ jobs:
             --region ap-northeast-1 \
             --exclude "*" \
             --include "index.html" \
-            --include "_payload.js" \
+            --include "_payload.json" \
             --include "entries/*" \
             --include "entry-list/*" \
             --include "category/${{ env.CATEGORY }}/*" \
