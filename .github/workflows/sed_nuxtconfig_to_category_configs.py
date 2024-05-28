@@ -38,9 +38,7 @@ def main() -> None:
         to_write = f.read()
         f.seek(0)
 
-        to_write = re.sub(
-            r"(nitro: { prerender: { crawlLinks: false, routes: )\[(.*?)\]", f"\\1[\\2{category_pages}]", to_write
-        )
+        to_write = re.sub(r"(crawlLinks: false, routes: )\[(.*?)\]", f"\\1[\\2{category_pages}]", to_write)
 
         f.write(to_write)
         f.truncate()
