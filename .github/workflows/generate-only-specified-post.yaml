@@ -92,7 +92,10 @@ jobs:
             --delete \
             --region ap-northeast-1 \
             --exclude "*" \
-            --include "*" \
+            --include "_payload.json" \
+            --include "200.html" \
+            --include "404.html" \
+            --include "index.html" \
             --include "${{ env.ROUTE_TO_GENERATE }}/*" \
             --include "about/*" \
             --include "category/**" \
