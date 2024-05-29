@@ -83,11 +83,27 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Copy build files that include specified route files to S3
+        # Since the Nuxt spec has changed and even if you just generate one route, the file name in _nuxt/*
+        #   will change, and the static file name that other fixed pages refer to will also change, so you
+        #   need to upload everything except the dynamically generated parts
+        # Note that `"*"` in exclude and include have different meanings
         run: |
           aws s3 sync \
             --delete \
             --region ap-northeast-1 \
-            --exclude "_nuxt/*" \
+            --exclude "*" \
+            --include "*" \
+            --include "${{ env.ROUTE_TO_GENERATE }}/*" \
+            --include "about/*" \
+            --include "category/**" \
+            --include "contact/*" \
+            --include "entries/**" \
+            --include "entry-list/*" \
+            --include "nice-to-meet-you-10/*" \
+            --include "privacy-policy/*" \
+            --include "profile/*" \
+            --include "s/*" \
+            --include "what-is-this-blog/*" \
             --cache-control "no-cache" \
             .output/public/ s3://mirumime-prd-mirumi-me/
           aws s3 sync \
