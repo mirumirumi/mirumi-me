@@ -88,8 +88,11 @@ jobs:
           aws s3 sync \
             --delete \
             --region ap-northeast-1 \
+            --exclude "*" \
+            --include "${{ env.ROUTE_TO_GENERATE }}/*" \
+            --include "_nuxt/*" \
             --cache-control "no-cache" \
-            .output/public/${{ env.ROUTE_TO_GENERATE }}/ s3://mirumime-prd-mirumi-me/${{ env.ROUTE_TO_GENERATE }}/
+            .output/public/ s3://mirumime-prd-mirumi-me/
 
       - name: Copy indexes pages and category pages to S3
         if: github.event.inputs.kind == 'post created'
