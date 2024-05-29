@@ -56,7 +56,6 @@ jobs:
           sed -irz "s/\[###\]/['\/${{ env.ROUTE_TO_GENERATE }}']/g" nuxt.config.ts
 
       - name: Replace to category pages
-        if: github.event.inputs.kind == 'post created'
         # Note that writes to environment variables are not reflected within the same step
         run: |
           echo CATEGORY=${{ github.event.inputs.category }} >> $GITHUB_ENV
@@ -83,31 +82,18 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Copy specified route files to S3
+      - name: Copy build files that include specified route files to S3
         run: |
           aws s3 sync \
             --delete \
             --region ap-northeast-1 \
-            --exclude "*" \
-            --include "${{ env.ROUTE_TO_GENERATE }}/*" \
-            --include "_nuxt/*" \
+            --exclude "_nuxt/*" \
             --cache-control "no-cache" \
             .output/public/ s3://mirumime-prd-mirumi-me/
-
-      - name: Copy indexes pages and category pages to S3
-        if: github.event.inputs.kind == 'post created'
-        run: |
           aws s3 sync \
-            --delete \
             --region ap-northeast-1 \
-            --exclude "*" \
-            --include "index.html" \
-            --include "_payload.json" \
-            --include "entries/*" \
-            --include "entry-list/*" \
-            --include "category/${{ env.CATEGORY }}/*" \
-            --cache-control "no-cache" \
-            .output/public/ s3://mirumime-prd-mirumi-me/
+            --cache-control "max-age=31536000" \
+            .output/public/_nuxt/ s3://mirumime-prd-mirumi-me/_nuxt/
 
       - name: Copy sitemaps to S3
         if: github.event.inputs.kind != 'comment approved'
@@ -131,22 +117,16 @@ jobs:
             --cache-control "no-cache" \
             .output/public/ s3://mirumime-prd-mirumi-me/
 
-      # キャッシュ削除はある程度広くても問題ないのでパターンで細かく区切っていない（あとリクエスト数増やすとエラーの確率が上がってしまう）
+      # いま CloudFront のキャッシュパスパターンがわざわざ /_nuxt/* 用にわかれているが、もともと全部キャッシュしたいので
+      # デフォルト (*) に適用されている分だけで問題なかった、という状態になっている
       - name: Purge CDN caches
         run: |
           aws cloudfront create-invalidation \
             --distribution-id E1UPWIMHFP5TEC \
-            --paths "/${{ env.ROUTE_TO_GENERATE }}/*" \
-              "/index.html" \
-              "/_payload.js" \
+            --paths "/*" \
+              "/${{ env.ROUTE_TO_GENERATE }}/*" \
               "/entries/*" \
               "/entry-list/*" \
+              "/category/${{ env.CATEGORY }}/*" \
               "/sitemap*" \
               "/feed*"
-
-      - name: Purge CDN caches for category pages
-        if: github.event.inputs.kind == 'post created'
-        run: |
-          aws cloudfront create-invalidation \
-            --distribution-id E1UPWIMHFP5TEC \
-            --paths "/category/${{ env.CATEGORY }}/*"
