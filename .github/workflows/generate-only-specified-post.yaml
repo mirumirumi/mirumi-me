@@ -98,7 +98,7 @@ jobs:
             --include "index.html" \
             --include "${{ env.ROUTE_TO_GENERATE }}/*" \
             --include "about/*" \
-            --include "category/**" \
+            --include "category/${{ env.CATEGORY }}/**" \
             --include "contact/*" \
             --include "entries/**" \
             --include "entry-list/*" \
