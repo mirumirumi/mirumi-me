@@ -1,7 +1,11 @@
 <template>
   <div class="entry_list_view indexes_single_column">
     <ul>
-      <li v-for="entries in entriesByCategories" class="category" :key="entries.categorySlug">
+      <li
+        v-for="entries in entriesByCategories"
+        class="category"
+        :key="entries.categorySlug"
+      >
         <NuxtLink :to="`/category/${entries.categorySlug}/`">
           {{ entries.categoryName }}
         </NuxtLink>
@@ -30,6 +34,7 @@ const { data } = await useFetch(`/mirumi/entry_list`, {
   baseURL: appConfig.baseURL,
   parseResponse: JSON.parse,
 })
+// biome-ignore lint:
 const entries = data.value as Record<string, any>[]
 
 interface Entry {
@@ -49,10 +54,12 @@ for (const [i, e] of entries.entries()) {
     entriesByCategories.push({
       categoryName: e.categoryName,
       categorySlug: e.categorySlug,
-      entries: [{
-        slug: e.slug,
-        title: e.title,
-      }],
+      entries: [
+        {
+          slug: e.slug,
+          title: e.title,
+        },
+      ],
     })
     categoryIndex++
     continue
@@ -61,10 +68,12 @@ for (const [i, e] of entries.entries()) {
       entriesByCategories.push({
         categoryName: e.categoryName,
         categorySlug: e.categorySlug,
-        entries: [{
-          slug: e.slug,
-          title: e.title,
-        }],
+        entries: [
+          {
+            slug: e.slug,
+            title: e.title,
+          },
+        ],
       })
       categoryIndex++
       continue
