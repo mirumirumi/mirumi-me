@@ -104,7 +104,6 @@
 const p = defineProps<{
   currentPage: number
   pageCount: number
-  itemCount: number
   isCsr: boolean
 }>()
 
