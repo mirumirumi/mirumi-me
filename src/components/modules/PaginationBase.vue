@@ -2,9 +2,11 @@
   <div v-if="2 <= pageCount" class="pagination_base">
     <NuxtLink
       v-if="1 < currentPage"
-      :to="isCsr
-        ? { query: { ...$route.query, p: currentPage - 1 } }
-        : { path: `${basePath}/page/${currentPage - 1}/` }"
+      :to="
+        isCsr
+          ? { query: { ...$route.query, p: currentPage - 1 } }
+          : { path: `${basePath}/page/${currentPage - 1}/` }
+      "
       class="arrow prev"
       @click="toTop"
     >
@@ -17,9 +19,11 @@
     </template>
     <template v-else>
       <NuxtLink
-        :to="isCsr
-          ? { query: { ...$route.query, p: 1 } }
-          : { path: `${basePath}/page/${1}/` }"
+        :to="
+          isCsr
+            ? { query: { ...$route.query, p: 1 } }
+            : { path: `${basePath}/page/${1}/` }
+        "
         class="page_latest"
         @click="toTop"
       >
@@ -33,9 +37,11 @@
     <template v-for="x in BEFORE_AND_AFTER.slice().reverse()" :key="x">
       <NuxtLink
         v-if="1 < currentPage - x"
-        :to="isCsr
-          ? { query: { ...$route.query, p: currentPage - x } }
-          : { path: `${basePath}/page/${currentPage - x}/` }"
+        :to="
+          isCsr
+            ? { query: { ...$route.query, p: currentPage - x } }
+            : { path: `${basePath}/page/${currentPage - x}/` }
+        "
         @click="toTop"
       >
         {{ currentPage - x }}
@@ -43,13 +49,15 @@
     </template>
     <div v-if="currentPage !== 1 && currentPage !== pageCount" class="current">
       {{ currentPage }}
-    </div>      
+    </div>
     <template v-for="x in BEFORE_AND_AFTER" :key="x">
       <NuxtLink
         v-if="currentPage + x < pageCount"
-        :to="isCsr
-          ? { query: { ...$route.query, p: currentPage + x } }
-          : { path: `${basePath}/page/${currentPage + x}/` }"
+        :to="
+          isCsr
+            ? { query: { ...$route.query, p: currentPage + x } }
+            : { path: `${basePath}/page/${currentPage + x}/` }
+        "
         @click="toTop"
       >
         {{ currentPage + x }}
@@ -66,9 +74,11 @@
     </template>
     <template v-else>
       <NuxtLink
-        :to="isCsr
-          ? { query: { ...$route.query, p: pageCount } }
-          : { path: `${basePath}/page/${pageCount}/` }"
+        :to="
+          isCsr
+            ? { query: { ...$route.query, p: pageCount } }
+            : { path: `${basePath}/page/${pageCount}/` }
+        "
         class="page_oldest"
         @click="toTop"
       >
@@ -77,9 +87,11 @@
     </template>
     <NuxtLink
       v-if="currentPage < pageCount"
-      :to="isCsr
-        ? { query: { ...$route.query, p: currentPage + 1 } }
-        : { path: `${basePath}/page/${currentPage + 1}/` }"
+      :to="
+        isCsr
+          ? { query: { ...$route.query, p: currentPage + 1 } }
+          : { path: `${basePath}/page/${currentPage + 1}/` }
+      "
       class="arrow next"
       @click="toTop"
     >
@@ -92,17 +104,16 @@
 const p = defineProps<{
   currentPage: number
   pageCount: number
-  itemCount: number
   isCsr: boolean
 }>()
 
 const route = useRoute()
 
-const LINKS_TO_SHOW = 3  // Only odd
+const LINKS_TO_SHOW = 3 // Only odd
 const BEFORE_AND_AFTER = [...Array((LINKS_TO_SHOW - 1) / 2).keys()].map((x) => x + 1)
 
 // Create "/xxx": https://regex101.com/r/cebdMM/1
-const basePath = ref(route.path.replace(/(\/.*?)?\/(page\/\d+\/?)?$/gmi, "$1"))
+const basePath = ref(route.path.replace(/(\/.*?)?\/(page\/\d+\/?)?$/gim, "$1"))
 
 const toTop = () => {
   if (p.isCsr) {
