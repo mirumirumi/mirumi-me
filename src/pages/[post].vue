@@ -110,25 +110,13 @@ onMounted(async () => {
 
 const slug = route.params.post as string
 
+const { data } = await useFetch(`/mirumi/post_data/${slug}`, {
+  baseURL: appConfig.baseURL,
+  retry: 100,
+  retryDelay: 10_000,
+})
 // biome-ignore lint:
-let post: any = undefined
-do {
-  post = undefined
-
-  const { data } = await useFetch(`/mirumi/post_data/${slug}`, {
-    baseURL: appConfig.baseURL,
-    retry: 100,
-    retryDelay: 10_000,
-  })
-
-  // biome-ignore lint: Hack for JSON parse error (unexpected token)
-  post = JSON.parse(JSON.stringify(data.value as any))
-
-  if (typeof post === "string") {
-    console.log(`Failed to fetch: /${slug}`)
-    await delay(10_000)
-  }
-} while (typeof post === "string")
+const post = data.value as any
 
 const thumbnailUrl = post.thumbnail_url.replace(/\.(png|jpg|jpeg)$/gim, ".webp")
 
