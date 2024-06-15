@@ -2,25 +2,47 @@
   <Transition name="fadedown" appear>
     <div class="category_menu" v-if="_isShown">
       <ul>
-        <li v-for="category in categories" :class="{ 'others_li_wrap': category.slug === 'others' }" :key="category.name">
-          <div v-if="category.slug === 'others'" class="others_wrap" @mouseenter="(isShownOthers = true)" @mouseleave="(isShownOthers = false)" @click.stop>
+        <li
+          v-for="category in categories"
+          :class="{ others_li_wrap: category.slug === 'others' }"
+          :key="category.name"
+        >
+          <div
+            v-if="category.slug === 'others'"
+            class="others_wrap"
+            @mouseenter="isShownOthers = true"
+            @mouseleave="isShownOthers = false"
+            @click.stop
+          >
             <div class="others_title">
-              <span  :class="{ 'current': category.current }">
+              <span :class="{ current: category.current }">
                 {{ category.name }}
               </span>
-              <PartsSvgIcon :icon="'angle_down'" :color="'var(--color-gray)'" :class="{ 'rotate': isShownOthers }" />
+              <PartsSvgIcon
+                :icon="'angle_down'"
+                :color="'var(--color-gray)'"
+                :class="{ rotate: isShownOthers }"
+              />
             </div>
             <Transition name="fade" appear>
               <ul v-if="isShownOthers">
                 <li v-for="other in others" :key="other.name">
-                  <NuxtLink :to="`/category/${other.slug}/`" :class="{ 'current': other.current }" @click="interruptChoose">
+                  <NuxtLink
+                    :to="`/category/${other.slug}/`"
+                    :class="{ current: other.current }"
+                    @click="interruptChoose"
+                  >
                     {{ other.name }}
                   </NuxtLink>
                 </li>
               </ul>
             </Transition>
           </div>
-          <NuxtLink v-else :to="`/category/${category.slug}/`" :class="{ 'current': category.current }">
+          <NuxtLink
+            v-else
+            :to="`/category/${category.slug}/`"
+            :class="{ current: category.current }"
+          >
             {{ category.name }}
           </NuxtLink>
         </li>
@@ -44,7 +66,7 @@ const p = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: "interruptChoose" ): void
+  (e: "interruptChoose"): void
 }>()
 
 const route = useRoute()
@@ -73,13 +95,19 @@ const others: Category[] = [
 
 await setIsCurrentCategory()
 
-watch(() => p.isShown, () => {
-  _isShown.value = p.isShown
-})
+watch(
+  () => p.isShown,
+  () => {
+    _isShown.value = p.isShown
+  }
+)
 
-watch(route, async () => {
-  await setIsCurrentCategory()
-})
+watch(
+  () => route.path,
+  async () => {
+    await setIsCurrentCategory()
+  }
+)
 
 async function setIsCurrentCategory(): Promise<void> {
   let categorySlug = ""
@@ -87,17 +115,20 @@ async function setIsCurrentCategory(): Promise<void> {
   if (route.params.categoryName) {
     // In category page
 
-    categorySlug = route.path.replace("/category/", "")
+    categorySlug = route.path.replace(/\/category\/(.*?)\//gim, "$1")
   } else if (route.params.post) {
     // In post page
 
-    const pagePath = route.path.replace("/", "")
-    
-    // https://github.com/nuxt/nuxt/discussions/??? (The page is gone... (cause by unifying repos for Nuxt 2/3))
-    categorySlug = await $fetch<string>(`/mirumi/category_slug_with_post_slug/${pagePath}`, {
-      baseURL: appConfig.baseURL,
-      parseResponse: JSON.parse,
-    })
+    const pagePath = route.path.replaceAll("/", "")
+
+    // https://github.com/nuxt/nuxt/discussions/??? (The page is gone... (cause by unifying repos for Nuxt 2~3))
+    categorySlug = await $fetch<string>(
+      `/mirumi/category_slug_with_post_slug/${pagePath}`,
+      {
+        baseURL: appConfig.baseURL,
+        parseResponse: JSON.parse,
+      }
+    )
   }
 
   for (const category of categories) {
@@ -111,7 +142,7 @@ async function setIsCurrentCategory(): Promise<void> {
   for (const other of others) {
     if (categorySlug === other.slug) {
       other.current = true
-      categories.slice(-1)[0].current = true  // `その他`
+      categories.slice(-1)[0].current = true // `その他`
     } else {
       other.current = false
     }
@@ -175,7 +206,9 @@ const interruptChoose = () => {
           }
         }
       }
-      a, span, .others_wrap > .others_title > span {
+      a,
+      span,
+      .others_wrap > .others_title > span {
         display: block;
         color: var(--color-gray);
         text-decoration: none;
