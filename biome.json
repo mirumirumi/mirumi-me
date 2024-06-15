@@ -13,7 +13,8 @@
                 "useTemplate": "off",
                 "noUselessElse": "off",
                 "useImportType": "off",
-                "noUnusedTemplateLiteral": "off"
+                "noUnusedTemplateLiteral": "off",
+                "useShorthandFunctionType": "off"
             },
             "complexity": {
                 "noForEach": "off"
