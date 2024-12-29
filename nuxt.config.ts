@@ -89,8 +89,10 @@ export default defineNuxtConfig({
   },
   nitro: {
     prerender: {
-      concurrency: 2,
-      interval: 500,
+      concurrency: 1,
+      interval: 250,
+      retry: 5,
+      retryDelay: 1_000,
 
       // CAUTION!: The following comment are used by CI to re-generate specified post
       // ### crawlLinks: false, routes: [###],
