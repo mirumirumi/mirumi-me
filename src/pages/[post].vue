@@ -112,8 +112,6 @@ const slug = route.params.post as string
 
 const { data } = await useFetch(`/mirumi/post_data/${slug}`, {
   baseURL: appConfig.baseURL,
-  retry: 100,
-  retryDelay: 10_000,
 })
 // biome-ignore lint:
 const post = data.value as any
