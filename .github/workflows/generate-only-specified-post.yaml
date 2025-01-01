@@ -56,7 +56,8 @@ jobs:
           sed -irz "s/\[###\]/['\/${{ env.ROUTE_TO_GENERATE }}']/g" nuxt.config.ts
 
       - name: Replace to category pages
-        # Note that writes to environment variables are not reflected within the same step
+        if: github.event.inputs.kind != 'comment approved'
+        # Note that writes to environment variables are not reflected within the another step
         run: |
           echo CATEGORY=${{ github.event.inputs.category }} >> $GITHUB_ENV
           python3 .github/workflows/sed_nuxtconfig_to_category_configs.py --category ${{ github.event.inputs.category }}
