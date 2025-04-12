@@ -1,36 +1,68 @@
 <template>
   <div class="comment_form">
     <h3 class="title">
-      {{
-          reply_to === "0"
-          ? "新しいコメントを書く"
-          : "このコメントに返信する"
-      }}
+      {{ reply_to === "0" ? "新しいコメントを書く" : "このコメントに返信する" }}
     </h3>
     <div class="description">
       <ul>
-        <li>必須項目はコメント本文のみですが、お名前はぜひご記入いただけると嬉しいです。<br />
-      ※メールアドレスを書いた場合も公開されることはないのでご安心ください。</li>
-        <li v-if="reply_to === '0'">特定のコメントに返信したい場合は各コメントにある「返信する」ボタンからどうぞ。</li>
-        <li>コメントはこちらで承認の作業を行うまでは表示されません。ご了承ください。<br />
-      ※ここ数年スパムが激化しており、誤って削除されてしまうケースが増えてきました。スパムボックスも毎日自分の目で確認するようにはしているのですが、どうしても限界があります。確実に僕に連絡を取りたい方は <a href="mailto:mail@mirumi.me">メール</a> か <a :href="`https://twitter.com/${appConfig.twitterName}`" target="_blank" rel="nofollow">Twitter</a> からお願いします。</li>
+        <li
+          >必須項目はコメント本文のみですが、お名前はぜひご記入いただけると嬉しいです。<br />
+          ※メールアドレスを書いた場合も公開されることはないのでご安心ください。</li
+        >
+        <li v-if="reply_to === '0'"
+          >特定のコメントに返信したい場合は各コメントにある「返信する」ボタンからどうぞ。</li
+        >
+        <li
+          >コメントはこちらで承認の作業を行うまでは表示されません。ご了承ください。<br />
+          ※ここ数年スパムが激化しており、誤って削除されてしまうケースが増えてきました。スパムボックスも毎日自分の目で確認するようにはしているのですが、どうしても限界があります。確実に僕に連絡を取りたい方は
+          <a href="mailto:mail@mirumi.me">メール</a> か
+          <a
+            :href="`https://x.com/${appConfig.twitterName}`"
+            target="_blank"
+            rel="nofollow"
+            >X</a
+          >
+          からお願いします。</li
+        >
       </ul>
     </div>
     <form autocomplete="off">
-      <div class="form" style="margin-bottom: 1.7em;">
+      <div class="form" style="margin-bottom: 1.7em">
         <label for="comment" class="form_label">
           コメント
           <span class="required">*</span>
         </label>
-        <textarea id="comment" class="input" cols="43" rows="8" maxlength="5555" v-model="comment" required />
+        <textarea
+          id="comment"
+          class="input"
+          cols="43"
+          rows="8"
+          maxlength="5555"
+          v-model="comment"
+          required
+        />
       </div>
       <div class="form">
         <label for="name" class="form_label">おなまえ</label>
-        <input type="text" id="name" class="input" v-model="name" autocomplete="on" placeholder="匿名" />
+        <input
+          type="text"
+          id="name"
+          class="input"
+          v-model="name"
+          autocomplete="on"
+          placeholder="匿名"
+        />
       </div>
       <div class="form">
         <label for="email" class="form_label">メールアドレス</label>
-        <input type="email" id="email" class="input" v-model="email" autocomplete="on" placeholder="mail@example.com" />
+        <input
+          type="email"
+          id="email"
+          class="input"
+          v-model="email"
+          autocomplete="on"
+          placeholder="mail@example.com"
+        />
       </div>
       <div class="button">
         <PartsBaseButton
@@ -49,11 +81,14 @@
 <script setup lang="ts">
 import { useToast } from "vue-toastification/dist/index.mjs"
 
-const p = withDefaults(defineProps<{
-  reply_to?: string
-}>(), {
-  reply_to: "0"
-})
+const p = withDefaults(
+  defineProps<{
+    reply_to?: string
+  }>(),
+  {
+    reply_to: "0",
+  }
+)
 
 const route = useRoute()
 const runtimeConfig = useRuntimeConfig()
@@ -83,7 +118,9 @@ const submit = async () => {
     baseURL: appConfig.baseURL,
     method: "POST",
     headers: {
-      "Authorization": `Basic ${window.btoa(runtimeConfig.userName + ":" + runtimeConfig.applicationPassword)}`,
+      Authorization: `Basic ${window.btoa(
+        runtimeConfig.userName + ":" + runtimeConfig.applicationPassword
+      )}`,
     },
     body: {
       author_email: email.value !== "" ? email.value : "",

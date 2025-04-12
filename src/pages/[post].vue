@@ -47,7 +47,7 @@
             <div class="author">
               <span>書いた人: </span>
               <a
-                :href="`https://twitter.com/${appConfig.twitterName}`"
+                :href="`https://x.com/${appConfig.twitterName}`"
                 target="_blank"
                 rel="nofollow"
                 >＠みるみ</a
@@ -143,7 +143,7 @@ onMounted(async () => {
 })
 
 useHead({ script: [{ src: "/assets/prism.js", defer: true }] })
-useHead({ script: [{ src: "https://platform.twitter.com/widgets.js", async: true }] })
+useHead({ script: [{ src: "https://platform.x.com/widgets.js", async: true }] })
 
 usePageInfo({
   title: post.title,
