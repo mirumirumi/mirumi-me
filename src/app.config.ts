@@ -14,5 +14,5 @@ export default defineAppConfig({
   perPage: 13,
 
   // Profiles
-  twitterName: "milmemo_net",
+  twitterName: "__mirumi__",
 })

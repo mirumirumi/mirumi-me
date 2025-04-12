@@ -2,7 +2,7 @@
   <div class="share_buttons">
     <div class="share_button">
       <a
-        :href="`https://twitter.com/intent/tweet?text=${encodeURI(
+        :href="`https://x.com/intent/tweet?text=${encodeURI(
           title
         )} - みるめも @${encodeURI(appConfig.twitterName)}&amp;url=${encodeURI(
           appConfig.siteFullPath + '/' + slug
