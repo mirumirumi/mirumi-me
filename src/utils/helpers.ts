@@ -24,10 +24,7 @@ export const zeroPadding = (input: number, precision: number): string => {
 
 export const friendlyDatetime = (isoformat: string): string => {
   const date = new Date(isoformat)
-  const year = date.getFullYear()
-  const month = zeroPadding(date.getMonth() + 1, 2)
-  const day = zeroPadding(date.getDate(), 2)
-  return `${year}/${month}/${day}`
+  return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`
 }
 
 export function isIOS(): boolean {

@@ -3,7 +3,7 @@
     "version": "4.1.0",
     "private": true,
     "scripts": {
-        "dev": "nuxt dev --host",
+        "dev": "nuxt dev",
         "build": "nuxt build",
         "generate": "nuxt generate",
         "preview": "nuxt preview"

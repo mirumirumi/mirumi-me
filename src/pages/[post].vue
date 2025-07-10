@@ -5,40 +5,58 @@
         <h1 class="title page_transition_target" itemprop="headline">
           {{ post.title }}
         </h1>
+        <div
+          class="thumbnail page_transition_target"
+          itemprop="image"
+          itemscope
+          itemtype="https://schema.org/ImageObject"
+        >
+          <picture>
+            <source
+              :media="'(max-width: 428px)'"
+              :srcset="thumbnailUrl.replace('.webp', '') + '-600x315.webp 600w'"
+              :sizes="'600w'"
+            />
+            <source :srcset="thumbnailUrl + ' 1200w'" :sizes="'1200w'" />
+            <img :src="thumbnailUrl" :alt="post.title" width="1200" height="630" />
+          </picture>
+          <meta itemprop="url" :content="post.thumbnail_url" />
+          <meta itemprop="width" content="1200" />
+          <meta itemprop="height" content="630" />
+        </div>
         <div class="meta page_transition_target" role="contentinfo">
-          <div class="meta_block">
-            <div class="author">
-              <PartsSvgIcon :icon="'at'" :color="'var(--color-gray)'" />
-              <a
-                :href="`https://x.com/${appConfig.twitterName}`"
-                target="_blank"
-                rel="nofollow"
-                >みるみ</a
-              >
-            </div>
+          <div class="grid_container">
             <div class="category">
-              <PartsSvgIcon :icon="'folder'" :color="'var(--color-gray)'" />
+              <span>かてごり: </span>
               <NuxtLink :to="`/category/${post.category_slug}`">{{
                 post.category_name
               }}</NuxtLink>
             </div>
-            <div class="dates">
-              <PartsSvgIcon :icon="'calendar-days'" :color="'var(--color-gray)'" />
-              <span class="created_at">
-                <time :datetime="post.date" itemprop="datePublished">{{
-                  friendlyDatetime(post.date)
-                }}</time>
-              </span>
-              <span class="updated_at"
-                ><span class="parentheses first">（</span>
-                <PartsSvgIcon :icon="'clock-rotate-left'" :color="'var(--color-gray)'" />
-                <time :datetime="post.modified" itemprop="dateModified">{{
-                  friendlyDatetime(post.modified)
-                }}</time>
-                <span class="parentheses">）</span></span
+            <div class="created_at">
+              <span>投稿日: </span>
+              <time :datetime="post.date" itemprop="datePublished">{{
+                friendlyDatetime(post.date)
+              }}</time>
+            </div>
+            <div class="updated_at">
+              <span>更新日: </span>
+              <time :datetime="post.modified" itemprop="dateModified">{{
+                friendlyDatetime(post.modified)
+              }}</time>
+            </div>
+            <div class="author">
+              <span>書いた人: </span>
+              <a
+                :href="`https://x.com/${appConfig.twitterName}`"
+                target="_blank"
+                rel="nofollow"
+                >＠みるみ</a
               >
             </div>
           </div>
+        </div>
+        <div class="share page_transition_target">
+          <ModulesShareButtons :slug="slug" :title="post.title" :counts="counts" />
         </div>
         <div
           class="display_none"
@@ -59,6 +77,9 @@
         ></div>
       </article>
       <footer>
+        <div class="share page_transition_target">
+          <ModulesShareButtons :slug="slug" :title="post.title" :counts="counts" />
+        </div>
         <div class="profile page_transition_target">
           <ModulesProfileBox :category="post.category_slug" />
         </div>
@@ -95,12 +116,30 @@ const { data } = await useFetch(`/mirumi/post_data/${slug}`, {
 // biome-ignore lint:
 const post = data.value as any
 
+const thumbnailUrl = post.thumbnail_url.replace(/\.(png|jpg|jpeg)$/gim, ".webp")
+
 // Insert Google AdSense before each h2
 post.content = insertAdSense(post.content)
+
+const counts = ref({
+  twitter: Number(post.twitter),
+  hatebu: Number(post.hatebu),
+  feedly: Number(post.feedly),
+  pocket: Number(post.pocket),
+  like: Number(post.like),
+})
 
 // Exec content scripts
 onMounted(() => {
   cs.loadYouTube()
+})
+
+// Re-fetch page contents
+onMounted(async () => {
+  counts.value = await $fetch(`/mirumi/share_counts/${slug}`, {
+    baseURL: appConfig.baseURL,
+    parseResponse: JSON.parse,
+  })
 })
 
 useHead({ script: [{ src: "/assets/prism.js", defer: true }] })
