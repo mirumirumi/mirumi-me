@@ -23,7 +23,7 @@
               }}</NuxtLink>
             </div>
             <div class="dates">
-              <PartsSvgIcon :icon="'calendar-days'" :color="'var(--color-gray)'" />
+              <PartsSvgIcon :icon="'calendar_days'" :color="'var(--color-gray)'" />
               <span class="created_at">
                 <time :datetime="post.date" itemprop="datePublished">{{
                   friendlyDatetime(post.date)
@@ -31,7 +31,7 @@
               </span>
               <span class="updated_at"
                 ><span class="parentheses first">（</span>
-                <PartsSvgIcon :icon="'clock-rotate-left'" :color="'var(--color-gray)'" />
+                <PartsSvgIcon :icon="'clock_rotate_left'" :color="'var(--color-gray)'" />
                 <time :datetime="post.modified" itemprop="dateModified">{{
                   friendlyDatetime(post.modified)
                 }}</time>

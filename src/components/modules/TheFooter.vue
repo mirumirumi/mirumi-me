@@ -45,8 +45,25 @@
           </ul>
         </div>
       </nav>
-      <div class="copyright">
-        © 2016-{{ new Date().getFullYear() }} みるめも
+      <div class="bottom">
+        <div class="copyright">© 2016-{{ new Date().getFullYear() }} みるめも</div>
+        <div class="right">
+          <ModulesThemeSwitch />
+          <div class="icons">
+            <a href="https://x.com/__mirumi__" target="_blank" rel="nofollow"
+              ><PartsSvgIcon :icon="'x'" :color="'#a8a8a8'" :dark="'#f1f1b4'"
+            /></a>
+            <a href="https://github.com/mirumirumi" target="_blank" rel="nofollow"
+              ><PartsSvgIcon :icon="'github'" :color="'#a8a8a8'" :dark="'#f1f1b4'"
+            /></a>
+            <a href="https://zenn.dev/mirumi" target="_blank" rel="nofollow"
+              ><PartsSvgIcon :icon="'zenn'" :color="'#a8a8a8'" :dark="'#f1f1b4'"
+            /></a>
+            <a href="https://note.com/mirumi_milmemo" target="_blank" rel="nofollow"
+              ><PartsSvgIcon :icon="'note'" :color="'#a8a8a8'" :dark="'#f1f1b4'"
+            /></a>
+          </div>
+        </div>
       </div>
     </footer>
   </div>
@@ -57,9 +74,12 @@ const router = useRouter()
 
 const query = ref("")
 
-watch(() => router.currentRoute.value.fullPath, () => {
-  query.value = router.currentRoute.value.query.q as string
-})
+watch(
+  () => router.currentRoute.value.fullPath,
+  () => {
+    query.value = router.currentRoute.value.query.q as string
+  }
+)
 
 const onEnter = () => {
   window.scrollTo({
@@ -74,11 +94,11 @@ const onEnter = () => {
   footer {
     --color: #a8a8a8;
     color: var(--color);
-    padding: 3.7em 1em 13px;
+    padding: 2.9em 1em 23px;
     background-color: var(--color-footer);
     .search_wrap {
       max-width: 31em;
-      margin: auto auto 2.3em;
+      margin: auto auto 2.7em;
       padding-left: 0.9em;
     }
     .link_groups {
@@ -86,7 +106,7 @@ const onEnter = () => {
       justify-content: center;
       align-items: flex-start;
       gap: 7em;
-      padding-left: 4.3em;  // `mirumi.tech` is too long
+      padding-left: 4.3em; // `mirumi.tech` is too long
       .links {
         font-size: 0.87em;
         .group_title {
@@ -124,10 +144,31 @@ const onEnter = () => {
         padding-left: 0;
       }
     }
-    .copyright {
-      margin-top: 3em;
-      font-size: 0.83em;
-      text-align: center;
+    .bottom {
+      display: flex;
+      justify-content: space-evenly;
+      margin-top: 3.7em;
+      .copyright {
+        font-size: 0.83em;
+        text-align: center;
+      }
+      .right {
+        display: flex;
+        gap: 2.3em;
+        transform: translateX(1em);
+        .icons {
+          display: flex;
+          align-items: center;
+          a {
+            display: inline-block;
+            margin-right: 1.3em;
+            > * {
+              position: static;
+              width: 1.3em;
+            }
+          }
+        }
+      }
     }
     @include mobile {
       padding-top: 2.3em;

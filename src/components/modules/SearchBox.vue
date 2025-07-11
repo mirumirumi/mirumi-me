@@ -8,7 +8,7 @@
       role="search"
       v-model="_query"
       @keydown.enter.prevent="move"
-    >
+    />
     <PartsSvgIcon :icon="'search'" :color="'#bbbbba'" @click="move" />
   </div>
 </template>
@@ -26,9 +26,12 @@ const router = useRouter()
 const _query = ref(p.query)
 const search = ref()
 
-watch(() => p.query, () => {
-  _query.value = p.query ?? ""
-})
+watch(
+  () => p.query,
+  () => {
+    _query.value = p.query ?? ""
+  }
+)
 
 const move = async () => {
   router.push({ path: "/s/", query: { q: _query.value } })
@@ -61,12 +64,13 @@ const move = async () => {
     padding-left: 1.3em;
     padding-right: 3.3em;
     font-size: 0.9em;
-    line-height: 1.5;
+    line-height: 1.8;
     border: 1.9px solid #e5e5e5;
     border-radius: 31px;
     background-color: transparent;
     &::placeholder {
       font-size: 0.85em;
+      transform: translateY(-0.5px);
     }
   }
   svg {
