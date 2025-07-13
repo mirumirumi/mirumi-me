@@ -10,7 +10,7 @@
       class="arrow prev"
       @click="toTop"
     >
-      <PartsSvgIcon :icon="'arrow_left'" :color="'#727272'" />
+      <PartsSvgIcon :icon="'arrow_left'" :color="'#727272'" :dark="'#a9a9a9'" />
     </NuxtLink>
     <template v-if="currentPage === 1">
       <div class="page_latest current">
@@ -95,7 +95,7 @@
       class="arrow next"
       @click="toTop"
     >
-      <PartsSvgIcon :icon="'arrow_right'" :color="'#727272'" />
+      <PartsSvgIcon :icon="'arrow_right'" :color="'#727272'" :dark="'#a9a9a9'" />
     </NuxtLink>
   </div>
 </template>
@@ -136,18 +136,13 @@ const toTop = () => {
   > * {
     display: flex;
     justify-content: center;
-    width: 46px;
-    height: 45.5px;
-    margin: 0 0.3em;
+    width: 30px;
+    height: 30px;
+    margin: 0 0.5em;
     color: #727272;
     font-size: 0.95em;
     font-weight: bold;
-    line-height: 44.4px;
-    border-radius: 50%;
-    transition: 0.23s all ease-out;
-    &:hover {
-      background-color: #f5efeb;
-    }
+    line-height: 30px;
     @include mobile {
       width: 36px;
       height: 35.7px;
@@ -161,28 +156,52 @@ const toTop = () => {
     text-decoration: none;
   }
   .arrow {
+    position: relative;
+    top: 1px;
     svg {
       width: 0.5em;
     }
   }
   .current {
-    background-color: #f5efeb;
-    pointer-events: none;
-    &:hover {
-      background-color: transparent;
+    user-select: none;
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: -5px;
+      width: 3.5px;
+      height: 3.5px;
+      border-radius: 50%;
+      background-color: #727272;
     }
   }
   .ellipsis {
     svg {
       width: 0.7em;
     }
-    &:hover {
-      background-color: transparent;
-    }
     @include mobile {
       width: 20px;
       height: 20px;
       line-height: 20px;
+    }
+  }
+}
+.dark {
+  .pagination_base {
+    > * {
+      color: #a9a9a9;
+    }
+    a {
+      color: #a9a9a9;
+    }
+    .current {
+      &::after {
+        background-color: #a9a9a9;
+      }
+    }
+    .ellipsis {
+      &:hover {
+        background-color: transparent;
+      }
     }
   }
 }

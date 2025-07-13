@@ -185,4 +185,15 @@ const submit = async () => {
     padding: 0 0.3em;
   }
 }
+.dark {
+  .comment_form {
+    form {
+      label {
+        .required {
+          color: #d77777;
+        }
+      }
+    }
+  }
+}
 </style>

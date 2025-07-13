@@ -1,4 +1,4 @@
-import Toast from "vue-toastification"
+import Toast, { POSITION } from "vue-toastification"
 import type { PluginOptions } from "vue-toastification"
 import "vue-toastification/dist/index.css"
 import "@/assets/styles/toast.scss"
@@ -14,8 +14,7 @@ const toastOptions: PluginOptions = {
   newestOnTop: true,
   pauseOnFocusLoss: false,
   pauseOnHover: true,
-  // @ts-ignore
-  position: "bottom-center",
+  position: POSITION.BOTTOM_CENTER,
   rtl: false,
   showCloseButtonOnHover: true,
   timeout: 4444,

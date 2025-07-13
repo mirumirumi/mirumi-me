@@ -128,4 +128,15 @@ usePageInfo({
     }
   }
 }
+.dark {
+  .entry_list_view {
+    > ul {
+      > li.category {
+        > a {
+          border-bottom-color: #7f7f7f;
+        }
+      }
+    }
+  }
+}
 </style>

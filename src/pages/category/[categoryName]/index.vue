@@ -95,7 +95,7 @@ usePageInfo({
 h1.title {
   margin: 0 0 2em;
   padding: 0 0.1em;
-  color: #554545;
+  color: var(--color-text-title-heading);
   line-height: 1.5;
   font-size: 1.4em;
   font-weight: bold;

@@ -29,10 +29,8 @@
             {{ formatTimestamp(c.comment_date) }}
           </div>
         </div>
-        <div class="link">
-          <a :href="`#comment-${c.comment_ID}`">
-            <PartsSvgIcon :icon="'link'" :color="'#9b9b9b'" />
-          </a>
+        <div class="link" @click="copyCommentUrl(c)">
+          <PartsSvgIcon :icon="'link'" :color="'#9b9b9b'" />
         </div>
       </div>
       <div class="content" v-html="formatContent(c.comment_content)"></div>
@@ -54,6 +52,8 @@ defineProps<{
   depth: number
 }>()
 
+const route = useRoute()
+
 const isOpenReply = ref(false)
 
 const formatContent = (content: string) => {
@@ -73,6 +73,12 @@ const formatContent = (content: string) => {
 
 const formatTimestamp = (timestamp: string) => {
   return timestamp.replace(/(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2}):\d{2}/gim, "$1/$2/$3 $4")
+
+const copyCommentUrl = (c: any) => {
+  const currentPath = window.location.origin + route.path
+  const commentUrl = `${currentPath}#comment-${c.comment_ID}`
+
+  navigator.clipboard.writeText(commentUrl)
 }
 </script>
 
@@ -123,6 +129,7 @@ const formatTimestamp = (timestamp: string) => {
         right: 3em;
         top: 0;
         bottom: 3px;
+        cursor: pointer;
         svg {
           width: 1.3em;
           transform: rotate(-23deg);
@@ -159,6 +166,16 @@ const formatTimestamp = (timestamp: string) => {
   .reply {
     .comment_form {
       margin-top: 1em;
+    }
+  }
+}
+.dark {
+  .comment_base {
+    .reply_button {
+      button {
+        color: #887a76;
+        border-color: #887a76;
+      }
     }
   }
 }

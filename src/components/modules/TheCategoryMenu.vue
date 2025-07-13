@@ -220,7 +220,7 @@ const interruptChoose = () => {
         color: var(--color-text);
       }
       &:hover {
-        background-color: #f8f5f2;
+        background-color: #504f4f;
         a {
           color: var(--color-text);
         }

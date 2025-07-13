@@ -117,11 +117,11 @@ const theme = useState("theme")
 const color = ref(p.color)
 const viewBox = ref("0 0 512 512")
 
+setViewBox()
+
 onMounted(() => {
   color.value = theme.value === "dark" ? p.dark ?? p.color : p.color
 })
-
-setViewBox()
 
 watch(theme, () => {
   if (theme.value === "dark") {
@@ -173,9 +173,6 @@ function setViewBox(): void {
     case "github":
       viewBox.value = "0 0 496 512"
       break
-    // case "note":
-    //   viewBox.value = "0 0 493 493"
-    //   break
   }
 }
 </script>

@@ -51,16 +51,16 @@
           <ModulesThemeSwitch />
           <div class="icons">
             <a href="https://x.com/__mirumi__" target="_blank" rel="nofollow"
-              ><PartsSvgIcon :icon="'x'" :color="'#a8a8a8'" :dark="'#f1f1b4'"
+              ><PartsSvgIcon :icon="'x'" :color="'#a8a8a8'"
             /></a>
             <a href="https://github.com/mirumirumi" target="_blank" rel="nofollow"
-              ><PartsSvgIcon :icon="'github'" :color="'#a8a8a8'" :dark="'#f1f1b4'"
+              ><PartsSvgIcon :icon="'github'" :color="'#a8a8a8'"
             /></a>
             <a href="https://zenn.dev/mirumi" target="_blank" rel="nofollow"
-              ><PartsSvgIcon :icon="'zenn'" :color="'#a8a8a8'" :dark="'#f1f1b4'"
+              ><PartsSvgIcon :icon="'zenn'" :color="'#a8a8a8'"
             /></a>
             <a href="https://note.com/mirumi_milmemo" target="_blank" rel="nofollow"
-              ><PartsSvgIcon :icon="'note'" :color="'#a8a8a8'" :dark="'#f1f1b4'"
+              ><PartsSvgIcon :icon="'note'" :color="'#a8a8a8'"
             /></a>
           </div>
         </div>

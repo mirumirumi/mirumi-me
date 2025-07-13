@@ -5,7 +5,7 @@
       <PartsSvgIcon
         :icon="icon"
         :color="'#ebb79f'"
-        :dark="'#f1f1b4'"
+        :dark="'#c9c97f'"
         class="light"
         :class="{ dark: isOn }"
       />
@@ -77,11 +77,12 @@ const icon = computed(() => {
     }
   }
   input:checked + label {
-    background-color: #b8b6cb;
+    border-color: #b8b7ba;
+    background-color: #99989b;
     &::before {
       left: calc(100% - 1em + 0.05em);
-      background-color: #37335f;
-      border-color: #49446e;
+      background-color: #3a394b;
+      border-color: #474459;
     }
   }
 }

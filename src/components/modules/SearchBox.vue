@@ -65,7 +65,7 @@ const move = async () => {
     padding-right: 3.3em;
     font-size: 0.9em;
     line-height: 1.8;
-    border: 1.9px solid #e5e5e5;
+    border: 1.9px solid var(--color-input-border);
     border-radius: 31px;
     background-color: transparent;
     &::placeholder {

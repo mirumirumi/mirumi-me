@@ -17,6 +17,7 @@
  */
 :root {
   --color-text: #4e4e4e;
+  --color-text-title-heading: #554545;
   --color-gray: #bab9b9;
   --color-text-white: #f2f2f2;
   --color-text-white-hover: #e3e3e3;
@@ -25,17 +26,18 @@
   --color-primary: #816e68;
   --color-mi: #604134;
   --color-link: #c74f16;
-  --color-invalid: #dc3545;
+  --color-input-border: #e2dcd3;
   --color-input-focus-border: #e9b18d;
   --color-input-focus-shadow: 0 0 0 0.19rem rgba(237, 120, 45, 0.37);
+  --color-scrollbar-thumb: #c7bfba;
   --width-max-base: 1188px;
-  --width-scrollbar: 16px;
   --width-max-screen: calc(var(--width-max-base) - var(--width-scrollbar));
   --font-family: "Custom Noto Sans", helvetica, arial, verdana, sans-serif;
 }
 * {
   box-sizing: border-box;
   overflow-wrap: break-word;
+  scrollbar-color: var(--color-scrollbar-thumb) var(--color-background);
 }
 html, body {
   margin: 0;
@@ -96,7 +98,7 @@ textarea:focus-visible {
   line-height: 1.5;
   background-color: #ffffff;
   background-clip: padding-box;
-  border: 1.1px solid #e2dcd3;
+  border: 1.1px solid var(--color-input-border);
   appearance: none;
   border-radius: 7px;
   transition: all 0.17s ease-out;
@@ -203,15 +205,6 @@ label {
   border-right-color: transparent;
   border-bottom-color: transparent;
 }
-::-webkit-scrollbar {
-  width: var(--width-scrollbar);
-}
-::-webkit-scrollbar-thumb {
-  border: 3.5px solid rgba(0, 0, 0, 0);
-  background-clip: padding-box;
-  border-radius: 9999px;
-  background-color: #c7bfba;
-}
 ::selection {
   color: #ffffff;
   background-color: var(--color-primary);
@@ -237,7 +230,7 @@ label {
       h1.title {
         margin: 0 0 0.5em;
         padding: 0 0.1em;
-        color: #554545;
+        color: var(--color-text-title-heading);
         line-height: 1.5;
         font-size: 1.4em;
         font-weight: bold;
@@ -263,7 +256,7 @@ label {
         font-size: 0.78em;
         .meta_block {
           display: inline-block;
-          padding: 0.7em 5.7em 0.7em 4.7em;
+          padding: 0.5em 5.7em 0.85em 4.7em;
           border-radius: 11px;
           background-color: var(--color-footer);
           > * {

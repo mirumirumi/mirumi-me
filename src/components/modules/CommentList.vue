@@ -130,7 +130,7 @@ try {
 .comment_list {
   margin-top: 5em;
   .title {
-    padding: 0 0 0.3em 0.3em;
+    padding-bottom: 0.3em;
     color: #6c6c6c;
     font-size: 1.09em;
     font-weight: bold;
@@ -142,6 +142,13 @@ try {
   }
   .comments_wrap {
     margin: 1.7em 0 3em;
+  }
+}
+.dark {
+  .comment_list {
+    .title {
+      color: #c8c8c8;
+    }
   }
 }
 </style>
