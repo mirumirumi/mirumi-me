@@ -30,11 +30,10 @@
 const route = useRoute()
 const appConfig = useAppConfig()
 
-const { data } = await useFetch(`/mirumi/entry_list`, {
+const { data } = await useFetch("/mirumi/entry_list", {
   baseURL: appConfig.baseURL,
   parseResponse: JSON.parse,
 })
-// biome-ignore lint:
 const entries = data.value as Record<string, any>[]
 
 interface Entry {

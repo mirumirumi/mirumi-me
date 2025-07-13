@@ -87,7 +87,7 @@ onMounted(async () => {
   await usePageTransition(null)
 })
 
-let postIds: number[] = []
+const postIds: number[] = []
 
 /**
  * Prepare nice-to-meet-you-10 entries
@@ -119,7 +119,7 @@ let posts: PageSummary[] = [
 /**
  * Prepare new entries
  */
-const { data: resNewEntries } = await useFetch(`/wp/v2/posts`, {
+const { data: resNewEntries } = await useFetch("/wp/v2/posts", {
   baseURL: appConfig.baseURL,
   params: {
     // Retrieve only the first 4 (or 2) indexes
@@ -140,7 +140,7 @@ for (const p of resNewEntries.value as Record<string, number>[]) {
 /**
  * Prepare "pc" category entries
  */
-const { data: resPc } = await useFetch(`/wp/v2/posts`, {
+const { data: resPc } = await useFetch("/wp/v2/posts", {
   baseURL: appConfig.baseURL,
   params: {
     page: 1,
@@ -160,7 +160,7 @@ for (const p of resPc.value as Record<string, number>[]) {
 /**
  * Prepare "mobile" category entries
  */
-const { data: resMobile } = await useFetch(`/wp/v2/posts`, {
+const { data: resMobile } = await useFetch("/wp/v2/posts", {
   baseURL: appConfig.baseURL,
   params: {
     page: 1,
@@ -180,7 +180,7 @@ for (const p of resMobile.value as Record<string, number>[]) {
 /**
  * Prepare "life" category entries
  */
-const { data: resLife } = await useFetch(`/wp/v2/posts`, {
+const { data: resLife } = await useFetch("/wp/v2/posts", {
   baseURL: appConfig.baseURL,
   params: {
     page: 1,
@@ -200,7 +200,7 @@ for (const p of resLife.value as Record<string, number>[]) {
 /**
  * Prepare "game" category entries
  */
-const { data: resGame } = await useFetch(`/wp/v2/posts`, {
+const { data: resGame } = await useFetch("/wp/v2/posts", {
   baseURL: appConfig.baseURL,
   params: {
     page: 1,
@@ -220,7 +220,7 @@ for (const p of resGame.value as Record<string, number>[]) {
 /**
  * Prepare "blog" category entries
  */
-const { data: resBlog } = await useFetch(`/wp/v2/posts`, {
+const { data: resBlog } = await useFetch("/wp/v2/posts", {
   baseURL: appConfig.baseURL,
   params: {
     page: 1,
@@ -240,7 +240,7 @@ for (const p of resBlog.value as Record<string, number>[]) {
 /**
  * Prepare "software-design" category entries
  */
-const { data: resSoftwareDesign } = await useFetch(`/wp/v2/posts`, {
+const { data: resSoftwareDesign } = await useFetch("/wp/v2/posts", {
   baseURL: appConfig.baseURL,
   params: {
     page: 1,
@@ -260,7 +260,7 @@ for (const p of resSoftwareDesign.value as Record<string, number>[]) {
 /**
  * Prepare "dreaming" category entries
  */
-const { data: resDreaming } = await useFetch(`/wp/v2/posts`, {
+const { data: resDreaming } = await useFetch("/wp/v2/posts", {
   baseURL: appConfig.baseURL,
   params: {
     page: 1,
@@ -280,7 +280,7 @@ for (const p of resDreaming.value as Record<string, number>[]) {
 /**
  * Prepare "notes" category entries
  */
-const { data: resNotes } = await useFetch(`/wp/v2/posts`, {
+const { data: resNotes } = await useFetch("/wp/v2/posts", {
   baseURL: appConfig.baseURL,
   params: {
     page: 1,

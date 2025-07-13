@@ -10,6 +10,9 @@
   },
   "linter": {
     "rules": {
+      "suspicious": {
+        "noExplicitAny": "warn"
+      },
       "style": {
         "noNonNullAssertion": "off",
         "useTemplate": "off",

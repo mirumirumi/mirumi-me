@@ -114,7 +114,7 @@ const submit = async () => {
     parseResponse: JSON.parse,
   })
 
-  const { error } = await useFetch(`/wp/v2/comments`, {
+  const { error } = await useFetch("/wp/v2/comments", {
     baseURL: appConfig.baseURL,
     method: "POST",
     headers: {
