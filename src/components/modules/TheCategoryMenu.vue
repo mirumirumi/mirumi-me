@@ -220,7 +220,7 @@ const interruptChoose = () => {
         color: var(--color-text);
       }
       &:hover {
-        background-color: #504f4f;
+        background-color: #f8f5f2;
         a {
           color: var(--color-text);
         }
@@ -235,6 +235,17 @@ const interruptChoose = () => {
   }
   @include mobile {
     left: -71%;
+  }
+}
+.dark {
+  .category_menu {
+    ul {
+      li {
+        &:hover {
+          background-color: #504f4f;
+        }
+      }
+    }
   }
 }
 </style>

@@ -1,0 +1,123 @@
+.dark {
+  #content {
+    .toc {
+      border-color: #565351;
+      .toc-content {
+        border-top-color: #454545;
+      }
+    }
+    h2, h3, h4 {
+      border-bottom-color: #4f4f4f;
+    }
+    blockquote {
+      color: #b2b2b2;
+      border-left-color: #86827e;
+    }
+    code {
+      color: var(--color-text);
+      background: #4a4c4d;
+    }
+    table {
+      border-color: #6c6a66;
+      th, td {
+        border-color: #6c6a66;
+      }
+      thead {
+        background-color: #424141;
+        tr {
+          th {
+            border-color: #555555;
+          }
+        }
+      }
+      tbody tr td {
+        border-color: #656565;
+      }
+    }
+    .wp-caption {
+      .wp-caption-text {
+        color: #b8b7b6;
+      }
+    }
+    .box-common {
+      color: var(--color-text);
+      border: solid 2.7px #5d5d5d;
+      &.box-info {
+        background-color: #4a4742;
+        &::before {
+          background-color: #b9ab78;
+        }
+      }
+      &.box-alert {
+        background-color: #453e3d;
+        &::before {
+          background-color: #af7474;
+        }
+      }
+      &.box-rewrite {
+        background-color: #42453f;
+        &::before {
+          background-color: #7f946c;
+        }
+      }
+    }
+    .keyboard-key {
+      color: #d9d9d9;
+      background-color: #535353;
+      border: solid 1.57px #878787;
+    }
+    a.blogcard {
+      &:hover .blogcard {
+        background-color: #333334;
+      }
+      .blogcard {
+        border-color: #686868;
+        .thumbnail.github + .content {
+          .favicon {
+            img {
+              mix-blend-mode: multiply;
+            }
+          }
+        }
+        .footer {
+          color: #aeadab;
+          .category {
+            &::before {
+              background-color: #aeadab;
+            }
+          }
+        }
+      }
+    }
+    // いまは使っていないのでダークモードのカラー調整も未実施
+    .static_tweet {}
+    .speech-balloon {
+      background-color: #404040;
+    }
+    .appreach {
+      border-color: #717171;
+    }
+    .waku-common {
+      border-color: #504f4e;
+      background-color: #363636;
+    }
+    .btn-wrap {
+      > a {
+        filter: saturate(0.5);
+        &:hover {
+          filter: saturate(0.3);
+        }
+      }
+    }
+    .dot-line-brown {
+      border-top-width: 4.3px;
+      border-color: #595754;
+    }
+    .micro-bottom {
+      color: #b8b7b6;
+    }
+    .color-red {
+      color: #dd6262;
+    }
+  }
+}

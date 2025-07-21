@@ -135,15 +135,10 @@ pre {
 
 // dark mode
 .dark {
-  pre {
+  pre[class*="language-"] {
+    background: #363839 !important;
     code {
-      // background: #2c2d3a !important;
-      background: #272c32 !important;
+      background: #363839 !important;
     }
-  }
-  pre.language-no {
-    color: var(--color-text) !important;
-    border: 2.3px solid #898683 !important;
-    background-color: #585858 !important;
   }
 }
