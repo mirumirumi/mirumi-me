@@ -139,7 +139,7 @@ const submit = async () => {
   isSubmitting.value = true
 
   const { error } = await useFetch(
-    `https://wxdwbxfdjdqc7ekpokyjnhmhd40dcldj.lambda-url.ap-northeast-1.on.aws/`,
+    "https://wxdwbxfdjdqc7ekpokyjnhmhd40dcldj.lambda-url.ap-northeast-1.on.aws/",
     {
       method: "POST",
       headers: {
