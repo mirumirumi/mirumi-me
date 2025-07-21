@@ -243,6 +243,9 @@ const interruptChoose = () => {
       li {
         &:hover {
           background-color: #504f4f;
+          &.others_li_wrap {
+            background-color: var(--color-background);
+          }
         }
       }
     }
