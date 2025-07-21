@@ -254,7 +254,7 @@ label {
       }
       .meta {
         margin: 1.9em auto;
-        font-size: 0.78em;
+        font-size: 0.75em;
         .meta_block {
           display: inline-block;
           padding: 0.5em 5.7em 0.85em 4.7em;
@@ -268,14 +268,16 @@ label {
               left: -2.3em;
             }
             &:nth-child(2) {
-              margin: 0.35em auto 0.25em;
+              margin: 0.4em auto;
             }
           }
           a {
             color: #a7a4a1;
           }
           .dates {
-            margin-top: 0.45em;
+            position: relative;
+            top: 1px;
+            margin-top: 0.5em;
             color: #a7a4a1;
             span {
               position: relative;
@@ -283,6 +285,9 @@ label {
             }
             svg {
               top: 1px;
+              @include mobile {
+                top: 0;
+              }
             }
             .updated_at {
               margin-left: 0.7em;
@@ -296,8 +301,15 @@ label {
                 top: 2px;
                 left: 0.35em;
                 width: 0.93em;
+                @include mobile {
+                  top: 1px;
+                }
               }
             }
+          }
+          @include mobile {
+            padding-left: 4.1em;
+            padding-right: 0.3em;
           }
         }
       }

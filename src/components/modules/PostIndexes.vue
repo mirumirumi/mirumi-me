@@ -78,6 +78,9 @@ watch(
       line-height: 1.3;
       font-size: 0.87em;
       font-weight: bold;
+      @include mobile {
+        margin-bottom: 0.3em;
+      }
     }
     .meta {
       margin-top: 0.17em;
@@ -102,12 +105,12 @@ watch(
       filter: brightness(0.98);
     }
     @include mobile {
-      max-width: 100%;
-      height: auto;
-      padding: 0 0.7em;
+      margin-bottom: 1.5em;
+      padding: 0.65em 1.3em 0.8em;
     }
   }
   @include mobile {
+    margin-bottom: 2.7em;
     padding: 0 0.7em;
   }
 }

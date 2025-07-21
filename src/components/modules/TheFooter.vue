@@ -151,6 +151,10 @@ const onEnter = () => {
       .copyright {
         font-size: 0.83em;
         text-align: center;
+        @include mobile {
+          order: 1;
+          margin-top: 1.1em;
+        }
       }
       .right {
         display: flex;
@@ -168,6 +172,14 @@ const onEnter = () => {
             }
           }
         }
+        @include mobile {
+          justify-content: center;
+          padding-right: 0.5em;
+        }
+      }
+      @include mobile {
+        flex-direction: column;
+        margin-top: 2.3em;
       }
     }
     @include mobile {

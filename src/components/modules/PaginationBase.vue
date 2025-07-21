@@ -172,6 +172,9 @@ const toTop = () => {
       height: 3.5px;
       border-radius: 50%;
       background-color: #727272;
+      @include mobile {
+        bottom: -1px;
+      }
     }
   }
   .ellipsis {
@@ -183,6 +186,9 @@ const toTop = () => {
       height: 20px;
       line-height: 20px;
     }
+  }
+  @include mobile {
+    margin-bottom: 2.1em;
   }
 }
 .dark {
