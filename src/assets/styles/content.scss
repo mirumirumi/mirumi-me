@@ -581,6 +581,9 @@
           font-size: 0.7em;
         }
       }
+      &.page .footer {
+        display: none;
+      }
       @include mobile {
         height: 90px;
         padding: 0 0.9em 0 1.1em;
