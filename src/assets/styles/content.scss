@@ -390,6 +390,33 @@
       padding-right: 1.1em;
     }
   }
+  .waku-common {
+    padding: 0 1.53em 0.17em;
+    background-color: #fffcf8;
+    border: solid 3px #e6dacd;
+    border-radius: 7px;
+    > ul, 
+    > ol {
+      margin-top: 1.7em;
+      margin-bottom: 1.87em;
+      padding-left: 1.5em;
+      > li {
+        margin: 0.67em 0;
+      }
+      @include mobile {
+        margin-top: 1.3em;
+        margin-bottom: 1.5em;
+        padding-left: 1.3em;
+      }
+    }
+    img {
+      border: none;
+    }
+    @include mobile {
+      padding-left: 1em;
+      padding-right: 0.9em;
+    }
+  }
   .num-ol {
     counter-reset: number;
     padding-left: 1em;
@@ -1089,30 +1116,6 @@
     }
     @include mobile {
       padding-top: 0.9em;
-    }
-  }
-  .waku-common {
-    padding: 0 1.53em 0.17em;
-    background-color: #fffcf8;
-    border: solid 3px #e6dacd;
-    border-radius: 7px;
-    > ul, 
-    > ol {
-      margin-top: 1.7em;
-      margin-bottom: 1.87em;
-      padding-left: 1.5em;
-      > li {
-        margin: 0.67em 0;
-      }
-      @include mobile {
-        margin-top: 1.3em;
-        margin-bottom: 1.5em;
-        padding-left: 1.3em;
-      }
-    }
-    @include mobile {
-      padding-left: 1em;
-      padding-right: 0.9em;
     }
   }
   .voice_wrap {
