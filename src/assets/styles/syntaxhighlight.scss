@@ -117,17 +117,6 @@ pre[class*="language-shell"] {
   }
 }
 
-// original-nohighlight
-pre.language-no {
-  padding: 0.77em 1.3em !important;
-  color: #585858 !important;
-  font-family: Consolas, Monaco, monospace !important;
-  border: 2.3px solid #e9e3de !important;
-  border-radius: 7px !important;
-  background-color: #fdfbf9 !important;
-  box-shadow: none !important;
-}
-
 // for failed loading Prism.js
 pre {
   overflow-x: auto;
