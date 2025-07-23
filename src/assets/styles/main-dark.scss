@@ -11,11 +11,12 @@
   --color-link: #cfa277;
   --color-media-border: #474340;
   --color-input-border: #a4a09b;
-  --color-input-focus-border: #f0c09f;
-  --color-input-focus-shadow: 0 0 0 0.19rem rgba(255, 162, 101, 0.37);
+  --color-input-focus-border: #a18775;
+  --color-input-focus-shadow: 0 0 0 0.19rem rgba(180, 147, 125, 0.37);
   --color-scrollbar-thumb: var(--color-gray);
   input, textarea {
     color: var(--color-text);
+    border: none;
     background-color: #3f3f40;
   }
   input::placeholder,

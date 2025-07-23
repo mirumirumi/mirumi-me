@@ -28,8 +28,8 @@
   --color-link: #c74f16;
   --color-media-border: #dfd1c6;
   --color-input-border: #e2dcd3;
-  --color-input-focus-border: #e9b18d;
-  --color-input-focus-shadow: 0 0 0 0.19rem rgba(237, 120, 45, 0.37);
+  --color-input-focus-border: transparent;
+  --color-input-focus-shadow: 0 0 0 0.19rem rgba(186, 139, 109, 0.37);
   --color-scrollbar-thumb: #c7bfba;
   --width-max-base: 1188px;
   --width-max-screen: calc(var(--width-max-base) - var(--width-scrollbar));
@@ -102,7 +102,7 @@ textarea:focus-visible {
   border: 1.1px solid var(--color-input-border);
   appearance: none;
   border-radius: 7px;
-  transition: all 0.17s ease-out;
+  transition: all 0.07s ease-out;
   &:focus {
     border-color: var(--color-input-focus-border);
     box-shadow: var(--color-input-focus-shadow);
