@@ -167,27 +167,56 @@
     font-size: 0.87em;
     border: solid 2.3px #f0eae1;
     border-spacing: 0;
-    border-collapse: collapse;
+    border-radius: 7px;
+    border-collapse: separate;
     th,
     td {
       border: 1px solid #eeeeee;
       padding: 6px;
     }
-  }
-  thead {
-    background-color: #faf6f1;
-    tr {
-      th {
-        border: solid 1.7px #f0eae1;
+    thead {
+      background-color: #faf6f1;
+      tr {
+        th {
+          border: solid 1.7px #f0eae1;
+        }
       }
     }
-  }
-  tbody tr td {
-    border: 1.3px dashed #bfbfbf;
-  }
-  th > code,
-  td > code {
-    word-break: break-all;
+    tbody tr td {
+      border: 1.3px dashed #dadada;
+    }
+    th > code,
+    td > code {
+      word-break: break-all;
+    }
+    tr:first-child td:first-child {
+      border-top: none !important;
+      border-left: none !important;
+    }
+    tr:first-child td:last-child {
+      border-top: none !important;
+      border-right: none !important;
+    }
+    tr:last-child td:first-child {
+      border-bottom: none !important;
+      border-left: none !important;
+    }
+    tr:last-child td:last-child {
+      border-bottom: none !important;
+      border-right: none !important;
+    }
+    tr:first-child td {
+      border-top: none !important;
+    }
+    tr:last-child td {
+      border-bottom: none !important;
+    }
+    td:first-child {
+      border-left: none !important;
+    }
+    td:last-child {
+      border-right: none !important;
+    }
   }
   .toc {
     display: table;
