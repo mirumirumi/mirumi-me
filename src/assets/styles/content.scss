@@ -73,6 +73,9 @@
     &.win11_ss {
       border-radius: 8px !important;
     }
+    &.mac_ss {
+      border-radius: 13px !important;
+    }
     ~ em {
       display: block;
       margin: 3px auto;
@@ -1317,6 +1320,7 @@
   .dot-line-brown {
     width: 97%;
     margin: 44px auto -33px;
+    line-height: 1.8;
     border-color: #f5ebdc;
     border-top-width: 5px;
     border-top-style: dotted;
