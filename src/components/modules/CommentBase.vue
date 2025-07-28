@@ -29,8 +29,10 @@
             {{ formatTimestamp(c.comment_date) }}
           </div>
         </div>
-        <div class="link" @click="copyCommentUrl(c)">
-          <PartsSvgIcon :icon="'link'" :color="'#9b9b9b'" />
+        <div class="link">
+          <a :href="`#comment-${c.comment_ID}`" @click="copyCommentUrl(c)">
+            <PartsSvgIcon :icon="'link'" :color="'#9b9b9b'" />
+          </a>
         </div>
       </div>
       <div class="content" v-html="formatContent(c.comment_content)"></div>
