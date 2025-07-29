@@ -120,16 +120,8 @@ for (const [i, c] of comments.entries()) {
 }
 
 // Testing
-try {
-  if (res.length !== count()) {
-    throw Error("Comments could not be structured correctly")
-  }
-  function count(): number {
-    return (JSON.stringify(comments).match(/"comment_ID":/g) ?? []).length
-  }
-} catch (err) {
-  // biome-ignore lint/complexity/noUselessCatch:
-  throw err
+if (res.length !== (JSON.stringify(comments).match(/"comment_ID":/g) ?? []).length) {
+  throw Error("Comments could not be structured correctly")
 }
 </script>
 
