@@ -1,7 +1,7 @@
 <template>
   <div class="comment_base">
     <div :class="`comment depth-${depth}`" :id="`comment-${c.comment_ID}`">
-      <div class="meta_data">
+      <div class="meta_data" @mouseenter="hover = true" @mouseleave="hover = false">
         <div class="icon">
           <img
             v-if="c.user_id === '1'"
@@ -30,9 +30,7 @@
           </div>
         </div>
         <div class="link">
-          <a :href="`#comment-${c.comment_ID}`">
-            <PartsSvgIcon :icon="'link'" :color="'#9b9b9b'" />
-          </a>
+          <ModulesHashLink :hash-link="`#comment-${c.comment_ID}`" :hover="hover" />
         </div>
       </div>
       <div class="content" v-html="formatContent(c.comment_content)"></div>
@@ -55,6 +53,7 @@ defineProps<{
 }>()
 
 const isOpenReply = ref(false)
+const hover = ref(false)
 
 const formatContent = (content: string) => {
   return (
@@ -72,7 +71,10 @@ const formatContent = (content: string) => {
 }
 
 const formatTimestamp = (timestamp: string) => {
-  return timestamp.replace(/(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2}):\d{2}/gim, "$1/$2/$3 $4")
+  return timestamp.replace(
+    /(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2}):\d{2}/gim,
+    "$1/$2/$3 $4"
+  )
 }
 </script>
 
@@ -118,18 +120,10 @@ const formatTimestamp = (timestamp: string) => {
         }
       }
       .link {
-        display: none;
         position: absolute;
         right: 3em;
-        top: 0;
-        bottom: 3px;
-        svg {
-          width: 1.3em;
-          transform: rotate(-23deg);
-        }
-      }
-      &:hover .link {
-        display: block;
+        top: 1.3em;
+        bottom: 0;
       }
     }
     .content {
@@ -159,6 +153,16 @@ const formatTimestamp = (timestamp: string) => {
   .reply {
     .comment_form {
       margin-top: 1em;
+    }
+  }
+}
+.dark {
+  .comment_base {
+    .reply_button {
+      button {
+        color: #887a76;
+        border-color: #887a76;
+      }
     }
   }
 }

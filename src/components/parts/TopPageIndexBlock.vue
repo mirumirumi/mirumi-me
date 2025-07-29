@@ -112,4 +112,19 @@ defineProps<{
     }
   }
 }
+.dark {
+  .block_title {
+    color: #8e8c8b;
+  }
+  .indexes {
+    a.index {
+      .thumbnail img {
+        border-color: #52504e;
+      }
+      .title {
+        color: var(--color-text);
+      }
+    }
+  }
+}
 </style>

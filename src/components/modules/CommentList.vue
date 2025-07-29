@@ -1,7 +1,9 @@
 <template>
   <div class="comment_list">
     <div class="title"> この記事へのコメント </div>
-    <div v-if="comments.length === 0" class="no_contents"> コメントはまだひとつもありません :) </div>
+    <div v-if="comments.length === 0" class="no_contents">
+      コメントはまだひとつもありません :)
+    </div>
     <div v-else class="comments_wrap">
       <template v-for="c in comments" :key="c.comment_ID">
         <ModulesCommentBase :c="c" :depth="1" />
@@ -77,7 +79,9 @@ for (const [i, r] of res.entries()) {
 
 // Compare the comment_ID of the `comments` with the comment_parent of the remaining comments
 // This will always be depth 4, so put all in the parent found here (this would also limit indentation to 4 times)
-const remainingIndecies: number[] = [...Array(res.length).keys()].filter((i) => used.indexOf(i) == -1)
+const remainingIndecies: number[] = [...Array(res.length).keys()].filter(
+  (i) => used.indexOf(i) === -1
+)
 const remainingComments: Record<string, any>[] = []
 for (const index of remainingIndecies) {
   remainingComments.push(res[index])
@@ -96,7 +100,9 @@ for (const r of remainingComments) {
     }
   }
 }
-const cleanRemainingComments: Record<string, any>[] = remainingComments.filter((x) => !_toDelete.includes(x.comment_ID))
+const cleanRemainingComments: Record<string, any>[] = remainingComments.filter(
+  (x) => !_toDelete.includes(x.comment_ID)
+)
 
 // Merge them!
 for (const [i, c] of comments.entries()) {
@@ -122,6 +128,7 @@ try {
     return (JSON.stringify(comments).match(/"comment_ID":/g) ?? []).length
   }
 } catch (err) {
+  // biome-ignore lint/complexity/noUselessCatch:
   throw err
 }
 </script>
@@ -130,7 +137,7 @@ try {
 .comment_list {
   margin-top: 5em;
   .title {
-    padding: 0 0 0.3em 0.3em;
+    padding-bottom: 0.3em;
     color: #6c6c6c;
     font-size: 1.09em;
     font-weight: bold;
@@ -142,6 +149,13 @@ try {
   }
   .comments_wrap {
     margin: 1.7em 0 3em;
+  }
+}
+.dark {
+  .comment_list {
+    .title {
+      color: #c8c8c8;
+    }
   }
 }
 </style>

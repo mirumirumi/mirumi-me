@@ -237,4 +237,18 @@ const interruptChoose = () => {
     left: -71%;
   }
 }
+.dark {
+  .category_menu {
+    ul {
+      li {
+        &:hover {
+          background-color: #504f4f;
+          &.others_li_wrap {
+            background-color: var(--color-background);
+          }
+        }
+      }
+    }
+  }
+}
 </style>

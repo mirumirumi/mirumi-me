@@ -84,3 +84,13 @@
 .original_fade-move {
   transition: all 333ms ease;
 }
+.dark {
+  .Vue-Toastification__toast--success {
+    color: #b7c6b9;
+    background-color: #424842;
+  }
+  .Vue-Toastification__toast--error {
+    color: #d4b9b9;
+    background-color: #484243;
+  }
+}

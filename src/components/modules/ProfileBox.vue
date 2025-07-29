@@ -133,4 +133,9 @@ switch (p.category) {
     padding: 1em 1em 1.3em 0.5em;
   }
 }
+.dark {
+  .profile_box {
+    border-color: #6c6a67;
+  }
+}
 </style>

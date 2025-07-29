@@ -114,7 +114,7 @@ const submit = async () => {
     parseResponse: JSON.parse,
   })
 
-  const { error } = await useFetch(`/wp/v2/comments`, {
+  const { error } = await useFetch("/wp/v2/comments", {
     baseURL: appConfig.baseURL,
     method: "POST",
     headers: {
@@ -183,6 +183,17 @@ const submit = async () => {
   }
   @include mobile {
     padding: 0 0.3em;
+  }
+}
+.dark {
+  .comment_form {
+    form {
+      label {
+        .required {
+          color: #d77777;
+        }
+      }
+    }
   }
 }
 </style>

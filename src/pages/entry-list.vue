@@ -30,11 +30,10 @@
 const route = useRoute()
 const appConfig = useAppConfig()
 
-const { data } = await useFetch(`/mirumi/entry_list`, {
+const { data } = await useFetch("/mirumi/entry_list", {
   baseURL: appConfig.baseURL,
   parseResponse: JSON.parse,
 })
-// biome-ignore lint:
 const entries = data.value as Record<string, any>[]
 
 interface Entry {
@@ -123,6 +122,17 @@ usePageInfo({
           > a {
             text-decoration: none;
           }
+        }
+      }
+    }
+  }
+}
+.dark {
+  .entry_list_view {
+    > ul {
+      > li.category {
+        > a {
+          border-bottom-color: #7f7f7f;
         }
       }
     }
