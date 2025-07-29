@@ -30,7 +30,7 @@
           </div>
         </div>
         <div class="link">
-          <ModulesHashLink :hash-link="`#comment-${c.comment_ID}`" :hover="hover" />
+          <PartsHashLink :hash-link="`#comment-${c.comment_ID}`" :hover="hover" />
         </div>
       </div>
       <div class="content" v-html="formatContent(c.comment_content)"></div>

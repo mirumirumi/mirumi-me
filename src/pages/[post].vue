@@ -73,7 +73,7 @@
         <PartsTopButton />
       </Teleport>
       <Teleport v-for="[i, tocId] in tocIds.entries()" :to="`#${tocId}`" :key="tocId">
-        <ModulesHashLink
+        <PartsHashLink
           :hash-link="`#${tocId.replace('-heading', '')}`"
           :hover="hover[i]"
           style="
