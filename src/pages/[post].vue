@@ -68,11 +68,24 @@
       <ModulesCommentForm class="page_transition_target" />
       <PartsAdSenseBase :kind="'Multiplex'" />
     </main>
-    <Teleport to="body">
-      <ClientOnly>
+    <ClientOnly>
+      <Teleport to="body">
         <PartsTopButton />
-      </ClientOnly>
-    </Teleport>
+      </Teleport>
+      <Teleport v-for="[i, tocId] in tocIds.entries()" :to="`#${tocId}`" :key="tocId">
+        <ModulesHashLink
+          :hash-link="`#${tocId.replace('-heading', '')}`"
+          :hover="hover[i]"
+          style="
+            position: absolute;
+            top: 0.6em;
+            bottom: 0;
+            right: 2.1em;
+            font-size: 0.8em;
+          "
+        />
+      </Teleport>
+    </ClientOnly>
   </div>
 </template>
 
@@ -83,24 +96,56 @@ import { insertAdSense } from "@/assets/scripts/insert-adsense"
 const route = useRoute()
 const appConfig = useAppConfig()
 
-onMounted(async () => {
-  await usePageTransition(0.7)
-})
-
 const slug = route.params.post as string
-
 const { data } = await useFetch(`/mirumi/post_data/${slug}`, {
   baseURL: appConfig.baseURL,
 })
-// biome-ignore lint:
 const post = data.value as any
 
 // Insert Google AdSense before each h2
 post.content = insertAdSense(post.content)
 
-// Exec content scripts
-onMounted(() => {
+const headings = ref<Array<HTMLHeadingElement>>([])
+const tocIds = ref<Array<string>>([])
+const hover = ref<Array<boolean>>([])
+const onMouseEnter = (index: number) => {
+  hover.value[index] = true
+}
+const onMouseLeave = (index: number) => {
+  hover.value[index] = false
+}
+
+onMounted(async () => {
+  await usePageTransition(0.7)
+
+  // Exec content scripts
   cs.loadYouTube()
+
+  // Insert toc hash links
+  headings.value = Array.from(
+    document.querySelectorAll<HTMLHeadingElement>(
+      "#content h2, #content h3, #content h4, #content h5, #content h6"
+    )
+  )
+  headings.value.forEach((el, i) => {
+    // Bind mouse hover evenets for HashLink component
+    el.addEventListener("mouseenter", () => onMouseEnter(i))
+    el.addEventListener("mouseleave", () => onMouseLeave(i))
+    // Give ids
+    const spanId = `${el.children[0].id}-heading`
+    el.id = spanId
+    tocIds.value.push(spanId)
+  })
+  // tocIds.value = Array.from(document.querySelectorAll<HTMLAnchorElement>('[id^="toc"]'))
+  //   .filter((el) => /^toc\d+$/.test(el.id))
+  //   .map((el) => el.id)
+})
+
+onUnmounted(() => {
+  headings.value.forEach((el, i) => {
+    el.removeEventListener("mouseenter", () => onMouseEnter(i))
+    el.removeEventListener("mouseleave", () => onMouseLeave(i))
+  })
 })
 
 useHead({ script: [{ src: "/assets/prism.js", defer: true }] })
@@ -115,4 +160,6 @@ usePageInfo({
   updatedAt: post.modified,
   thumbnail: post.thumbnail_url,
 })
+
+// Don't use scoped <style> because this component scoped style has overridden styles of `content.scss`
 </script>

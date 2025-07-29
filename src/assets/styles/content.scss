@@ -9,6 +9,7 @@
     margin: 0;
   }
   h2, h3, h4, h5, h6 {
+    position: relative;
     margin-top: 1.8em;
     margin-bottom: 1.7em;
     padding-top: 0.7em;
@@ -31,11 +32,12 @@
     border-bottom: solid 1px #e0e0e0;
   }
   h4 {
-    display: inline-block;
     margin: 0;
-    padding: 0.5em 0.3em 0.4em;
     font-size: 1.1em;
-    border-bottom: solid 1.3px #d9d9d9;
+    span {
+      padding: 0.5em 0.3em 0.4em;
+      border-bottom: solid 1.3px #d9d9d9;
+    }
   }
   h5 {
     font-size: 1.09em;
