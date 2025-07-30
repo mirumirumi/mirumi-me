@@ -30,14 +30,15 @@
           </div>
         </div>
         <div class="link">
-          <ModulesHashLink :hash-link="`#comment-${c.comment_ID}`" :hover="hover" />
+          <PartsHashLink :hash-link="`#comment-${c.comment_ID}`" :hover="hover" />
         </div>
       </div>
       <div class="content" v-html="formatContent(c.comment_content)"></div>
       <div class="reply_button">
-        <PartsBaseButton :type="'outline'" @click="isOpenReply = !isOpenReply">
-          {{ isOpenReply ? "やめる" : "返信する" }}
-        </PartsBaseButton>
+        <!-- Using this with `v-show` breaks the dynamic width calculation -->
+        <button type="button" @click="isOpenReply = !isOpenReply">{{
+          isOpenReply ? "やめる" : "返信する"
+        }}</button>
       </div>
     </div>
     <div v-if="isOpenReply" class="reply">
@@ -143,10 +144,27 @@ const formatTimestamp = (timestamp: string) => {
     .reply_button {
       text-align: right;
       button {
+        display: inline-block;
         margin-right: 1em;
         padding: 0.25em 1em 0.3em;
         font-size: 0.73em;
+        font-weight: bold;
+        font-family: var(--font-family);
+        line-height: 1.5;
+        text-align: center;
+        text-decoration: none;
+        color: #887a76;
+        border: 1.9px solid #887a76;
+        border-radius: 7px;
+        background-color: var(--color-background);
         box-shadow: none;
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.13s ease-out;
+        &:hover {
+          opacity: 0.7;
+          filter: contrast(0.9);
+        }
       }
     }
   }

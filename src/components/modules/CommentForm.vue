@@ -3,13 +3,13 @@
     <h3 class="title">
       {{ reply_to === "0" ? "新しいコメントを書く" : "このコメントに返信する" }}
     </h3>
-    <div class="description">
+    <div v-if="reply_to === '0'" class="description">
       <ul>
         <li
           >必須項目はコメント本文のみですが、お名前はぜひご記入いただけると嬉しいです。<br />
           ※メールアドレスを書いた場合も公開されることはないのでご安心ください。</li
         >
-        <li v-if="reply_to === '0'"
+        <li
           >特定のコメントに返信したい場合は各コメントにある「返信する」ボタンからどうぞ。</li
         >
         <li
@@ -70,9 +70,8 @@
           :isSubmitButton="true"
           :isSubmitting="isSubmitting"
           @click="submit"
+          >コメントを送信する</PartsBaseButton
         >
-          コメントを送信する
-        </PartsBaseButton>
       </div>
     </form>
   </div>
@@ -149,7 +148,7 @@ const submit = async () => {
 
 <style lang="scss" scoped>
 .comment_form {
-  margin-top: 5em;
+  margin-top: 4em;
   .description {
     margin-bottom: 1.7em;
     font-size: 0.7em;
@@ -167,6 +166,7 @@ const submit = async () => {
   }
   form {
     label {
+      font-size: 0.9em;
       .required {
         margin-left: 0em;
         padding: 0;

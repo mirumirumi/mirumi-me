@@ -95,9 +95,8 @@
                 :isSubmitButton="true"
                 :isSubmitting="isSubmitting"
                 @click="submit"
+                >送信する</PartsBaseButton
               >
-                送信する
-              </PartsBaseButton>
             </div>
           </form>
         </div>
@@ -185,6 +184,10 @@ usePageInfo({
     .button {
       margin-top: 2.7em;
       text-align: center;
+      button {
+        padding-left: 1.7em;
+        padding-right: 1.7em;
+      }
     }
   }
 }

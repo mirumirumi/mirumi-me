@@ -29,6 +29,17 @@
       background-color: #3f3f40;
     }
   }
+  label {
+    span {
+      color: var(--color-text);
+    }
+    .required {
+      background-color: #985e5e;
+    }
+    .no_required {
+      background-color: #646668;
+    }
+  }
   .article_layout {
     main header {
       .meta .meta_block {
