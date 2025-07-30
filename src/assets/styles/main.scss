@@ -121,7 +121,8 @@ label {
     opacity: 0.5;
   }
   .required, .no_required {
-    display: inline-block;
+    position: relative;
+    bottom: 0.5px;
     margin-left: 0.7em;
     padding: 0.07em 0.43em 0.105em;
     color: var(--color-text-white);
@@ -139,7 +140,7 @@ label {
   }
 }
 .form_label {
-  margin-bottom: 0.3em;
+  margin-bottom: 0.4em;
 }
 .form_check {
   display: block;
