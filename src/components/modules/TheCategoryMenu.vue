@@ -65,9 +65,7 @@ const p = defineProps<{
   isShown: boolean
 }>()
 
-const emit = defineEmits<{
-  (e: "interruptChoose"): void
-}>()
+const emit = defineEmits(["interruptChoose"])
 
 const route = useRoute()
 const appConfig = useAppConfig()
@@ -75,7 +73,7 @@ const appConfig = useAppConfig()
 const _isShown = ref(p.isShown)
 const isShownOthers = ref(false)
 
-const categories: Category[] = [
+const categories: Array<Category> = [
   { name: "PC", slug: "pc" },
   { name: "スマートフォン", slug: "mobile" },
   { name: "ゲーム", slug: "game" },
@@ -85,12 +83,13 @@ const categories: Category[] = [
   { name: "雑記", slug: "notes" },
   { name: "その他", slug: "others" },
 ]
-const others: Category[] = [
-  { name: "音楽", slug: "music" },
-  { name: "カーナビ", slug: "car-navigation-system" },
-  { name: "枕", slug: "pillow" },
-  { name: "明晰夢/体外離脱", slug: "dreaming" },
+const others: Array<Category> = [
   { name: "Software Design", slug: "software-design" },
+  { name: "Up&Coming", slug: "up-and-coming" },
+  { name: "音楽", slug: "music" },
+  { name: "枕", slug: "pillow" },
+  { name: "カーナビ", slug: "car-navigation-system" },
+  { name: "明晰夢/体外離脱", slug: "dreaming" },
 ]
 
 await setIsCurrentCategory()
@@ -109,7 +108,7 @@ watch(
   }
 )
 
-async function setIsCurrentCategory(): Promise<void> {
+async function setIsCurrentCategory() {
   let categorySlug = ""
 
   if (route.params.categoryName) {
@@ -132,11 +131,7 @@ async function setIsCurrentCategory(): Promise<void> {
   }
 
   for (const category of categories) {
-    if (categorySlug === category.slug) {
-      category.current = true
-    } else {
-      category.current = false
-    }
+    category.current = categorySlug === category.slug
   }
 
   for (const other of others) {

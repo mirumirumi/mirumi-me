@@ -1,8 +1,14 @@
 <template>
   <div class="category_view indexes_single_column">
     <h1 class="title">
-      {{ category.categoryName }}
-      {{ category.categoryName === "雑記" ? "&nbsp;&nbsp;...です" : "に関する記事" }}
+      <span v-html="category.categoryName"></span>
+      {{
+        category.categoryName === "雑記"
+          ? "&nbsp;&nbsp;...です"
+          : content.meta_keywords.includes("#taglike")
+          ? "の記事"
+          : "に関する記事"
+      }}
     </h1>
     <ModulesPaginationBase
       :currentPage="page"
@@ -48,7 +54,7 @@ const { data: resCategory } = await useFetch(
 // biome-ignore lint:
 const category = JSON.parse(JSON.stringify(resCategory.value as any))
 
-const { data } = await useFetch(`/mirumi/post_ids`, {
+const { data } = await useFetch("/mirumi/post_ids", {
   baseURL: appConfig.baseURL,
   params: {
     category_id: Number(category.categoryId),
