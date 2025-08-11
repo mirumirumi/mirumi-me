@@ -55,6 +55,8 @@
 </template>
 
 <script setup lang="ts">
+import { categories as _categories, others as _others } from "../../constants/category"
+
 interface Category {
   name: string
   slug: string
@@ -73,24 +75,8 @@ const appConfig = useAppConfig()
 const _isShown = ref(p.isShown)
 const isShownOthers = ref(false)
 
-const categories: Array<Category> = [
-  { name: "PC", slug: "pc" },
-  { name: "スマートフォン", slug: "mobile" },
-  { name: "ゲーム", slug: "game" },
-  { name: "くらし", slug: "life" },
-  { name: "テクノロジー", slug: "technology" },
-  { name: "ブログ", slug: "blog" },
-  { name: "雑記", slug: "notes" },
-  { name: "その他", slug: "others" },
-]
-const others: Array<Category> = [
-  { name: "Software Design", slug: "software-design" },
-  { name: "Up&Coming", slug: "up-and-coming" },
-  { name: "音楽", slug: "music" },
-  { name: "枕", slug: "pillow" },
-  { name: "カーナビ", slug: "car-navigation-system" },
-  { name: "明晰夢/体外離脱", slug: "dreaming" },
-]
+const categories: Array<Category> = _categories.map((c) => ({ ...c }))
+const others: Array<Category> = _others.map((c) => ({ ...c }))
 
 await setIsCurrentCategory()
 

@@ -7,7 +7,7 @@
         :key="entries.categorySlug"
       >
         <NuxtLink :to="`/category/${entries.categorySlug}/`">
-          {{ entries.categoryName }}
+          <span v-html="entries.categoryName"></span>
         </NuxtLink>
         <ul>
           <li v-for="e in entries.entries" class="entry" :key="e.slug">
@@ -27,6 +27,26 @@
 </template>
 
 <script setup lang="ts">
+import { categories, others } from "../constants/category"
+
+interface Entry {
+  slug: string
+  title: string
+}
+
+interface EntryListItem {
+  slug: string
+  title: string
+  categoryName: string
+  categorySlug: string
+}
+
+interface EntriesByCategory {
+  categoryName: string
+  categorySlug: string
+  entries: Array<Entry>
+}
+
 const route = useRoute()
 const appConfig = useAppConfig()
 
@@ -34,19 +54,9 @@ const { data } = await useFetch("/mirumi/entry_list", {
   baseURL: appConfig.baseURL,
   parseResponse: JSON.parse,
 })
-const entries = data.value as Record<string, any>[]
+const entries = data.value as Array<EntryListItem>
 
-interface Entry {
-  slug: string
-  title: string
-}
-interface EntriesByCategory {
-  categoryName: string
-  categorySlug: string
-  entries: Entry[]
-}
-
-const entriesByCategories: EntriesByCategory[] = []
+const entriesByCategories: Array<EntriesByCategory> = []
 let categoryIndex = -1
 for (const [i, e] of entries.entries()) {
   if (i === 0) {
@@ -83,6 +93,25 @@ for (const [i, e] of entries.entries()) {
     title: e.title,
   })
 }
+
+// Sort order by categories/others defined in constants
+const orderedSlugs: Array<string> = [
+  ...categories.filter((c) => c.slug !== "others").map((c) => c.slug),
+  ...others.map((o) => o.slug),
+]
+
+const map = new Map(entriesByCategories.map((c) => [c.categorySlug, c]))
+const sorted: Array<EntriesByCategory> = []
+for (const slug of orderedSlugs) {
+  const found = map.get(slug)
+  if (found) sorted.push(found)
+}
+for (const c of entriesByCategories) {
+  if (!orderedSlugs.includes(c.categorySlug)) {
+    sorted.push(c)
+  }
+}
+entriesByCategories.splice(0, entriesByCategories.length, ...sorted)
 
 usePageInfo({
   title: "全記事一覧",
