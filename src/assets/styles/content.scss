@@ -511,7 +511,7 @@
     .blogcard {
       display: flex;
       height: 120px;
-      padding: 0 1.7em;
+      padding: 0 1.3em 0 0;
       border: solid 1.7px #e6e0d7;
       border-radius: 8px;
       background-color: var(--color-background);
@@ -546,6 +546,7 @@
         display: flex;
         flex-direction: column;
         justify-content: center;
+        margin-left: 1.3em;
         .title {
           display: -webkit-box;
           -webkit-box-orient: vertical;
