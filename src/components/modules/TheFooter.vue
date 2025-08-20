@@ -9,6 +9,9 @@
           <div class="group_title">Page</div>
           <ul>
             <li>
+              <NuxtLink to="/what-is-this-blog//">みるめも とは</NuxtLink>
+            </li>
+            <li>
               <NuxtLink to="/entry-list/">全記事一覧</NuxtLink>
             </li>
             <li>
@@ -31,24 +34,7 @@
           </ul>
         </div>
         <div class="links">
-          <div class="group_title">Tech</div>
-          <ul>
-            <li>
-              <a href="https://github.com/mirumirumi" target="_blank">GitHub</a>
-            </li>
-            <li>
-              <a href="https://mirumi.tech" target="_blank">mirumi.tech (技術ブログ)</a>
-            </li>
-            <li>
-              <a href="https://zenn.dev/mirumi" target="_blank">Zenn</a>
-            </li>
-          </ul>
-        </div>
-      </nav>
-      <div class="bottom">
-        <div class="copyright">© 2016-{{ new Date().getFullYear() }} みるめも</div>
-        <div class="right">
-          <ModulesThemeSwitch />
+          <div class="group_title">Social</div>
           <div class="icons">
             <a href="https://x.com/__mirumi__" target="_blank" rel="nofollow"
               ><PartsSvgIcon :icon="'x'" :color="'#a8a8a8'"
@@ -62,8 +48,14 @@
             <a href="https://note.com/mirumi_milmemo" target="_blank" rel="nofollow"
               ><PartsSvgIcon :icon="'note'" :color="'#a8a8a8'"
             /></a>
+            <!-- これ以上増やすときは 2 行にする -->
           </div>
         </div>
+      </nav>
+      <div class="bottom">
+        <div class="space"></div>
+        <div class="copyright">© 2016-{{ new Date().getFullYear() }} みるめも</div>
+        <ModulesThemeSwitch />
       </div>
     </footer>
   </div>
@@ -132,6 +124,24 @@ const onEnter = () => {
             width: 12em;
           }
         }
+        .icons {
+          display: flex;
+          align-items: center;
+          margin-top: 10px;
+          a {
+            display: inline-block;
+            margin-right: 1.3em;
+            > * {
+              position: static;
+              width: 1.3em;
+            }
+          }
+          @include mobile {
+            width: 12em;
+            margin-top: 0;
+            transform: translateY(3px);
+          }
+        }
         @include mobile {
           display: flex;
           align-items: baseline;
@@ -146,40 +156,27 @@ const onEnter = () => {
     }
     .bottom {
       display: flex;
-      justify-content: space-evenly;
+      justify-content: center;
+      gap: 2.3em;
       margin-top: 3.7em;
+      padding-right: 2.3em;
+      .space {
+        width: 55px;
+        @include mobile {
+          display: none;
+        }
+      }
       .copyright {
         font-size: 0.83em;
         text-align: center;
         @include mobile {
-          order: 1;
-          margin-top: 1.1em;
+          transform: translateY(2.5px);
         }
       }
-      .right {
-        display: flex;
-        gap: 2.3em;
-        transform: translateX(1em);
-        .icons {
-          display: flex;
-          align-items: center;
-          a {
-            display: inline-block;
-            margin-right: 1.3em;
-            > * {
-              position: static;
-              width: 1.3em;
-            }
-          }
-        }
+      .theme_switch {
         @include mobile {
-          justify-content: center;
-          padding-right: 0.5em;
+          transform: scale(1.23) translateY(0px);
         }
-      }
-      @include mobile {
-        flex-direction: column;
-        margin-top: 2.3em;
       }
     }
     @include mobile {
