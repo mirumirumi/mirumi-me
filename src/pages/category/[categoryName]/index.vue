@@ -2,13 +2,7 @@
   <div class="category_view indexes_single_column">
     <h1 class="title">
       <span v-html="category.categoryName"></span>
-      {{
-        category.categoryName === "雑記"
-          ? "&nbsp;&nbsp;...です"
-          : content.meta_keywords.includes("#taglike")
-          ? "の記事"
-          : "に関する記事"
-      }}
+      {{ content.meta_keywords.includes("#taglike") ? "の記事" : "" }}
     </h1>
     <ModulesPaginationBase
       :currentPage="page"
