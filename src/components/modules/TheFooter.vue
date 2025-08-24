@@ -9,7 +9,7 @@
           <div class="group_title">Page</div>
           <ul>
             <li>
-              <NuxtLink to="/what-is-this-blog//">みるめも とは</NuxtLink>
+              <NuxtLink to="/what-is-this-blog/">みるめも とは</NuxtLink>
             </li>
             <li>
               <NuxtLink to="/entry-list/">全記事一覧</NuxtLink>

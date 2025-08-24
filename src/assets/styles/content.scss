@@ -1046,9 +1046,6 @@
         }
         .shoplinkbtn1 a {
           margin: 0 auto 9px;
-          &::before {
-            mask-image: url("@/assets/svgs/.svg");
-          }
         }
         @include mobile {
           margin-top: 0.9em;
