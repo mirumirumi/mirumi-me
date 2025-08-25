@@ -46,23 +46,26 @@ const gray = ref("var(--color-gray)")
 const contentBody = ref("この「みるめも」というブログの筆者です。")
 
 switch (p.category) {
-  case "mobile":
-    contentBody.value =
-      "Android 2.3 の頃から 10 年以上カスタマイズオタクをやってます。2020 年からは iPhone も持っているので両 OS とも守備範囲になりました。"
-    break
   case "game":
     contentBody.value = "1 歳でコントローラーを持つ。ここ数年はインディーズゲームにお熱。"
+    break
+  case "computer-science":
+    contentBody.value = "暗号資産業界で働いています。"
     break
   case "blog":
     contentBody.value = "文章を書くのが好きです。サイトは全部自分でつくっています。"
     break
-  case "car-navigation-system":
+  case "mobile":
     contentBody.value =
-      "数百人分の車/カーナビ/取り付け事情を見てきた元カーナビ販売員。どこよりも詳しいカーナビ情報を書いています。"
+      "Android 2.3 の頃から 10 年以上カスタマイズオタクをやっています。2020 年からは iPhone も持って両刀使いに。"
     break
   case "pillow":
     contentBody.value =
       "肩こりを治したくて枕に 15 万円以上も使ってしまったゆえにめちゃくちゃ詳しくなってしまった悲しい人。"
+    break
+  case "car-navigation-system":
+    contentBody.value =
+      "数百人分の車/カーナビ/取り付け事情を見てきた元カーナビ販売員。どこよりも詳しいカーナビ情報を書いています。"
     break
   case "dreaming":
     contentBody.value = "趣味で夢や睡眠の研究をしている人。体外離脱が得意です。"
