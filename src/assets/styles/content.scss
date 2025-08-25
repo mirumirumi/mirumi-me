@@ -881,8 +881,8 @@
         }
         .image-content {
           position: absolute;
-          top: 0;
-          right: 0;
+          bottom: 50px;
+          right: 50px;
           border: 1px solid #eeeeee;
           border-radius: 2px;
           background-color: #f5f6f7;
@@ -994,6 +994,9 @@
               height: 1em;
               margin-left: 0.5em;
               mask-image: url("@/assets/svgs/external-link.svg");
+              @include mobile {
+                top: 4px;
+              }
             }
             @include mobile {
               display: inline-block;
@@ -1033,12 +1036,12 @@
         }
         .shoplinkyahoo a {
           &::before {
+            mask-image: url("@/assets/svgs/yahoo.svg");
             top: -0.8em;
             left: -0.61em;
             width: 3.5em;
             height: 2.8em;
             transform: scale(0.45);
-            mask-image: url("@/assets/svgs/yahoo.svg");
             @include mobile {
               top: -0.75em;
               left: -3.2em;
@@ -1046,7 +1049,18 @@
           }
         }
         .shoplinkbtn1 a {
-          margin: 0 auto 9px;
+          margin-bottom: 1.3em;
+          &::before {
+            mask-image: url("@/assets/svgs/hand-point-right.svg");
+            top: 0.1em;
+            left: 0.6em;
+            width: 1.15em;
+            height: 1.15em;
+            @include mobile {
+              top: 0.2em;
+              left: -1.7em;
+            }
+          }
         }
         @include mobile {
           margin-top: 0.9em;
