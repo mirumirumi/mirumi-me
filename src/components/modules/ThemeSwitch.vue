@@ -53,7 +53,6 @@ function switchTheme(isDark: boolean): void {
   } else {
     toDark()
   }
-  switchTwitterColorTheme()
 }
 
 function toLight(): void {
@@ -66,18 +65,6 @@ function toDark(): void {
   isDark.value = true
   theme.value = "dark"
   document.getElementsByTagName("html")[0].classList.add("dark")
-}
-
-function switchTwitterColorTheme(): void {
-  const elements = Array.from(
-    document.querySelectorAll<HTMLIFrameElement>('[id^="twitter-widget-"]')
-  ).filter((el) => /^twitter-widget-\d+$/.test(el.id))
-
-  for (const el of elements) {
-    el.src = isDark.value
-      ? el.src.replace("theme=light", "theme=dark")
-      : el.src.replace("theme=dark", "theme=light")
-  }
 }
 </script>
 

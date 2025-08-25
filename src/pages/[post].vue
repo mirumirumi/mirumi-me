@@ -141,6 +141,7 @@ onMounted(async () => {
 
   // Exec content scripts
   cs.loadYouTube()
+  cs.switchTwitterColorTheme()
 
   // Insert toc hash links
   headings.value = Array.from(
