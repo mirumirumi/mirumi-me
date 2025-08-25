@@ -95,6 +95,9 @@ export default defineNuxtConfig({
       interval: 250,
       retry: 5,
       retryDelay: 1_000,
+      ignore: [
+        /regexp-for-p\/\$3/,
+      ],
 
       // CAUTION!: The following comment are used by CI to re-generate specified post
       // ### crawlLinks: false, routes: [###],

@@ -11,7 +11,7 @@
         :blockTitle="'CS'"
         :indexes="posts.slice(4, 8)"
         :linkText="'技術記事一覧'"
-        :linkTo="'/category/computer-science/'"
+        :linkTo="'/category/computer-science'"
       />
     </div>
     <div class="row">
