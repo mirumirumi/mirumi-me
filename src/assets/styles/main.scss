@@ -32,7 +32,7 @@
   --color-input-focus-shadow: 0 0 0 0.19rem rgba(186, 139, 109, 0.37);
   --color-scrollbar-thumb: #c7bfba;
   --width-max-base: 1188px;
-  --width-max-screen: calc(var(--width-max-base) - var(--width-scrollbar));
+  --width-max-screen: calc(var(--width-max-base));
   --font-family: "Custom Noto Sans", helvetica, arial, verdana, sans-serif;
 }
 * {
