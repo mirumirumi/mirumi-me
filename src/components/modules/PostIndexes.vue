@@ -8,7 +8,7 @@
             <PartsSvgIcon :icon="'calendar_days'" :color="'#c5c5c5'" :dark="'#606060'" />
             <time :datetime="p.createdAt">{{ friendlyDatetime(p.createdAt!) }}</time>
           </div>
-          <div class="updated_at">
+          <div v-if="p.createdAt !== p.updatedAt" class="updated_at">
             <PartsSvgIcon
               :icon="'clock_rotate_left'"
               :color="'#c5c5c5'"

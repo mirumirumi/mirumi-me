@@ -49,7 +49,7 @@
                   friendlyDatetime(post.date)
                 }}</time>
               </span>
-              <span class="updated_at"
+              <span v-if="post.date !== post.modified" class="updated_at"
                 ><span class="parentheses first">（</span>
                 <PartsSvgIcon :icon="'clock_rotate_left'" :color="'var(--color-gray)'" />
                 <time :datetime="post.modified" itemprop="dateModified">{{
