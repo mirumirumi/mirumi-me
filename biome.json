@@ -1,40 +1,46 @@
 {
-    "files": {
-        "ignore": ["nuxt.config.ts"]
-    },
-    "formatter": {
-        "indentStyle": "space",
-        "lineWidth": 90
-    },
-    "linter": {
-        "rules": {
-            "style": {
-                "noNonNullAssertion": "off",
-                "useTemplate": "off",
-                "noUselessElse": "off",
-                "useImportType": "off",
-                "noUnusedTemplateLiteral": "off",
-                "useShorthandFunctionType": "off"
-            },
-            "complexity": {
-                "noForEach": "off"
-            }
-        }
-    },
-    "organizeImports": {
-        "enabled": true
-    },
-    "javascript": {
-        "formatter": {
-            "semicolons": "asNeeded"
-        },
-        "parser": {
-            "unsafeParameterDecoratorsEnabled": true
-        }
-    },
-    "json": {
-        "parser": {
-            "allowComments": true
-        }
+  "files": {
+    "ignore": [
+      "nuxt.config.ts"
+    ]
+  },
+  "formatter": {
+    "indentStyle": "space",
+    "lineWidth": 100
+  },
+  "linter": {
+    "rules": {
+      "suspicious": {
+        "noExplicitAny": "warn"
+      },
+      "style": {
+        "noNonNullAssertion": "off",
+        "useTemplate": "off",
+        "noUselessElse": "off",
+        "useImportType": "off"
+      },
+      "complexity": {
+        "noForEach": "off"
+      },
+      "a11y": {
+        "noSvgWithoutTitle": "off"
+      }
     }
+  },
+  "organizeImports": {
+    "enabled": true
+  },
+  "javascript": {
+    "formatter": {
+      "semicolons": "asNeeded"
+    },
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
+    }
+  },
+  "json": {
+    "parser": {
+      "allowComments": true
+    }
+  }
 }

@@ -17,6 +17,7 @@
  */
 :root {
   --color-text: #4e4e4e;
+  --color-text-title-heading: #554545;
   --color-gray: #bab9b9;
   --color-text-white: #f2f2f2;
   --color-text-white-hover: #e3e3e3;
@@ -25,17 +26,19 @@
   --color-primary: #816e68;
   --color-mi: #604134;
   --color-link: #c74f16;
-  --color-invalid: #dc3545;
-  --color-input-focus-border: #e9b18d;
-  --color-input-focus-shadow: 0 0 0 0.19rem rgba(237, 120, 45, 0.37);
+  --color-media-border: #dfd1c6;
+  --color-input-border: #e2dcd3;
+  --color-input-focus-border: transparent;
+  --color-input-focus-shadow: 0 0 0 0.19rem rgba(186, 139, 109, 0.37);
+  --color-scrollbar-thumb: #c7bfba;
   --width-max-base: 1188px;
-  --width-scrollbar: 16px;
-  --width-max-screen: calc(var(--width-max-base) - var(--width-scrollbar));
+  --width-max-screen: calc(var(--width-max-base));
   --font-family: "Custom Noto Sans", helvetica, arial, verdana, sans-serif;
 }
 * {
   box-sizing: border-box;
   overflow-wrap: break-word;
+  scrollbar-color: var(--color-scrollbar-thumb) var(--color-background);
 }
 html, body {
   margin: 0;
@@ -96,10 +99,10 @@ textarea:focus-visible {
   line-height: 1.5;
   background-color: #ffffff;
   background-clip: padding-box;
-  border: 1.1px solid #e2dcd3;
+  border: 1.1px solid var(--color-input-border);
   appearance: none;
   border-radius: 7px;
-  transition: all 0.17s ease-out;
+  transition: all 0.07s ease-out;
   &:focus {
     border-color: var(--color-input-focus-border);
     box-shadow: var(--color-input-focus-shadow);
@@ -118,7 +121,8 @@ label {
     opacity: 0.5;
   }
   .required, .no_required {
-    display: inline-block;
+    position: relative;
+    bottom: 0.5px;
     margin-left: 0.7em;
     padding: 0.07em 0.43em 0.105em;
     color: var(--color-text-white);
@@ -136,7 +140,7 @@ label {
   }
 }
 .form_label {
-  margin-bottom: 0.3em;
+  margin-bottom: 0.4em;
 }
 .form_check {
   display: block;
@@ -203,15 +207,6 @@ label {
   border-right-color: transparent;
   border-bottom-color: transparent;
 }
-::-webkit-scrollbar {
-  width: var(--width-scrollbar);
-}
-::-webkit-scrollbar-thumb {
-  border: 3.5px solid rgba(0, 0, 0, 0);
-  background-clip: padding-box;
-  border-radius: 9999px;
-  background-color: #c7bfba;
-}
 ::selection {
   color: #ffffff;
   background-color: var(--color-primary);
@@ -235,9 +230,9 @@ label {
     padding: 0.1em 13px 0;
     header {
       h1.title {
-        margin: 0 0 1em;
+        margin: 0 0 0.5em;
         padding: 0 0.1em;
-        color: #554545;
+        color: var(--color-text-title-heading);
         line-height: 1.5;
         font-size: 1.4em;
         font-weight: bold;
@@ -250,7 +245,7 @@ label {
       .thumbnail {
         position: relative;
         max-width: 100%;
-        margin-bottom: 0.13em;
+        margin: 25.2px 0 0.13em;
         img {
           max-width: 100%;
           height: 100%;
@@ -259,42 +254,64 @@ label {
         }
       }
       .meta {
-        margin: 0.9em auto 1.9em;
-        font-size: 0.78em;
-        text-align: center;
-        .grid_container {
+        margin: 1.9em auto;
+        font-size: 0.75em;
+        .meta_block {
+          display: inline-block;
+          padding: 0.5em 5.7em 0.85em 4.7em;
+          border-radius: 11px;
+          background-color: var(--color-footer);
           > * {
-            display: inline-block;
-            margin: auto 1.3em;
-            a, span, time {
-              color: var(--color-gray);
+            position: relative;
+            margin: 0.3em auto;
+            svg {
+              top: 3px;
+              left: -2.3em;
             }
-            &:nth-child(3) {
+            &:nth-child(2) {
+              margin: 0.4em auto;
+            }
+          }
+          a {
+            color: #a7a4a1;
+          }
+          .dates {
+            position: relative;
+            top: 1px;
+            margin-top: 0.5em;
+            color: #a7a4a1;
+            span {
+              position: relative;
+              margin-right: 0.5em;
+            }
+            svg {
+              top: 1px;
               @include mobile {
-                grid-column: 2/3;
+                top: 0;
               }
             }
-            &:nth-child(4) {
-              @include mobile {
-                grid-row: 2/3;
+            .updated_at {
+              margin-left: 0.7em;
+              .parentheses {
+                margin: auto 0.3em;
+                &.first {
+                  left: -1.2em;
+                }
               }
-            }
-            @include mobile {
-              margin: 0;
-              text-align: left;
+              svg {
+                top: 2px;
+                left: 0.35em;
+                width: 0.93em;
+                @include mobile {
+                  top: 1px;
+                }
+              }
             }
           }
           @include mobile {
-            display: inline-grid;
-            grid-template-columns: repeat(2, max-content);
-            grid-column-gap: 1.3em;
+            padding-left: 4.1em;
+            padding-right: 4.1em;
           }
-          @include mobile {
-            text-align: center;
-          }
-        }
-        @include mobile {
-          margin: 0.7em auto 1.1em;
         }
       }
     }

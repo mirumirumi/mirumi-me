@@ -30,7 +30,7 @@ const page = ref(Number(p.pageNumber ?? 1))
 const posts = ref<PageSummary[]>([])
 const pageCount = ref(0)
 
-const { data } = await useFetch(`/mirumi/post_ids`, {
+const { data } = await useFetch("/mirumi/post_ids", {
   baseURL: appConfig.baseURL,
   params: {
     page: page.value,

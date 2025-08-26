@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - dev
 
 jobs:
   deploy:
@@ -50,28 +51,32 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Copy files to S3
+        env:
+          ENV_NAME: ${{ github.ref_name == 'main' && 'prd' || 'dev' }}
         run: |
           aws s3 rm \
             --region ap-northeast-1 \
             --recursive \
             --exclude "apps/*" \
             --exclude "assets/components/*" \
-            s3://mirumime-prd-mirumi-me/
+            s3://mirumime-${ENV_NAME}-mirumi-me/
           aws s3 cp \
             --region ap-northeast-1 \
             --recursive \
             --cache-control "max-age=31536000" \
-            .output/public/_nuxt/ s3://mirumime-prd-mirumi-me/_nuxt/
+            .output/public/_nuxt/ s3://mirumime-${ENV_NAME}-mirumi-me/_nuxt/
           aws s3 cp \
             --region ap-northeast-1 \
             --recursive \
             --cache-control "no-cache" \
             --exclude "_nuxt/*" \
             --exclude "assets/components/*" \
-            .output/public/ s3://mirumime-prd-mirumi-me/
+            .output/public/ s3://mirumime-${ENV_NAME}-mirumi-me/
 
       - name: Purge CDN caches
+        env:
+          DISTRIBUTION_ID: ${{ github.ref_name == 'main' && 'E1UPWIMHFP5TEC' || 'E16GU2ZPNLT91U' }}
         run: |
           aws cloudfront create-invalidation \
-            --distribution-id E1UPWIMHFP5TEC \
+            --distribution-id ${DISTRIBUTION_ID} \
             --paths "/*"

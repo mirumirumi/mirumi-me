@@ -15,6 +15,7 @@ const toastOptions: PluginOptions = {
   pauseOnFocusLoss: false,
   pauseOnHover: true,
   // @ts-ignore
+  // `POSITION` をインポートして使ってもビルドは落ちる
   position: "bottom-center",
   rtl: false,
   showCloseButtonOnHover: true,

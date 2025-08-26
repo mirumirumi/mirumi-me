@@ -3,15 +3,15 @@
     :type="isSubmitButton ? 'submit' : 'button'"
     class="btn"
     :class="{
-      'btn_primary': type === 'fill',
-      'btn_outline_primary': type === 'outline',
-      'btn_text_only': type === 'text',
-      'auto_width': isAutoWidth,
-      'auto_height': isAutoHeight,
+      btn_primary: type === 'fill',
+      btn_outline_primary: type === 'outline',
+      btn_text_only: type === 'text',
+      auto_width: isAutoWidth,
+      auto_height: isAutoHeight,
     }"
     :disabled="isSubmitting || disabled"
     ref="button"
-    @click.prevent=";"
+    @click.prevent=""
   >
     <PartsLoadSpinner
       v-if="isSubmitting"
@@ -40,8 +40,9 @@ const button = templateRef("button")
 onMounted(async () => {
   await nextTick()
 
-  width.value = (((button.value as HTMLElement).offsetWidth ?? 0) + 1)?.toString() + "px"  // roundup
-  height.value = (((button.value as HTMLElement).offsetHeight ?? 0) + 1)?.toString() + "px"  // roundup
+  width.value = (((button.value as HTMLElement).offsetWidth ?? 0) + 1)?.toString() + "px" // roundup
+  height.value =
+    (((button.value as HTMLElement).offsetHeight ?? 0) + 1)?.toString() + "px" // roundup
 })
 
 const isAutoWidth = computed(() => {
@@ -72,7 +73,7 @@ const isAutoHeight = computed(() => {
   box-shadow: 1.3px 1.7px 5px -2px #50494e59;
   cursor: pointer;
   user-select: none;
-  transition: all 0.13s ease-out;
+  transition: all 0.09s ease-out;
   &.auto_width {
     width: v-bind(width);
   }
@@ -108,7 +109,8 @@ const isAutoHeight = computed(() => {
   background-color: transparent;
   box-shadow: none;
 }
-.btn-check:focus + .btn_primary[data-v-4ba94436], .btn_primary[data-v-4ba94436]:focus {
+.btn-check:focus + .btn_primary[data-v-4ba94436],
+.btn_primary[data-v-4ba94436]:focus {
   box-shadow: 0 0 0 0.25rem rgba(196, 55, 93, 0.5);
 }
 </style>

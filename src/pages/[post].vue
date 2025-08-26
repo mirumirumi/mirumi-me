@@ -6,6 +6,7 @@
           {{ post.title }}
         </h1>
         <div
+          v-if="post.show_thumbnail_on_frontend"
           class="thumbnail page_transition_target"
           itemprop="image"
           itemscope
@@ -25,38 +26,39 @@
           <meta itemprop="height" content="630" />
         </div>
         <div class="meta page_transition_target" role="contentinfo">
-          <div class="grid_container">
-            <div class="category">
-              <span>かてごり: </span>
-              <NuxtLink :to="`/category/${post.category_slug}`">{{
-                post.category_name
-              }}</NuxtLink>
-            </div>
-            <div class="created_at">
-              <span>投稿日: </span>
-              <time :datetime="post.date" itemprop="datePublished">{{
-                friendlyDatetime(post.date)
-              }}</time>
-            </div>
-            <div class="updated_at">
-              <span>更新日: </span>
-              <time :datetime="post.modified" itemprop="dateModified">{{
-                friendlyDatetime(post.modified)
-              }}</time>
-            </div>
+          <div class="meta_block">
             <div class="author">
-              <span>書いた人: </span>
+              <PartsSvgIcon :icon="'at'" :color="'var(--color-gray)'" />
               <a
                 :href="`https://x.com/${appConfig.twitterName}`"
                 target="_blank"
                 rel="nofollow"
-                >＠みるみ</a
+                >みるみ</a
+              >
+            </div>
+            <div class="category">
+              <PartsSvgIcon :icon="'folder'" :color="'var(--color-gray)'" />
+              <NuxtLink :to="`/category/${post.category_slug}`">{{
+                post.category_name
+              }}</NuxtLink>
+            </div>
+            <div class="dates">
+              <PartsSvgIcon :icon="'calendar_days'" :color="'var(--color-gray)'" />
+              <span class="created_at">
+                <time :datetime="post.date" itemprop="datePublished">{{
+                  friendlyDatetime(post.date)
+                }}</time>
+              </span>
+              <span v-if="post.date !== post.modified" class="updated_at"
+                ><span class="parentheses first">（</span>
+                <PartsSvgIcon :icon="'clock_rotate_left'" :color="'var(--color-gray)'" />
+                <time :datetime="post.modified" itemprop="dateModified">{{
+                  friendlyDatetime(post.modified)
+                }}</time>
+                <span class="parentheses">）</span></span
               >
             </div>
           </div>
-        </div>
-        <div class="share page_transition_target">
-          <ModulesShareButtons :slug="slug" :title="post.title" :counts="counts" />
         </div>
         <div
           class="display_none"
@@ -77,9 +79,6 @@
         ></div>
       </article>
       <footer>
-        <div class="share page_transition_target">
-          <ModulesShareButtons :slug="slug" :title="post.title" :counts="counts" />
-        </div>
         <div class="profile page_transition_target">
           <ModulesProfileBox :category="post.category_slug" />
         </div>
@@ -89,11 +88,24 @@
       <ModulesCommentForm class="page_transition_target" />
       <PartsAdSenseBase :kind="'Multiplex'" />
     </main>
-    <Teleport to="body">
-      <ClientOnly>
+    <ClientOnly>
+      <Teleport to="body">
         <PartsTopButton />
-      </ClientOnly>
-    </Teleport>
+      </Teleport>
+      <Teleport v-for="[i, tocId] in tocIds.entries()" :to="`#${tocId}`" :key="tocId">
+        <PartsHashLink
+          :hash-link="`#${tocId.replace('-heading', '')}`"
+          :hover="hover[i]"
+          style="
+            position: absolute;
+            top: 0.6em;
+            bottom: 0;
+            right: 2.1em;
+            font-size: 0.8em;
+          "
+        />
+      </Teleport>
+    </ClientOnly>
   </div>
 </template>
 
@@ -104,41 +116,57 @@ import { insertAdSense } from "@/assets/scripts/insert-adsense"
 const route = useRoute()
 const appConfig = useAppConfig()
 
-onMounted(async () => {
-  await usePageTransition(0.7)
-})
-
 const slug = route.params.post as string
-
 const { data } = await useFetch(`/mirumi/post_data/${slug}`, {
   baseURL: appConfig.baseURL,
 })
-// biome-ignore lint:
 const post = data.value as any
-
 const thumbnailUrl = post.thumbnail_url.replace(/\.(png|jpg|jpeg)$/gim, ".webp")
 
 // Insert Google AdSense before each h2
 post.content = insertAdSense(post.content)
 
-const counts = ref({
-  twitter: Number(post.twitter),
-  hatebu: Number(post.hatebu),
-  feedly: Number(post.feedly),
-  pocket: Number(post.pocket),
-  like: Number(post.like),
-})
+const headings = ref<Array<HTMLHeadingElement>>([])
+const tocIds = ref<Array<string>>([])
+const hover = ref<Array<boolean>>([])
+const onMouseEnter = (index: number) => {
+  hover.value[index] = true
+}
+const onMouseLeave = (index: number) => {
+  hover.value[index] = false
+}
 
-// Exec content scripts
-onMounted(() => {
-  cs.loadYouTube()
-})
-
-// Re-fetch page contents
 onMounted(async () => {
-  counts.value = await $fetch(`/mirumi/share_counts/${slug}`, {
-    baseURL: appConfig.baseURL,
-    parseResponse: JSON.parse,
+  await usePageTransition(0.7)
+
+  // Exec content scripts
+  cs.loadYouTube()
+  cs.switchTwitterColorTheme()
+
+  // Insert toc hash links
+  headings.value = Array.from(
+    document.querySelectorAll<HTMLHeadingElement>(
+      "#content h2, #content h3, #content h4, #content h5, #content h6"
+    )
+  )
+  headings.value.forEach((el, i) => {
+    // Bind mouse hover evenets for HashLink component
+    el.addEventListener("mouseenter", () => onMouseEnter(i))
+    el.addEventListener("mouseleave", () => onMouseLeave(i))
+    // Give ids
+    const spanId = `${el.children[0].id}-heading`
+    el.id = spanId
+    tocIds.value.push(spanId)
+  })
+  // tocIds.value = Array.from(document.querySelectorAll<HTMLAnchorElement>('[id^="toc"]'))
+  //   .filter((el) => /^toc\d+$/.test(el.id))
+  //   .map((el) => el.id)
+})
+
+onUnmounted(() => {
+  headings.value.forEach((el, i) => {
+    el.removeEventListener("mouseenter", () => onMouseEnter(i))
+    el.removeEventListener("mouseleave", () => onMouseLeave(i))
   })
 })
 
@@ -154,4 +182,6 @@ usePageInfo({
   updatedAt: post.modified,
   thumbnail: post.thumbnail_url,
 })
+
+// Don't use scoped <style> because this component scoped style has overridden styles of `content.scss`
 </script>

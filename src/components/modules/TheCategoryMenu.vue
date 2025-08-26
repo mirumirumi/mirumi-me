@@ -55,6 +55,8 @@
 </template>
 
 <script setup lang="ts">
+import { categories as _categories, others as _others } from "../../constants/category"
+
 interface Category {
   name: string
   slug: string
@@ -65,9 +67,7 @@ const p = defineProps<{
   isShown: boolean
 }>()
 
-const emit = defineEmits<{
-  (e: "interruptChoose"): void
-}>()
+const emit = defineEmits(["interruptChoose"])
 
 const route = useRoute()
 const appConfig = useAppConfig()
@@ -75,23 +75,8 @@ const appConfig = useAppConfig()
 const _isShown = ref(p.isShown)
 const isShownOthers = ref(false)
 
-const categories: Category[] = [
-  { name: "PC", slug: "pc" },
-  { name: "スマートフォン", slug: "mobile" },
-  { name: "ゲーム", slug: "game" },
-  { name: "くらし", slug: "life" },
-  { name: "テクノロジー", slug: "technology" },
-  { name: "ブログ", slug: "blog" },
-  { name: "雑記", slug: "notes" },
-  { name: "その他", slug: "others" },
-]
-const others: Category[] = [
-  { name: "音楽", slug: "music" },
-  { name: "カーナビ", slug: "car-navigation-system" },
-  { name: "枕", slug: "pillow" },
-  { name: "明晰夢/体外離脱", slug: "dreaming" },
-  { name: "Software Design", slug: "software-design" },
-]
+const categories: Array<Category> = _categories.map((c) => ({ ...c }))
+const others: Array<Category> = _others.map((c) => ({ ...c }))
 
 await setIsCurrentCategory()
 
@@ -109,7 +94,7 @@ watch(
   }
 )
 
-async function setIsCurrentCategory(): Promise<void> {
+async function setIsCurrentCategory() {
   let categorySlug = ""
 
   if (route.params.categoryName) {
@@ -132,11 +117,7 @@ async function setIsCurrentCategory(): Promise<void> {
   }
 
   for (const category of categories) {
-    if (categorySlug === category.slug) {
-      category.current = true
-    } else {
-      category.current = false
-    }
+    category.current = categorySlug === category.slug
   }
 
   for (const other of others) {
@@ -235,6 +216,20 @@ const interruptChoose = () => {
   }
   @include mobile {
     left: -71%;
+  }
+}
+.dark {
+  .category_menu {
+    ul {
+      li {
+        &:hover {
+          background-color: #504f4f;
+          &.others_li_wrap {
+            background-color: var(--color-background);
+          }
+        }
+      }
+    }
   }
 }
 </style>

@@ -95,9 +95,8 @@
                 :isSubmitButton="true"
                 :isSubmitting="isSubmitting"
                 @click="submit"
+                >送信する</PartsBaseButton
               >
-                送信する
-              </PartsBaseButton>
             </div>
           </form>
         </div>
@@ -139,7 +138,7 @@ const submit = async () => {
   isSubmitting.value = true
 
   const { error } = await useFetch(
-    `https://wxdwbxfdjdqc7ekpokyjnhmhd40dcldj.lambda-url.ap-northeast-1.on.aws/`,
+    "https://wxdwbxfdjdqc7ekpokyjnhmhd40dcldj.lambda-url.ap-northeast-1.on.aws/",
     {
       method: "POST",
       headers: {
@@ -185,6 +184,10 @@ usePageInfo({
     .button {
       margin-top: 2.7em;
       text-align: center;
+      button {
+        padding-left: 1.7em;
+        padding-right: 1.7em;
+      }
     }
   }
 }

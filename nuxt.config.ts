@@ -80,7 +80,9 @@ export default defineNuxtConfig({
         scss: {
           additionalData: `
             @import "@/assets/styles/main.scss";
+            @import "@/assets/styles/main-dark.scss";
             @import "@/assets/styles/content.scss";
+            @import "@/assets/styles/content-dark.scss";
             @import "@/assets/styles/syntaxhighlight.scss";
           `,
         },
@@ -90,9 +92,12 @@ export default defineNuxtConfig({
   nitro: {
     prerender: {
       concurrency: 2,
-      interval: 250,
+      interval: 1_000,
       retry: 5,
       retryDelay: 1_000,
+      ignore: [
+        /regexp-for-p\/\$3/,
+      ],
 
       // CAUTION!: The following comment are used by CI to re-generate specified post
       // ### crawlLinks: false, routes: [###],
