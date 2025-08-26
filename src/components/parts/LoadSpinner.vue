@@ -1,28 +1,51 @@
 <template>
   <div class="load_spinner">
-    <svg v-if="kind === 'short'" class="short" height="100%" viewBox="-4 -4 45 45" xmlns="http://www.w3.org/2000/svg" :stroke="color">
+    <svg
+      v-if="kind === 'short'"
+      class="short"
+      height="100%"
+      viewBox="-4 -4 45 45"
+      xmlns="http://www.w3.org/2000/svg"
+      :stroke="color"
+    >
       <g fill="none" fill-rule="evenodd">
         <g transform="translate(1 1)" stroke-width="4.5">
           <circle stroke-opacity=".5" cx="18" cy="18" r="18" />
           <path d="M36 18c0-9.94-8.06-18-18-18">
-            <animateTransform attributeName="transform" type="rotate" from="0 18 18" to="360 18 18" repeatCount="indefinite" dur="1.1s" />
+            <animateTransform
+              attributeName="transform"
+              type="rotate"
+              from="0 18 18"
+              to="360 18 18"
+              repeatCount="indefinite"
+              dur="1.1s"
+            />
           </path>
         </g>
       </g>
     </svg>
-    <svg v-if="kind === 'long'" class="ring" height="100%" viewBox="25 25 50 50" stroke-width="5">
+    <svg
+      v-if="kind === 'long'"
+      class="ring"
+      height="100%"
+      viewBox="25 25 50 50"
+      stroke-width="5"
+    >
       <circle cx="50" cy="50" r="20" />
     </svg>
   </div>
 </template>
 
 <script setup lang="ts">
-withDefaults(defineProps<{
-  kind: "short" | "long"
-  color?: string
-}>(), {
-  color: "#8b8b8b"
-})
+withDefaults(
+  defineProps<{
+    kind: "short" | "long"
+    color?: string
+  }>(),
+  {
+    color: "#8b8b8b",
+  }
+)
 </script>
 
 <style lang="scss" scoped>
@@ -30,7 +53,9 @@ withDefaults(defineProps<{
   --size: 27px;
   --speed: 2s;
   --color: v-bind(color);
-  .short, .ring {
+  transform: translateY(-1px);
+  .short,
+  .ring {
     width: var(--size);
     height: var(--size);
     vertical-align: middle;
