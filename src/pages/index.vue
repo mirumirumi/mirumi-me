@@ -8,32 +8,39 @@
         :linkTo="'/nice-to-meet-you-10'"
       />
       <PartsTopPageIndexBlock
-        :blockTitle="'CS'"
+        :blockTitle="'新しい記事'"
         :indexes="posts.slice(4, 8)"
-        :linkText="'技術記事一覧'"
-        :linkTo="'/category/computer-science'"
+        :linkText="'新着記事一覧'"
+        :linkTo="'/entries'"
+      />
+    </div>
+    <div class="row">
+      <PartsTopPageIndexBlock
+        :blockTitle="'くらし'"
+        :indexes="posts.slice(8, 12)"
+        :linkText="'くらし カテゴリ'"
+        :linkTo="'/category/life'"
+      />
+      <PartsTopPageIndexBlock
+        :blockTitle="'雑記'"
+        :indexes="posts.slice(12, 16)"
+        :linkText="'雑記 カテゴリ'"
+        :linkTo="'/category/notes'"
       />
     </div>
     <div class="row">
       <PartsTopPageIndexBlock
         :blockTitle="'Software Design'"
-        :indexes="posts.slice(8, 12)"
+        :indexes="posts.slice(16, 20)"
         :linkText="'Software Design サマリー記事一覧'"
         :linkTo="'/category/software-design'"
       />
       <PartsTopPageIndexBlock
-        :blockTitle="'雑記'"
-        :indexes="posts.slice(12, 16)"
-        :linkText="'雑記'"
-        :linkTo="'/category/notes'"
+        :blockTitle="'Up&Coming'"
+        :indexes="posts.slice(20, 24)"
+        :linkText="'Up&Coming への寄稿記事一覧'"
+        :linkTo="'/category/up-and-coming'"
       />
-    </div>
-    <h3>最近の記事</h3>
-    <div class="indexes_wrapper indexes_single_column">
-      <ModulesPostIndexes :posts="posts.slice(16)" />
-    </div>
-    <div class="more">
-      <NuxtLink :to="'/entries/'">もっとみる</NuxtLink>
     </div>
     <Teleport to="body">
       <ClientOnly>
@@ -82,9 +89,9 @@ let posts: PageSummary[] = [
 ]
 
 /**
- * Prepare "computer-science" category entries
+ * Prepare new entries
  */
-const { data: resComputerScience } = await useFetch("/wp/v2/posts", {
+const { data: resNewEntries } = await useFetch("/wp/v2/posts", {
   baseURL: appConfig.baseURL,
   params: {
     page: 1,
@@ -92,19 +99,18 @@ const { data: resComputerScience } = await useFetch("/wp/v2/posts", {
     type: "post",
     subtype: "post",
     status: ["publish"],
-    categories: [1211],
     _fields: "id",
   },
   parseResponse: JSON.parse,
 })
-for (const p of resComputerScience.value as Array<Record<string, number>>) {
+for (const p of resNewEntries.value as Array<Record<string, number>>) {
   postIds.push(p.id)
 }
 
 /**
- * Prepare "software-design" category entries
+ * Prepare "life" category entries
  */
-const { data: resSoftwareDesign } = await useFetch("/wp/v2/posts", {
+const { data: resLife } = await useFetch("/wp/v2/posts", {
   baseURL: appConfig.baseURL,
   params: {
     page: 1,
@@ -112,12 +118,12 @@ const { data: resSoftwareDesign } = await useFetch("/wp/v2/posts", {
     type: "post",
     subtype: "post",
     status: ["publish"],
-    categories: [1877],
+    categories: [169],
     _fields: "id",
   },
   parseResponse: JSON.parse,
 })
-for (const p of resSoftwareDesign.value as Array<Record<string, number>>) {
+for (const p of resLife.value as Array<Record<string, number>>) {
   postIds.push(p.id)
 }
 
@@ -142,21 +148,42 @@ for (const p of resNotes.value as Array<Record<string, number>>) {
 }
 
 /**
- * Prepare new entries
+ * Prepare "software-design" category entries
  */
-const { data: resNewEntries } = await useFetch("/wp/v2/posts", {
+const { data: resSoftwareDesign } = await useFetch("/wp/v2/posts", {
   baseURL: appConfig.baseURL,
   params: {
     page: 1,
-    per_page: 5,
+    per_page: 4,
     type: "post",
     subtype: "post",
     status: ["publish"],
+    categories: [1877],
     _fields: "id",
   },
   parseResponse: JSON.parse,
 })
-for (const p of resNewEntries.value as Array<Record<string, number>>) {
+for (const p of resSoftwareDesign.value as Array<Record<string, number>>) {
+  postIds.push(p.id)
+}
+
+/**
+ * Prepare "up-and-coming" category entries
+ */
+const { data: resUpAndComing } = await useFetch("/wp/v2/posts", {
+  baseURL: appConfig.baseURL,
+  params: {
+    page: 1,
+    per_page: 4,
+    type: "post",
+    subtype: "post",
+    status: ["publish"],
+    categories: [1898],
+    _fields: "id",
+  },
+  parseResponse: JSON.parse,
+})
+for (const p of resUpAndComing.value as Array<Record<string, number>>) {
   postIds.push(p.id)
 }
 
