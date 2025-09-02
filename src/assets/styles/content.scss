@@ -575,20 +575,17 @@
           color: #4e4e4e;
           .category {
             position: relative;
-            padding-left: 1.7em;
+            padding-left: 1.9em;
             &::before {
               position: absolute;
-              top: 0.5em;
+              top: 0.325em;
               left: 1px;
-              width: 0.9em;
-              height: 0.9em;
+              width: 1.3em;
+              height: 1.3em;
               content: "";
               mask: url("@/assets/svgs/folder.svg");
               mask-size: cover;
               background-color: #828282;
-              @include mobile {
-                top: 0.45em;
-              }
             }
           }
           .favicon {
