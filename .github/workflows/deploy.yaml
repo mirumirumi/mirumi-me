@@ -5,7 +5,8 @@ on:
   push:
     branches:
       - main
-      - dev
+      # Enable only when in use
+      # - dev
 
 jobs:
   deploy:

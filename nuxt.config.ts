@@ -96,6 +96,7 @@ export default defineNuxtConfig({
       retry: 5,
       retryDelay: 1_000,
       ignore: [
+        // `/regexp-for-p` 記事内にあるコードブロック内にある a タグをクロール先として誤検知してしまう問題への対策
         /regexp-for-p\/\$3/,
       ],
 
