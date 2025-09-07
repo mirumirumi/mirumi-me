@@ -55,9 +55,17 @@ jobs:
           sed -irz "s/\/\/ ### //g" nuxt.config.ts
           sed -irz "s/\[###\]/['\/${{ env.ROUTE_TO_GENERATE }}']/g" nuxt.config.ts
 
+      # 新規記事追加時に /entries/page/1 のみ記事表示数を増やすことで生成ルート数を抑えつつページの取りこぼしをなくす
+      # ref: https://app.asana.com/1/1209029477658805/project/1209029524614548/task/1211258705803610?focus=true
+      - name: Replace to `/entries` pages
+        if: github.event.inputs.kind == 'post created'
+        run: |
+          PER_PAGE_PLUS_ONE=$(grep -oE 'perPage: *[0-9]+' src/app.config.ts | head -n1 | grep -oE '[0-9]+' | awk '{print $1+1}')
+          sed -irz "s/appConfig.perPage/${PER_PAGE_PLUS_ONE}/g" src/pages/entries/index.vue
+          sed -E -z -i "s#(crawlLinks: false, routes: \[[^]]*)\]#\1, '/entries/page/1']#g" nuxt.config.ts
+
       - name: Replace to category pages
         if: github.event.inputs.kind != 'comment approved'
-        # Note that writes to environment variables are not reflected within the another step
         run: |
           echo CATEGORY=${{ github.event.inputs.category }} >> $GITHUB_ENV
           python3 .github/workflows/sed_nuxtconfig_to_category_configs.py --category ${{ github.event.inputs.category }}
