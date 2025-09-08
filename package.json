@@ -4,9 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "nuxt dev --host",
-    "build": "nuxt build",
-    "generate": "nuxt generate",
-    "preview": "nuxt preview"
+    "generate": "nuxt generate"
   },
   "dependencies": {
     "@nuxtjs/google-adsense": "^3.0.0",
