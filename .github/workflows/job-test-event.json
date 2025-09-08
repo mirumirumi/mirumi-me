@@ -1,7 +1,0 @@
-{
-  "action": "workflow_dispatch",
-  "inputs": {
-      "slug": "1password",
-      "kind": "created"
-  }
-}
