@@ -60,7 +60,6 @@ jobs:
       # `/entries` ページもすべて generate する（新規記事追加時のみ）
       # ref: https://app.asana.com/1/1209029477658805/project/1209029524614548/task/1211258705803610?focus=true
       - name: Replace to `/entries` pages
-        if: github.event.inputs.kind == 'post created'
         run: |
           bun run scripts/ci/sed-nuxtconfig-entries-routes.mts
 
