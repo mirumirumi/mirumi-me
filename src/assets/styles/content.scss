@@ -166,6 +166,12 @@
       }
     }
   }
+  .table-wrapper {
+    overflow-x: auto;
+    max-inline-size: 100%;
+    overscroll-behavior-inline: contain;
+    scrollbar-gutter: stable both-edges;
+  }
   table {
     width: 99%;
     max-width: 100%;
