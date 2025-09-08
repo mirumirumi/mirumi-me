@@ -22,10 +22,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v3
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: 20.12.2
+          bun-version: 1.2.19
 
+      # generate_xxx.py は deploy.yml でも使っているため一旦移行を後回しにしたが、もしこれらを触る機会があればまとめて
+      # ts で書き直し setup-python をなくすことで CI の実行時間をより削減できる
       - uses: actions/setup-python@v4
         with:
           python-version: "3.9"
@@ -34,7 +36,7 @@ jobs:
         run: echo ${{ github.event.inputs.kind }}
 
       - name: Install dependencies
-        run: npm ci
+        run: bun i --frozen-lockfile
 
       - name: Install Python modules
         run: pip3 install httpx
@@ -55,24 +57,22 @@ jobs:
           sed -irz "s/\/\/ ### //g" nuxt.config.ts
           sed -irz "s/\[###\]/['\/${{ env.ROUTE_TO_GENERATE }}']/g" nuxt.config.ts
 
-      # 新規記事追加時に /entries/page/1 のみ記事表示数を増やすことで生成ルート数を抑えつつページの取りこぼしをなくす
+      # `/entries` ページもすべて generate する（新規記事追加時のみ）
       # ref: https://app.asana.com/1/1209029477658805/project/1209029524614548/task/1211258705803610?focus=true
       - name: Replace to `/entries` pages
         if: github.event.inputs.kind == 'post created'
         run: |
-          PER_PAGE_PLUS_ONE=$(grep -oE 'perPage: *[0-9]+' src/app.config.ts | head -n1 | grep -oE '[0-9]+' | awk '{print $1+1}')
-          sed -irz "s/appConfig.perPage/${PER_PAGE_PLUS_ONE}/g" src/pages/entries/index.vue
-          sed -E -z -i "s#(crawlLinks: false, routes: \[[^]]*)\]#\1, '/entries/page/1']#g" nuxt.config.ts
+          bun run scripts/ci/sed-nuxtconfig-entries-routes.mts
 
       - name: Replace to category pages
         if: github.event.inputs.kind != 'comment approved'
         run: |
           echo CATEGORY=${{ github.event.inputs.category }} >> $GITHUB_ENV
-          python3 .github/workflows/sed_nuxtconfig_to_category_configs.py --category ${{ github.event.inputs.category }}
+          bun run scripts/ci/sed-nuxtconfig-category-routes.mts --category ${{ github.event.inputs.category }}
 
       - name: Re-generate specified routes
         run: |
-          npm run generate
+          bun run generate
 
       - name: Generate sitemaps
         if: github.event.inputs.kind != 'comment approved'
