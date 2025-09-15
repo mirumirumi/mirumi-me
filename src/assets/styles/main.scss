@@ -49,6 +49,7 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
   color: var(--color-text);
   background-color: var(--color-footer);
+  overflow-x: clip;
   @include mobile {
     font-size: 16px;
   }
