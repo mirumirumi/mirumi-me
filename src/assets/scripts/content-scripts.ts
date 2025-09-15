@@ -1,5 +1,5 @@
 // Load YouTube Video iframe
-export function loadYouTube() {
+export const loadYouTube = () => {
   ;(document.querySelectorAll(".youtube") as NodeListOf<HTMLDivElement>).forEach((target) => {
     target.addEventListener("click", () => {
       const iframe = document.createElement("iframe")
@@ -17,7 +17,7 @@ export function loadYouTube() {
 }
 
 // Sync X (Twitter) widget theme
-export function switchTwitterColorTheme() {
+export const switchTwitterColorTheme = () => {
   const theme = useState<string>("theme", () => "")
 
   // X のウィジェットに置換される前に備える用
