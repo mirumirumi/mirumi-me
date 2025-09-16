@@ -112,6 +112,7 @@
 <script setup lang="ts">
 import * as cs from "@/assets/scripts/content-scripts"
 import { insertAdSense } from "@/assets/scripts/insert-adsense"
+import * as ps from "@/assets/scripts/post-scripts"
 
 const route = useRoute()
 const appConfig = useAppConfig()
@@ -139,7 +140,7 @@ const onMouseLeave = (index: number) => {
 onMounted(async () => {
   await usePageTransition(0.7)
 
-  // Exec content scripts
+  // Load content scripts
   cs.loadYouTube()
   cs.switchTwitterColorTheme()
 
@@ -158,9 +159,10 @@ onMounted(async () => {
     el.id = spanId
     tocIds.value.push(spanId)
   })
-  // tocIds.value = Array.from(document.querySelectorAll<HTMLAnchorElement>('[id^="toc"]'))
-  //   .filter((el) => /^toc\d+$/.test(el.id))
-  //   .map((el) => el.id)
+
+  // Load post scripts
+  // biome-ignore lint/complexity/useOptionalChain:
+  ps.POST_SCRIPTS_MAP[slug] && ps.POST_SCRIPTS_MAP[slug](post.content)
 })
 
 onUnmounted(() => {
