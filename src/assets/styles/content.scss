@@ -13,20 +13,22 @@
     margin-top: 1.8em;
     margin-bottom: 1.7em;
     padding-top: 0.7em;
+    padding-right: 1.7em;
     color: var(--color-text-title-heading);
     font-weight: bold;
     line-height: 1.25;
+    @include mobile {
+      padding-right: 1.1em;
+    }
   }
   h2 {
     padding-left: 0.1em;
-    padding-right: 0.1em;
     padding-bottom: 0.3em;
     font-size: 1.57em;
     border-bottom: solid 1.3px #e0e0e0;
   }
   h3 {
     padding-left: 0;
-    padding-right: 0;
     padding-bottom: 0.3em;
     font-size: 1.27em;
     border-bottom: solid 1px #e0e0e0;
@@ -34,10 +36,10 @@
   h4 {
     margin: 0;
     font-size: 1.1em;
-    span {
-      padding: 0.5em 0.3em 0.4em;
-      border-bottom: solid 1.3px #d9d9d9;
-    }
+    padding-top: 0.5em;
+    padding-left: 0.3em;
+    padding-bottom: 0.4em;
+    border-bottom: solid 1.3px #d9d9d9;
   }
   h5 {
     font-size: 1.09em;
