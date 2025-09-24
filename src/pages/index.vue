@@ -67,7 +67,7 @@ const postIds: number[] = []
 let posts: PageSummary[] = [
   {
     slug: "pc-freesoft",
-    title: "Windows にまず入れるべきおすすめフリーソフト/便利アプリ 40 選",
+    title: "Windows にまず入れたいおすすめフリーソフト/便利アプリ 40 選",
     thumbnailUrl: "https://mirumi.media/windows-freesoft-recommend-list-412x216-1.webp",
   },
   {
@@ -76,15 +76,15 @@ let posts: PageSummary[] = [
     thumbnailUrl: "https://mirumi.media/good-recommend-goods-milmemo-412x216.webp",
   },
   {
+    slug: "indies-game-recommend",
+    title: "個人的インディーズゲームおすすめ 30 本くらいを紹介する！",
+    thumbnailUrl: "https://mirumi.media/indies-game-recommend-1-412x216.webp",
+  },
+  {
     slug: "out-of-body",
     title: "この記事で人生変わるかも？体外離脱 (幽体離脱) 総まとめ",
     thumbnailUrl:
       "https://mirumi.media/taigai-ridatsu-lucid-dreaming-milmemo-412x216-1.webp",
-  },
-  {
-    slug: "blog-for-you",
-    title: "「みるめも」のような雑記ブログで副業したい人のために頑張って書いた記事",
-    thumbnailUrl: "https://mirumi.media/blog-for-you-only-start-412x216.webp",
   },
 ]
 
