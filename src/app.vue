@@ -1,6 +1,12 @@
 <template>
   <div id="app" ref="app">
     <ModulesTheHeader />
+    <NuxtLoadingIndicator
+      :height="2.9"
+      :duration="1777"
+      :color="'var(--color-mi)'"
+      :throttle="199"
+    />
     <NuxtPage id="container" />
     <ModulesTheFooter />
   </div>
@@ -44,10 +50,13 @@ MMMMMMMMMMWKkoc;,'''''',;cokKNMMMMMMMMMM
   await incrementAccessCounter(slug)
 })
 
-watch(() => router.currentRoute.value, async (newValue) => {
-  const slug = shapeSlug(newValue.path)
-  await incrementAccessCounter(slug)
-})
+watch(
+  () => router.currentRoute.value,
+  async (newValue) => {
+    const slug = shapeSlug(newValue.path)
+    await incrementAccessCounter(slug)
+  }
+)
 
 async function incrementAccessCounter(slug: string): Promise<void> {
   if (/.*?\/.*?/gim.test(slug)) return
