@@ -99,7 +99,6 @@ switch (p.category) {
       border-radius: 50%;
       @include mobile {
         width: 55.5px;
-        padding-right: 0.3em;
       }
     }
   }
