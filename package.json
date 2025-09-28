@@ -1,6 +1,6 @@
 {
   "name": "mirumi-me",
-  "version": "4.2.14",
+  "version": "4.2.15",
   "private": true,
   "scripts": {
     "dev": "nuxt dev --host",

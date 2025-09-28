@@ -3,7 +3,7 @@ export const POST_SCRIPTS_MAP: Record<string, (content?: string) => void> = {
 } as const
 
 export function justAnswer() {
-  const commentMoreButton = document.querySelector("div.load_more > button")
+  const commentMoreButton = document.querySelector("div.load_more > button") as HTMLButtonElement
 
   commentMoreButton?.addEventListener("click", async () => {
     await delay(1_000)
@@ -44,4 +44,6 @@ export function justAnswer() {
 
     document.querySelector(".comment_list")!.insertAdjacentHTML("beforeend", donation)
   })
+
+  commentMoreButton?.click()
 }
