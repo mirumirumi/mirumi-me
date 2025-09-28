@@ -1,5 +1,5 @@
 <template>
-  <div class="comment_form">
+  <div id="comment_form" class="comment_form">
     <h3 class="title">
       {{ reply_to === "0" ? "新しいコメントを書く" : "このコメントに返信する" }}
     </h3>
