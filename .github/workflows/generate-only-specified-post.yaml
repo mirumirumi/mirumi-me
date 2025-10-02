@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       kind:
-        description: "Choose from 3 kinds: `post updated`, `post created`, `comment approved`"
+        description: "Choose from 3 kinds: `post updated`, `post created`, `comment approved`, `page updated`"
         required: true
         type: string
       category:
@@ -64,7 +64,7 @@ jobs:
           bun run scripts/ci/sed-nuxtconfig-entries-routes.mts
 
       - name: Replace to category pages
-        if: github.event.inputs.kind != 'comment approved'
+        if: github.event.inputs.kind != 'comment approved' && github.event.inputs.kind != 'page updated'
         run: |
           echo CATEGORY=${{ github.event.inputs.category }} >> $GITHUB_ENV
           bun run scripts/ci/sed-nuxtconfig-category-routes.mts --category ${{ github.event.inputs.category }}
@@ -79,7 +79,7 @@ jobs:
           python3 .github/workflows/generate_sitemaps.py
 
       - name: Generate feeds
-        if: github.event.inputs.kind != 'post updated'
+        if: github.event.inputs.kind != 'post updated' && github.event.inputs.kind != 'page updated'
         run: |
           python3 .github/workflows/generate_feeds.py
 
