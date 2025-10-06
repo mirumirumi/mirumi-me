@@ -38,9 +38,9 @@
             </div>
             <div class="category">
               <PartsSvgIcon :icon="'folder'" :color="'var(--color-gray)'" />
-              <NuxtLink :to="`/category/${post.category_slug}`">{{
-                post.category_name
-              }}</NuxtLink>
+              <NuxtLink :to="`/category/${post.category_slug}`">
+                <span v-html="post.category_name"></span>
+              </NuxtLink>
             </div>
             <div class="dates">
               <PartsSvgIcon :icon="'calendar_days'" :color="'var(--color-gray)'" />
