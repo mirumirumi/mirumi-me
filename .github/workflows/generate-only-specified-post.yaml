@@ -157,3 +157,49 @@ jobs:
               "/category/${{ env.CATEGORY }}/*" \
               "/sitemap*" \
               "/feed*"
+
+      - name: Notify Slack
+        if: always()
+        continue-on-error: true
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          JOB_STATUS: ${{ job.status }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          BRANCH: ${{ github.ref_name }}
+          COMMIT_SHA: ${{ github.sha }}
+          INPUT_KIND: ${{ github.event.inputs.kind }}
+          INPUT_SLUG: ${{ github.event.inputs.slug }}
+          INPUT_CATEGORY: ${{ github.event.inputs.category }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          def env(name: str) -> str:
+              return os.environ.get(name, "")
+
+          lines = [
+              "GitHub Actions の generate-only-specified-post が完了しました。",
+              f"結果: {env('JOB_STATUS')}",
+              f"Run: {env('RUN_URL')}",
+              f"Branch: {env('BRANCH')}",
+              f"Commit: {env('COMMIT_SHA')}",
+              f"kind: {env('INPUT_KIND')}",
+              f"slug: {env('INPUT_SLUG')}",
+          ]
+
+          if env("INPUT_CATEGORY"):
+              lines.append(f"category: {env('INPUT_CATEGORY')}")
+
+          payload = json.dumps({"text": "\n".join(lines)}, ensure_ascii=False).encode("utf-8")
+          request = urllib.request.Request(
+              env("SLACK_WEBHOOK_URL"),
+              data=payload,
+              headers={"Content-Type": "application/json"},
+              method="POST",
+          )
+
+          with urllib.request.urlopen(request, timeout=10) as response:
+              response.read()
+          PY
