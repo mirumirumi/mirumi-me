@@ -162,7 +162,7 @@ jobs:
         if: always()
         continue-on-error: true
         env:
-          SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           JOB_STATUS: ${{ job.status }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           BRANCH: ${{ github.ref_name }}
