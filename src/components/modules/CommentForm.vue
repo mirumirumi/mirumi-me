@@ -12,17 +12,7 @@
         <li
           >特定のコメントに返信したい場合は各コメントにある「返信する」ボタンからどうぞ。</li
         >
-        <li
-          >コメントはこちらで承認の作業を行うまでは表示されません。ご了承ください
-          <a href="mailto:mail@mirumi.me">メール</a> か
-          <a
-            :href="`https://x.com/${appConfig.twitterName}`"
-            target="_blank"
-            rel="nofollow"
-            >X</a
-          >
-          からお願いします。</li
-        >
+        <li>コメントはこちらで承認の作業を行うまでは表示されません。ご了承ください。</li>
       </ul>
     </div>
     <form autocomplete="off">

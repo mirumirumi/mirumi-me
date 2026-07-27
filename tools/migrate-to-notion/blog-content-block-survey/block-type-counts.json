@@ -1,0 +1,1853 @@
+{
+  "generatedAt": "2026-07-04T09:45:09.009Z",
+  "inputPath": ".contexts/blog-content-block-survey/contents.ndjson",
+  "targetCount": 477,
+  "postTypeCounts": {
+    "post": 468,
+    "page": 9
+  },
+  "blockTypes": [
+    {
+      "id": "plain_text_paragraph",
+      "group": "基本本文",
+      "label": "通常本文・段落",
+      "detector": "`<p>` とタグ外テキスト",
+      "note": "クラシックエディタ本文として、ほぼ全コンテンツが `<p>` を持つ。固定ページ `new-entries` だけ本文空。",
+      "occurrences": 37347,
+      "contentCount": 476,
+      "examples": [
+        {
+          "id": 2,
+          "postType": "page",
+          "slug": "profile",
+          "title": "このブログを書いている人",
+          "snippet": "<p>この「みるめも」というブログを書いている <a href=\"https://x.com/__mirumi__\">みるみ</a> といいます。</p> <p>こんなよく分からんブログを読んでいただくだけに飽き足らずそのプロフィールページまで見に来てくれるなんて、本当に本当に…<del>あなたも物好きですね</del> ありがとうございます。<br /> お世辞ではなく心から嬉しいです。</p> <p>てなわけで、自己紹介的なやつ、や"
+        },
+        {
+          "id": 12,
+          "postType": "page",
+          "slug": "contact",
+          "title": "お問い合わせ",
+          "snippet": "<p>各種サービスに関するお問い合わせ、広告掲載や PR 記事の執筆依頼などを受け付けています。<br /> ご意見・ご感想などももちろん嬉しいです…！お気軽にどうぞ。</p> <p>よりフランクな連絡手段をご希望の場合は <a href=\"https://x.com/__mirumi__\">X</a> もご検討ください。</p> <div class=\"box-common box-alert\" style=\"margin-botto"
+        },
+        {
+          "id": 270,
+          "postType": "page",
+          "slug": "what-is-this-blog",
+          "title": "このブログについて：みるめもとは",
+          "snippet": "<p>方針やポリシー的なものを一応載せておこうということで、なんか色々書いてみたもの。</p> <p>読んでもいいことはありません。たぶん。</p> <h2>なんのブログ？</h2> <div class=\"waku-common\"> <p>自分の体験や経験内容を第一に考え、たとえどんなに需要がなかろうがそれをオリジナリティと捉えただ書きまくる！！</p> </div> <p>というのを基本スタンスにしています。</p> <p>"
+        },
+        {
+          "id": 1798,
+          "postType": "page",
+          "slug": "privacy-policy",
+          "title": "プライバシーポリシー",
+          "snippet": "<p>当ブログ執筆者 みるみ は、下記プライバシーポリシーに則りサイト運営を致します。</p> <h3>このブログについて</h3> <p>このブログのURLドメインは mirumi.me です。また、通信は SSL/TLS によってセキュアな接続で保護されており、当ブログへのアクセス、書き込み等によって第三者に情報が漏洩することはありません。</p> <h3>このサイトが収集する個人データと収集の理由</h3> <h4>コメント</"
+        },
+        {
+          "id": 10328,
+          "postType": "page",
+          "slug": "nice-to-meet-you-10",
+          "title": "みるめもに来たらまずはこれをどうぞ。「はじめましての 10 記事」",
+          "snippet": "<p>このページに「とりあえずビール」的な記事を 10 本用意しておきました。</p> <p>どれもたくさんの方に読んでいただいている記事で、他のいろいろな記事へも個別にリンクが貼られているまとめ記事が多め。ぜひ「みるめも」の玄関として使ってください。</p> <p>ちなみに運営者（みるみ）のプロフィールは<a href=\"/profile\">こちら</a>。併せてどうぞ。</p> <h2>１．Windows のフリーソフトおすすめ</"
+        }
+      ]
+    },
+    {
+      "id": "heading",
+      "group": "基本本文",
+      "label": "見出し",
+      "detector": "`<h1>`〜`<h6>`",
+      "note": "実データでは主に h2/h3/h4。最近の記事には `toc_item` class 付き見出しもある。",
+      "occurrences": 4684,
+      "contentCount": 447,
+      "examples": [
+        {
+          "id": 2,
+          "postType": "page",
+          "slug": "profile",
+          "title": "このブログを書いている人",
+          "snippet": "ロフィールページまで見に来てくれるなんて、本当に本当に…<del>あなたも物好きですね</del> ありがとうございます。<br /> お世辞ではなく心から嬉しいです。</p> <p>てなわけで、自己紹介的なやつ、やります。</p> <h2>いろいろ</h2> <table style=\"width: 93%; margin: 0px auto; height: 484px;\" itemscope=\"\" itemtype=\"https://schema.org/Person\"> <tbody> <tr> <td style=\"width: 32.51%;\">なまえ</td> <td style=\"width: 67.49%;\" itemprop=\"name\">みるみ</td> <"
+        },
+        {
+          "id": 270,
+          "postType": "page",
+          "slug": "what-is-this-blog",
+          "title": "このブログについて：みるめもとは",
+          "snippet": "<p>方針やポリシー的なものを一応載せておこうということで、なんか色々書いてみたもの。</p> <p>読んでもいいことはありません。たぶん。</p> <h2>なんのブログ？</h2> <div class=\"waku-common\"> <p>自分の体験や経験内容を第一に考え、たとえどんなに需要がなかろうがそれをオリジナリティと捉えただ書きまくる！！</p> </div> <p>というのを基本スタンスにしています。</p> <p>いろんな記事で書いていることなのですが、僕はブログというものを「人生の資産化」であると考えていて、つまりは<strong>自分が生きてきた経験まるまるをコンテンツにできたらめっちゃ"
+        },
+        {
+          "id": 1798,
+          "postType": "page",
+          "slug": "privacy-policy",
+          "title": "プライバシーポリシー",
+          "snippet": "<p>当ブログ執筆者 みるみ は、下記プライバシーポリシーに則りサイト運営を致します。</p> <h3>このブログについて</h3> <p>このブログのURLドメインは mirumi.me です。また、通信は SSL/TLS によってセキュアな接続で保護されており、当ブログへのアクセス、書き込み等によって第三者に情報が漏洩することはありません。</p> <h3>このサイトが収集する個人データと収集の理由</h3> <h4>コメント</h4> <p>訪問者がこのサイトにコメントを残す際、コメントフォームに表示されているデータ、そしてスパム検出に役立てるための"
+        },
+        {
+          "id": 10328,
+          "postType": "page",
+          "slug": "nice-to-meet-you-10",
+          "title": "みるめもに来たらまずはこれをどうぞ。「はじめましての 10 記事」",
+          "snippet": "いろな記事へも個別にリンクが貼られているまとめ記事が多め。ぜひ「みるめも」の玄関として使ってください。</p> <p>ちなみに運営者（みるみ）のプロフィールは<a href=\"/profile\">こちら</a>。併せてどうぞ。</p> <h2>１．Windows のフリーソフトおすすめ</h2> <p><img class=\"aligncenter size-full wp-image-11862\" src=\"https://mirumi.in/wp-content/uploads/windows-freesoft-recommend-milmemo.png\" alt=\"Windowsにまず入れるべきおすすめフリーソフト/便利アプリ40選\" width=\"1200\" height=\"630\" /></p> <p><i cl"
+        },
+        {
+          "id": 12717,
+          "postType": "page",
+          "slug": "home",
+          "title": "home",
+          "snippet": "<div class=\"column-wrap column-2 effect-fade\"> <div class=\"column-left\"> <h3 class=\"entry-list-title\">みるめも厳選 10 記事</h3> <div class=\"navi-entry-cards widget-entry-cards no-icon card-large-image large-thumb card-title-bold home-entry-card\"><a class=\"navi-entry-card-link widget-entry-card-link a-wrap effect-fade effect-scroll\" href=\"https:"
+        }
+      ]
+    },
+    {
+      "id": "list",
+      "group": "基本本文",
+      "label": "箇条書き・番号付きリスト",
+      "detector": "`<ul>` / `<ol>`",
+      "note": "`num-ol` class の装飾付き番号リストも含む。",
+      "occurrences": 3229,
+      "contentCount": 380,
+      "examples": [
+        {
+          "id": 2,
+          "postType": "page",
+          "slug": "profile",
+          "title": "このブログを書いている人",
+          "snippet": "/p> <p>他人のねこツイートとかも普通にいいねするしかわいいと思っているけど、実はうちのねこが世界で一番かわいいと思っている。</p> <h2>おわりに</h2> <p>長い間ブログを書いてますが、今でも一番嬉しいのは</p> <ul> <li>コメントとか X とかで「記事面白かったです！」って言ってもらえる</li> <li><a href=\"https://feedly.com/i/subscription/feed/https://mirumi.me/feed\">Feedly</a>（RSS）の購読者数が１増える</li> </ul> <p>とかそういうのです。</p> <p>つまりこんなページのこんな最後まで読んでいただけるようなみなさんには特に感謝しているということ！<br /> 本当にありがとうございます。</p> <p>そんなわけで、今後とも「みるめも」をどうぞよろしくお願いします！</p> <p>&nbsp;</p> <div class=\"dot-line-brown\"> </div> <p>ついでなので何か他の記事も読んでいってください（"
+        },
+        {
+          "id": 270,
+          "postType": "page",
+          "slug": "what-is-this-blog",
+          "title": "このブログについて：みるめもとは",
+          "snippet": "人生の資産化」であると考えていて、つまりは<strong>自分が生きてきた経験まるまるをコンテンツにできたらめっちゃユニークじゃない？</strong>という意図で運営を続けています。</p> <p>ここでいう「ユニーク」とは</p> <ul> <li>固有で一意性のあるもの</li> <li>独創的で魅力的なもの</li> </ul> <p>という２つの意味どちらも含んでいると思っています。</p> <p>2020 年代に入ってくらいから、ネットで見かけるほとんどの記事がペラペラな情報ばかりになっていると感じませんか？</p> <p>でもこれって当然。<strong>よりたくさんの需要に届けようと思うと情報はどんどん広く浅くなってしまうから</strong>なんですよね。だから誰でも書ける記事ばかりになってしまい、インターネット全てがそのような情報で溢れていっ"
+        },
+        {
+          "id": 10328,
+          "postType": "page",
+          "slug": "nice-to-meet-you-10",
+          "title": "みるめもに来たらまずはこれをどうぞ。「はじめましての 10 記事」",
+          "snippet": "i.me/blog-for-you\">https://mirumi.me/blog-for-you</a></p> <p>ブログなんて全っっっく興味がなかったであろうあなたのためだけに書いた記事。</p> <p>これを読むと</p> <ul> <li>「ブログ」って最近よく聞くけど実際なんなのよ</li> <li>稼げるって聞いたけどどうなってんの？</li> <li>実際に始めたいとき何をどうすればいい？</li> </ul> <p>という 3 本立てで全てが分かるようになっています。</p> <p>なぜ僕がこんな記事を書いたのか、これを読むとあなた（と僕）にどんなメリットがあるのか。その秘密は記事を読んでいくと分かるようになってます。</p> <p>僕と新しい扉、開きませんか？（意味深）</p> <h2>10．あなたの思い通りになる自分だけの世界、作れます</h2> <p><img class=\"aligncenter size-full wp-"
+        },
+        {
+          "id": 36,
+          "postType": "post",
+          "slug": "shiren2-saihate",
+          "title": "【シレン2 徹底攻略！】最果てへの道を必ずクリアできる方法まとめ",
+          "snippet": "50～あれば問題なく殴り合いで最後まで行けます（武器の攻撃力20くらいは欲しいけど）。</p> <p>ちからを上げるに当たり、必要なアイテムは以下の３つ。 見かけたら<strong>最優先で</strong>手に入れましょう。</p> <ul> <li>ちからの草（買値1500円、これと毒草のみ）</li> <li>よくきき草（買値1000円、これのみ）</li> <li>草受けの杖、草投げの杖（コマンドに「いれる」があるので即識別可能）</li> </ul> <p>というわけで、 Mr.ブーンを見つけたら即刻処刑（Mr.ヘリコでもレベル下げて倒すくらいの価値あり）、 1000円の草は即購入、杖は見つけたらコマンド開く。 この癖を徹底しましょう。</p> <p>使い方はご想像の通りです。 草投げの杖でも、大将どん、店長以上（<span class=\"color-red\">店主×</span>）、エスカルゴンなどあるので、無駄遣いしないように。 大店長、殿様どんなどが近くにいるなら最後回数"
+        },
+        {
+          "id": 95,
+          "postType": "post",
+          "slug": "line-talk",
+          "title": "LINEのグループと複数人トークの違い",
+          "snippet": "<p>LINEには「1対1のトーク以外」に、みんなで話せる機能に魅力がありますよね。でも、方法としては２つあります。</p> <ol> <li>グループという1つの機能を使う方法</li> <li>通常のトークに複数人を招待する方法</li> </ol> <p>ですね。</p> <ul> <li>なんか違いがあるのは知ってるけど、結局どっちがどっちだっけ？</li> <li>最新ver.はどうなってるの？</li> </ul> <p>という方のためにまとめておきました。</p> <p>以下、簡潔に箇条書きにしてあります。</p> <h2>グループ</h2> <ul> <li>グループ諸々の編集が出来る（グループ名、トークアイコン）</li> <li>ノート"
+        }
+      ]
+    },
+    {
+      "id": "table",
+      "group": "基本本文",
+      "label": "テーブル",
+      "detector": "`<table>`",
+      "note": "プロフィール、スペック表、計測結果などで使用。style 属性付きが多い。",
+      "occurrences": 424,
+      "contentCount": 93,
+      "examples": [
+        {
+          "id": 2,
+          "postType": "page",
+          "slug": "profile",
+          "title": "このブログを書いている人",
+          "snippet": "れるなんて、本当に本当に…<del>あなたも物好きですね</del> ありがとうございます。<br /> お世辞ではなく心から嬉しいです。</p> <p>てなわけで、自己紹介的なやつ、やります。</p> <h2>いろいろ</h2> <table style=\"width: 93%; margin: 0px auto; height: 484px;\" itemscope=\"\" itemtype=\"https://schema.org/Person\"> <tbody> <tr> <td style=\"width: 32.51%;\">なまえ</td> <td style=\"width: 67.49%;\" itemprop=\"name\">みるみ</td> </tr> <tr> <td style=\"width: 32.51%;\">職業</td> <td style=\"width: 67.49%;\" itemprop=\"jobTitle\">ソフトウェアエンジニア</td> </tr> <tr> <td style=\"width: 32.51%; vertical-align: top;\">経歴とか</td> <td style=\"width: 67.49%;\" itemprop=\"hasCredential\" itemscope=\"\" itemtype=\"https://schema.org/EducationalOccupationalCredential\">情報系の大卒。ただし遊んでしかいなかったのでほぼゴミです。でもいまはプログラム書くかブログ書くかしかやっていないので人生分からんもんですね。<br /> <span>現在は暗号資産業界でソフトウェアエンジニアをやっています。そのほか趣味でいろいろなものをつくったりなど。</span></td> </tr> <tr> <td style=\"width: 32.51%; vertical-align: top;\">GitHub</td> <td style=\"width: 67.49%;\"><a href=\"https://github.com/mirumirumi\">https://github.com/mirumirumi</a></td> </tr> <tr> <td style=\"width: 32.51%;\">やってきたこと</td> <td style=\"width: 67.49%;\">ほぼ音楽オンリーの人生（後述）</td> </tr> <tr> <td style=\"width: 32.51%;\">珍しい特技</td> <td style=\"width: 67.49%;\" itemprop=\"knowsAbout\">睡眠および夢に関する研究（後述）</td> </tr> <tr style=\"height: 131px;\"> <td style=\"width: 32.51%; vertical-align: top; height: 131px;\">副業歴</td> <td style=\"width: 67.49%; height: 131px;\">・ブログ<span style=\"font-size: 0.8em;\">（無料ブログ時代含めたら[age birth=\"2011/6/1\" unit=\"年\"]/800記事くらいは書いたと思う）</span><br /> ・YouTube<span style=\"font-size: 0.8em;\">（一時期結構稼げてたけど今は敗戦中）</span><br /> ・ライター/寄稿<span style=\"font-size: 0.8em;\">（もうほぼやってない）</span><br /> ・エンジニアとしてフリー案件受注<span style=\"font-size: 0.8em;\">（もう全くやってない）</span></td> </tr> <tr style=\"height: 106px;\"> <td style=\"width: 32.51%; vertical-align: top; height: 106px;\">SNSアカウント</td> <td style=\"width: 67.49%; height: 106px;\">・<a href=\"https://x.com/__mirumi__\">X</a><br /> ・<a href=\"https://feedly.com/i/subscription/feed%2Fhttps%3A%2F%2Fmirumi.me%2Ffeed.xml\">Feedly</a><br /> ・<a href=\"https://www.pinterest.jp/mirumi_milmemo/_created/\">Pinterest</a><br /> ・<a href=\"https://note.com/mirumi_milmemo\">note</a></td> </tr> </tbody> </table> <p>ブログの更新通知含めて色々ポストしている <a class=\"twitter-link\" href=\"https://x.com/__mirumi__\">みるみの X</a> もどうぞフォローくださいませ。</p> <p>https://x.com/__mirumi__/status/1367088122316558336</p> <h3>音楽と楽器</h3> <p>自分から音楽を取ったらなにも残らないっていうくらい、こ"
+        },
+        {
+          "id": 17002,
+          "postType": "page",
+          "slug": "about",
+          "title": "サイト概要・運営者情報",
+          "snippet": "<table style=\"width: 93%; margin: 0px auto; height: 620px;\" itemscope=\"\" itemtype=\"https://schema.org/Organization\"> <tbody> <tr style=\"height: 43px;\"> <td style=\"width: 37.9895%; border-style: dashed; height: 43px;\">サイト名</td> <td style=\"width: 62.0105%; border-style: dashed; height: 43px;\" itemprop=\"brand\" itemscope=\"\" itemtype=\"https://schema.org/Brand\"><span>みるめも</span></td> </tr> <tr style=\"height: 42px;\"> <td style=\"width: 37.9895%; border-style: dashed; height: 42px;\">サイト運営者・記事執筆者</td> <td style=\"width: 62.0105%; border-style: dashed; height: 42px;\" itemprop=\"founder\" itemscope=\"\" itemtype=\"https://schema.org/Person\"><span>みるみ</span><span style=\"font-size: 0.8em;\">（<a href=\"/profile\">プロフィール</a>）</span></td> </tr> <tr style=\"height: 42px;\"> <td style=\"width: 37.9895%; border-style: dashed; height: 42px;\">サイト URL</td> <td style=\"width: 62.0105%; border-style: dashed; height: 42px;\"><a href=\"https://mirumi.me/\">https://mirumi.me/</a></td> </tr> <tr style=\"height: 42px;\"> <td style=\"width: 37.9895%; border-style: dashed; height: 42px;\">サイト説明</td> <td style=\"width: 62.0105%; border-style: dashed; height: 42px;\"><span>呆れるほど話題に統一感のない雑記ブログ。</span></td> </tr> <tr style=\"height: 42px;\"> <td style=\"width: 37.9895%; border-style: dashed; height: 42px; vertical-align: top;\">運営方針</td> <td style=\"width: 62.0105%; border-style: dashed; height: 42px;\" itemprop=\"publishingPrinciples\">自らが体験したものや考えたことを第一に記事を執筆します。調べればすぐに分かるような誰でも書ける情報より、需要は少なくても自分にしか書けない情報を発信するというポリシーを貫きます。</td> </tr> <tr style=\"height: 42px;\"> <td style=\"width: 37.9895%; border-style: dashed; height: 42px; vertical-align: top;\">発信内容の情報信頼性</td> <td style=\"width: 62.0105%; border-style: dashed; height: 42px;\">技術的データやニュースによって報じられた情報など、第三者が発信した内容をもとに記事を執筆する際は、官公庁・企業の公式サイト・技術サイトの公的ドキュメント・権威あるニュースサイトなどからの引用出典に努めています。<br /> また、各記事は定期的に内容を見直し常に正しい情報が記載されるように努めています。</td> </tr> <tr> <td style=\"width: 37.9895%; border-style: dashed; vertical-align: top;\">SNS アカウント</td> <td style=\"width: 62.0105%; border-style: dashed;\">・<a href=\"https://x.com/__mirumi__\">X</a><br /> ・<a href=\"https://feedly.com/i/subscription/feed%2Fhttps%3A%2F%2Fmirumi.me%2Ffeed.xml\">Feedly</a><br /> ・<a href=\"https://www.pinterest.jp/mirumi_milmemo/_created/\">Pinterest</a><br /> ・<a href=\"https://note.com/mirumi_milmemo\">note</a><br /> ・<a href=\"https://github.com/mirumirumi\">GitHub</a></td> </tr> <tr style=\"height: 43px;\"> <td style=\"width: 37.9895%; border-style: dashed; height: 43px;\">運営事業者名</td> <td style=\"width: 62.0105%; border-style: dashed; height: 43px;\" itemprop=\"name\">みるみスタジオ</td> </tr> <tr style=\"height: 42px;\"> <td style=\"width: 37.9895%; border-style: dashed; height: 42px;\">代表者名</td> <td style=\"width: 62.0105%; border-style: dashed; height: 42px;\" itemprop=\"founder\" itemscope=\"\" itemtype=\"https://schema.org/Person\"><span>みるみ</span></td> </tr> <tr style=\"height: 42px;\"> <td style=\"width: 37.9895%; border-style: dashed; height: 42px;\">所在地</td> <td style=\"width: 62.0105%; border-style: dashed; height: 42px;\" itemprop=\"address\">日本</td> </tr> <tr style=\"height: 42px;\"> <td style=\"width: 37.9895%; border-style: dashed; height: 42px;\">メールアドレス</td> <td style=\"width: 62.0105%; border-style: dashed; height: 42px;\" itemprop=\"email\">mail@mirumi.me</td> </tr> <tr> <td style=\"width: 37.9895%; border-style: dashed;\">プライバシーポリシー</td> <td style=\"width: 62.0105%; border-style: dashed;\"><a href=\"/privacy-policy\">プライバシーポリシー</a></td> </tr> <tr style=\"height: 42px;\"> <td style=\"width: 37.9895%; border-style: dashed; height: 42px;\">お問い合わせ先</td> <td style=\"width: 62.0105%; border-style: dashed; height: 42px;\" itemprop=\"contactPoint\"><a href=\"/contact\">お問い合わせフォーム</a></td> </tr> <tr style=\"height: 72px;\"> <td style=\"width: 37.9895%; border-style: dashed; height: 72px; vertical-align: top;\">事業内容</td> <td style=\"width: 62.0105%; border-style: dashed; height: 72px;\" itemprop=\"description\">Webサイト運営/構築・ライティング/執筆・ソフトウェアやアプリケーションの開発/設計</td> </tr> <tr> <td style=\"width: 37.9895%; border-style: dashed; vertical-align: top;\">関連サイト/サービス</td> <td style=\"width: 62.0105%; border-style: dashed;\">・<a href=\"https://chrome.google.com/webstore/detail/easy-to-save-image-as-名前を/opjhacmpfbfcjjpleemaelinjikggjff\">Chrome 拡張機能「Easy to Save Image As」</a><br /> ・<a href=\"https://chrome.google.com/webstore/detail/form-character-counter/mlipcjglbcilhlpigomimjmjdhhpgnhg\">Chrome 拡張機能「入力フォーム用文字数カウンター」</a><br /> ・<a href=\"https://chromewebstore.google.com/detail/site-icon-favicon-changer/pjnpdadpjhcjajjceggcgpofmfnclkmo\">Chrome 拡張機能「Site icon (favicon) changer」</a><br /> ・<del>みんすい - みんなでつくる吹奏楽音源データベース</del> (サービス停止中)<br /> ・<a href=\"https://mirumi.in/apps/milmemo-box/\" target=\"_blank\" rel=\"noopener\">みるめもぼっくす</a><br /> ・<a href=\"https://mirumi.in/apps/yourcat\" target=\"_blank\" rel=\"noopener\">YourCat</a><br /> ・<a href=\"https://mirumi.in/apps/how-far-map/\" target=\"_blank\" rel=\"noopener\">How far can I go? | Walking Distance Map</a><br /> ・<a href=\"https://mirumi.in/apps/pordle/\" target=\"_blank\" rel=\"noopener\">Pordle | Wordle of Poker</a><br /> ・<a href=\"https://mirumi.in/apps/candlestick-renderer/\">Candlestick Renderer</a></td> </tr> </tbody> </table> <p style=\"margin-bottom: 3em; text-align: right;\"><span style=\"font-size: 0.8em; color: #999999;\">2025/9/1 時点</span></p>"
+        },
+        {
+          "id": 200,
+          "postType": "post",
+          "slug": "windows-launcher",
+          "title": "WindowsでMacみたいに下にアプリをかっこよく並べる方法（ランチャー）",
+          "snippet": "ァイルの場所を示していることになります。</p> <p>で、マイコンピュータの場合は、「特殊フォルダのクラスID」というものを使って指定してあげる必要があるんです。<br /> 下に主な特殊フォルダの一覧を紹介しておきます。</p> <table> <tbody> <tr> <td>マイ コンピューター</th> <td>::{20D04FE0-3AEA-1069-A2D8-08002B30309D}</td> </tr> <tr> <td>ごみ箱</th> <td>::{645FF040-5081-101B-9F08-00AA002F954E}</td> </tr> <tr> <td>マイ ドキュメント</th> <td>::{450D8FBA-AD25-11D0-98A8-0800361B1103}</td> </tr> <tr> <td>コントロール パネル</th> <td>::{20D04FE0-3AEA-1069-A2D8-08002B30309D}<br /> ::{21EC2020-3AEA-1069-A2DD-08002B30309D}</td> </tr> </tbody> </table> <p>実際に使用するときは改行を削除して1行で入力してください。また、「」は「￥（半角）」です。</p> <h2>アイコンの追加と削除</h2> <p>肝心のアイコンを追加・削除する方法についてです。</p> <h3>追加</h3> <p>大きく分けて2通りあります。デスクトップやエクスプローラーで表示している対象をそのままドラッグアンドドロップでDockへ持って行く方法と、Dockを右クリック→「アイテムの追加」から「ファ"
+        },
+        {
+          "id": 689,
+          "postType": "post",
+          "slug": "android-app",
+          "title": "誰も知らない超便利 Android アプリおすすめ 40 選",
+          "snippet": "get=\"_top\" rel=\"nofollow noopener\"><img src=\"https://nabettu.github.io/appreach/img/gplay_ja.png\" /></a></div> </div> <table style=\"width: 93%; margin: auto; font-size: 0.87em; \" > <tbody> <tr> <td style=\"width: 35.4903%; \">主な有料版との違い</td> <td style=\"width: 64.5097%; \">・広告なし<br /> ・アラームの設定数が10個→100個</td> </tr> <tr> <td style=\"width: 35.4903%; \">有料版の価格</td> <td style=\"width: 64.5097%; \">200円</td> </tr> </tbody> </table> <p>まずは本当に毎日使うものから。<br /> わりと有名な目覚ましアプリだと思います。</p> <p>これの売りはもちろん設定項目が豊富なこと。それでいながらごちゃごちゃせずに UI が整理されている点も「毎日ちょっとずつ触る目覚まし」という観点からするととても良い。</p> <p>「設定した時刻順にアラームが並んでくれる」みたいな、個人ごとの微妙なこだわりにほぼ全部応えてくれるポテンシャルがあります。</p> <p><"
+        },
+        {
+          "id": 786,
+          "postType": "post",
+          "slug": "music-analysis-entropy",
+          "title": "移動エントロピーで「音楽や曲が似ている感覚」を数値化できるかもしれない",
+          "snippet": "数10で進める。意味はあるんだけど、省きます。</p> <h4>補足：平均情報量</h4> <p>これは情報量、つまり確率の平均、みたいな捉え方が分かりやすいと思う。たとえば1000本1セットの宝くじが存在する場合を考える。</p> <table> <tbody> <tr> <td class=\"xl64\" style=\"height: 26.4pt; width: 63px; text-align: center;\" height=\"35\"><strong>賞</strong></td> <td class=\"xl64\" style=\"width: 72px; text-align: center;\"><strong>本数</strong></td> <td class=\"xl64\" style=\"width: 62.9px; text-align: center;\"><strong>確率</strong></td> <td class=\"xl64\" style=\"width: 124.1px; text-align: center;\"><strong>情報量<span class=\"font0\">（bit）</span></strong></td> </tr> <tr> <td class=\"xl63\" style=\"text-align: center;\" height=\"18\">1等</td> <td class=\"xl63\" style=\"text-align: center;\">1本</td> <td class=\"xl63\" style=\"text-align: center;\" align=\"right\">0.0001</td> <td class=\"xl63\" style=\"text-align: center;\" align=\"right\">13.2877</td> </tr> <tr> <td class=\"xl63\" style=\"text-align: center;\" height=\"18\">2等</td> <td class=\"xl63\" style=\"text-align: center;\">10本</td> <td class=\"xl63\" style=\"text-align: center;\" align=\"right\">0.001</td> <td class=\"xl63\" style=\"text-align: center;\" align=\"right\">9.9658</td> </tr> <tr> <td class=\"xl63\" style=\"text-align: center;\" height=\"18\">3等</td> <td class=\"xl63\" style=\"text-align: center;\">100本</td> <td class=\"xl63\" style=\"text-align: center;\" align=\"right\">0.01</td> <td class=\"xl63\" style=\"text-align: center;\" align=\"right\">6.6439</td> </tr> <tr> <td class=\"xl63\" style=\"text-align: center;\" height=\"18\">外れ</td> <td class=\"xl63\" style=\"text-align: center;\">9,889本</td> <td class=\"xl63\" style=\"text-align: center;\" align=\"right\">0.9889</td> <td class=\"xl63\" style=\"text-align: center;\" align=\"right\">0.0161</td> </tr> </tbody> </table> <p>それぞれの当たり（もしくははずれ）を引く確率から情報量は簡単に求められる。</p> <p>1等は1000本に1本しかないから情報の価値が高く13.2877となっているのに対して、外れは引く確率が高いため小さい値の0.0161となっている。<strong>引く前にだいたいが外れと分かっているようなものであるから、情報の価値はほとんどない</strong>ということ。ここは感覚的に理解しやすいですね。</p> <p>で、要はこ"
+        }
+      ]
+    },
+    {
+      "id": "blockquote",
+      "group": "基本本文",
+      "label": "引用ブロック",
+      "detector": "`<blockquote>`",
+      "note": "引用文・レビュー引用など。",
+      "occurrences": 176,
+      "contentCount": 76,
+      "examples": [
+        {
+          "id": 142,
+          "postType": "post",
+          "slug": "donkey-2-soundtrack",
+          "title": "ドンキー 2 のサントラになぜ 20 万もの値が付くのか考える",
+          "snippet": "ク」というステージで、ここも当然上述の設定が当てはまるのだが、どうだろう。このステージを面白くないと感じたことがあるだろうか。僕はない。</p> <p>むしろゲームを起動してデータが消えているのを発見するたび少しにんまりして、</p> <blockquote> <p>ドジでまぬけなドンキーコングは、つかまえた。かえしてほしけりゃ、バナナをよこせ。ワッハッハッ キャプテン クルールより</p> </blockquote> <p>を読んで、またこのステージからプレイできる！などと喜んでいた。</p> <p>つまりこれがバランスだと僕は勝手に思っている。</p> <p>このステージは、ひとつひとつのギミックを抜けるのはまったく難しくない。事実落とし穴（落ちてミスになる場所）などはここには一個もない。しかしその「難易度設定」を保ちながら、ゲームとしての整合性を損なわないのがバランスの大切な役割だ。</p> <p>そもそもこの言葉自体がそういう意味じゃ"
+        },
+        {
+          "id": 636,
+          "postType": "post",
+          "slug": "kirby-sdx",
+          "title": "僕の中でのカービィの原点はスーパーデラックスにあるかもしれない",
+          "snippet": "t\">星のカービィUSDXのサントラに収録されている公式アレンジの方。ゆったりとしたイメージの（実際にはテンポはほとんど変わらないけど）オーケストラアレンジ。これがなんとも良いサウンドなのである。解説にはこうある。</span></p> <blockquote> <p>｢打ち込み｣のオーケストラ曲では､｢打ち込みならではの要素｣をまず考え､本物を目指さないように作ることにしています｡でないと本物に勝てるわけがありませんから｡ この曲で｢ニセモノならではの良さ｣を楽しんでいただけたら幸いです｡ （安藤浩和）</p> </blockquote> <p>まったくその通りで、よくある残念な感じのオケアレンジとは程遠い、素晴らしい出来上がりとなってます。</p> <h2>まとめ</h2> <p>なんでこのスーパーデラックスがカービィの原点といえるのかってことを色んなところから考えてみた。<br /> と同時に、どれほど楽しんで遊んでいた素晴らしいゲームだったのかを振り返ることが出来て僕も楽しかった。</p> <p>今はさっきからも話に出ているウルトラスーパーデラックスって"
+        },
+        {
+          "id": 1237,
+          "postType": "post",
+          "slug": "earphone-er4pt",
+          "title": "世界が変わる超おすすめ高級イヤホン ER-4PT (ER4XR) を使ってみてくれ…！",
+          "snippet": "通り過ぎてもなにも聞こえない。だから道を歩くときはかなり周りに注意を配るクセがついた。何度も車に轢き殺されそうになっているので。考えられる唯一のデメリットかもｗ</p> <p>しかもなにが面白いって、サウンドハウスの商品説明に</p> <blockquote> <p>・外部ノイズの低減は、危険な音量でのリスニングによるリスクを軽減します。</p> </blockquote> <p>ってある。要はこれって「まわりの音がなにも聞こえなくなるから音量が小さくても充分聞けるよ」って言っているんだけれど、<span class=\"color-red\">そもそも遮音性能が高すぎてまわりが聞こえない→なにもリスクは低減されていない</span>ってことなので笑えます。</p> <p>まあ冗談はさておき、この遮音性の異常な高さゆえ他のイヤホンをもう使いたくなくなっている自分がいます。これくらいのクラスのイヤホンになる"
+        },
+        {
+          "id": 1404,
+          "postType": "post",
+          "slug": "taiko-tuning",
+          "title": "打楽器のチューニングを教えるってなんだ？",
+          "snippet": "<p style=\"font-weight: 400;\">打楽器を教える側の立場になってしまうと必ず訪れるのが「チューニング教えてください問題」ですね。そしてこの次の瞬間に質問者が受ける返答はまず間違いなくこう。</p> <blockquote> <p style=\"font-weight: 400;\">「それは自分で触ってみて覚えていくしかないかな」</p> </blockquote> <p style=\"font-weight: 400;\">残酷な事実だよね、うん。</p> <p style=\"font-weight: 400;\">回答する側はそれなりの答えを持っている（はず）なのにも関わらずなんで出てくる答えはこうなっちゃうんだ？というのをこの間初めてちゃんと考えてみた。というより、そもそも聞かれたときにどうして自分が普段やっているチューニングの方法を素直に答えないのか自分で自分に疑問を感じたときに気づいたん"
+        },
+        {
+          "id": 1497,
+          "postType": "post",
+          "slug": "pc-freesoft",
+          "title": "Windows にまず入れたいおすすめフリーソフト/便利アプリ 30 個くらい＋純正ソフト/PowerToys",
+          "snippet": "a href=\"https://www.nihongoka.com/daemontools/\">https://www.nihongoka.com/daemontools/</a></p> <p>仮想ドライブを実装するソフト。</p> <blockquote> <p>仮想ドライブとは、あらかじめCDやDVD、BDといった光学ディスクの中身を丸ごとディスクイメージとして取り込んでおき、それを仮想的なCD/DVDドライブに入れることによって、あたかも本物のCD/DVDドライブからデータを読み込んでいるように動作する仕組みのことです。 </p> </blockquote> <p>ということで、つまりは<strong>「ディスクがないのにディスクがあるように動作させられるソフト」</strong>なんですよ。</p> [caption id=\"attachment_4930\" align=\"aligncenter\" width=\"1747\"]<img class=\"size-full wp-image-4930\" src=\"https://mirumi.media/daemo-tools.png\""
+        }
+      ]
+    },
+    {
+      "id": "horizontal_separator",
+      "group": "基本本文",
+      "label": "装飾区切り線",
+      "detector": "`dot-line-brown` class",
+      "note": "本文の場面転換として使われる点線系の区切り。",
+      "occurrences": 376,
+      "contentCount": 182,
+      "examples": [
+        {
+          "id": 2,
+          "postType": "page",
+          "slug": "profile",
+          "title": "このブログを書いている人",
+          "snippet": "な最後まで読んでいただけるようなみなさんには特に感謝しているということ！<br /> 本当にありがとうございます。</p> <p>そんなわけで、今後とも「みるめも」をどうぞよろしくお願いします！</p> <p>&nbsp;</p> <div class=\"dot-line-brown\"> </div> <p>ついでなので何か他の記事も読んでいってください（超最低）<br /> <i class=\"fas fa-hand-point-down\"></i> の「はじめましての 10 記事」というのがおすすめ。</p> <p>[/nice-to-meet-you-10]</p>"
+        },
+        {
+          "id": 270,
+          "postType": "page",
+          "slug": "what-is-this-blog",
+          "title": "このブログについて：みるめもとは",
+          "snippet": "<p>というわけで、最初の話である「ユニークな～～～」のところに繋がるという感じです。</p> <p>誰でも書ける記事を自分のブログで書いたって面白くもなんともないじゃないですか。っていうか単にモチベーションが全く出ないよね。</p> <div class=\"dot-line-brown\"> </div> <p>それらがあった上で、もともと文章を書くのが好きというのも乗っかる形でずっとブログを続けています。</p> <p>この「みるめも」以前にもたくさんの無料ブログ <del>またの名を黒歴史</del> を作っては消して…と繰り返したりしており、たぶんブログ自体は 14 年ほど、書いた記事数は 800 を超えるくらいはあるんじゃないかと思います。</p> <p>そんなわけで、「誰も読んでくれないだろうな～」などと思"
+        },
+        {
+          "id": 186,
+          "postType": "post",
+          "slug": "soundhorizon-recommend",
+          "title": "サンホラを初心者におすすめするのに一番向いている曲はこれだ！",
+          "snippet": "の映像を見せられていた）</li> </ul> <p>この友人の勧めるチョイスに関してはツッコまないであげてほしいｗ<br /> たぶん僕がたまたま覚えているのがそこなだけできっと良い曲も聴かせてくれていた（のだろう）</p> <div class=\"dot-line-brown\"> </div> <p>このときの僕の感想を見ていこう。</p> <p>ひとつめ。</p> <div class=\"blank-box\">「えーなんかそんなわけ分かんないハードメタルみたいなむちゃくちゃロックとかめんどくさそう」</div> <p>辛辣すぎて草</p> <p>ふたつめ。</p> <div class=\"blank-box\">「ストーリーあるっていったって、音楽ってそういうの求めて聞きたいわけじゃないし。っていう"
+        },
+        {
+          "id": 296,
+          "postType": "post",
+          "slug": "ibitunarushinen-sononahamaou-mp3",
+          "title": "「歪なる思念 其の名は魔王」の耳コピぴこぴこアレンジmp3配布ページ",
+          "snippet": "://mirumi.media/maou-pikopiko.mp3\" target=\"_blank\" download=\"maou-pikopiko.mp3\" rel=\"noopener\">Download</a></span></p> <div class=\"dot-line-brown\"> </div> <p>原曲の音源がどこで手に入るのかとよく聞かれますのでサントラを紹介しておきます。</p> <p>一般的にはこれ。</p> <p>[amazon asin=\"B00G7S902I\" kw=\"ブレイブリーデフォルト ドラマCD リユニオンの祝祭\" title=\"ブレイブリーデフォルト ドラマCD~リユニオンの祝祭~\" size=\"l\"]</p> <p>もしくは、サンホラ好きな方ならアソホラの初回限定デラックス盤の"
+        },
+        {
+          "id": 992,
+          "postType": "post",
+          "slug": "memory-anki",
+          "title": "効率よく丸暗記する方法 - 物の覚え方とコツを知れば記憶力は必要ない",
+          "snippet": "にをしなければならないか、という風に逆方向に物事を考えられる。このプロセスが大切。</p> <p>今自分がしている仕事が全体のどの部分なのか、一体何の役に立つのかを理解できていない人って仕事ができない人の特徴でよく挙がりますよね？</p> <div class=\"dot-line-brown\"> </div> <p>今のは分かりやすい例として挙げたけれど、これは勉強にも使えます。</p> <p>暗記テクニックの項で詳しく説明するけど、たとえば歴史のある制度の名前を覚えるとき、僕の場合だと「その歴史上である一定のまとまりを作って、その制度が生まれたのはなぜなのか」というのを流れで覚えます。これが<strong>道筋、理由、背景</strong>なんかにあたるわけです。</p> <p>しかもまだメリットはあって、流れで覚えているか"
+        }
+      ]
+    },
+    {
+      "id": "inline_emphasis",
+      "group": "インライン装飾",
+      "label": "強調・色付き文字・マーカー",
+      "detector": "`<strong>`, `color-*`, `bb-*`, `marker-*` など",
+      "note": "ブロックというより inline styling。移行時にはテキスト装飾として扱う候補。",
+      "occurrences": 7892,
+      "contentCount": 384,
+      "examples": [
+        {
+          "id": 270,
+          "postType": "page",
+          "slug": "what-is-this-blog",
+          "title": "このブログについて：みるめもとは",
+          "snippet": "がそれをオリジナリティと捉えただ書きまくる！！</p> </div> <p>というのを基本スタンスにしています。</p> <p>いろんな記事で書いていることなのですが、僕はブログというものを「人生の資産化」であると考えていて、つまりは<strong>自分が生きてきた経験まるまるをコンテンツにできたらめっちゃユニークじゃない？</strong>という意図で運営を続けています。</p> <p>ここでいう「ユニーク」とは</p> <ul> <li>固有で一意性のあるもの</li> <li>独創的で魅力的なもの</li> </ul> <p>という２つの意味どちらも含んでいると思っています。</p> <p>2020 年代に入ってくらいから、ネットで見かけるほとんどの記事がペラペラな情報ばかりになっていると感じませんか？</p> <p>でもこれって当然。<stron"
+        },
+        {
+          "id": 10328,
+          "postType": "page",
+          "slug": "nice-to-meet-you-10",
+          "title": "みるめもに来たらまずはこれをどうぞ。「はじめましての 10 記事」",
+          "snippet": "e/nitori-pillow</a></p> <p>高校生のころから人 3 倍くらい肩こりに悩まされる体質なのもあり、20 代になると「朝起きると動かせないくらいヤバい」という状態に→どうやら枕で変わるらしいと知る→色々試す→結果的に <strong>15 万円以上も散財する</strong>→おかげで最強の枕と選び方が分かった…。</p> <p>という流れで「枕オタク」なるものになってしまったとなんとなく半ば自虐的に認識していたのですが、ふらっと寄ったニトリでノリと勢いだけで書いたこの記事が自分でもかなり気に入る感じになりました。</p> <p>偶然にも、枕について何も興味がない人（≒全員）にもとっかかりとしてわかりやすく読んでいただける構成になったので、これを機に気になる枕探しをやっていただくのもおすすめ！</p>"
+        },
+        {
+          "id": 36,
+          "postType": "post",
+          "slug": "shiren2-saihate",
+          "title": "【シレン2 徹底攻略！】最果てへの道を必ずクリアできる方法まとめ",
+          "snippet": "ックをやってみましょう…笑）</p> </div> <p>シレン２を持ってるけど最果てだけはクリアできない…<br /> たくさん遊んだけどここだけは放っておいた…</p> <p>そんなあなたにお届けするこのページ。<br /> <strong>「これを読んだら間違いなくクリアできるようになります！」</strong><span style=\"font-size: 80%;\"><span style=\"font-size: 80%;\">きっと</span></span></p> <p>つまるところ、やることは決まっているわけですね。間違っても運ゲーではありません。運を使うのは最初の何ヶ所かくらいです！</p> <div class=\"box-common box-info\"> <p>この記事を読まれる方として僕が想定しているのは、「攻略wiki"
+        },
+        {
+          "id": 82,
+          "postType": "post",
+          "slug": "iwannabetheguy-map",
+          "title": "I Wanna be the Guy の全体マップをつくった",
+          "snippet": "<p>つくった。</p> <p>けど、<strong>「全ステージの全体図を余計なもの抜きにくっつけてみただけ」</strong>です。</p> <p>こういうゲームだしちょっとググったら全体構造マップなんてすぐ見つかるだろう、 って思っていたらこれが探してみても全然見あたらない。</p> <p>wikiにもそれらしいものはあったんだけどリンクマップだけで一枚絵ではない。似た趣旨のものも見つけたが注釈や矢印により画像のみではない。</p> <p>…これはまさか誰も試みていないのでは？ とﾑﾌﾌな感じでちょろっと作ってみました。</p> <div class"
+        },
+        {
+          "id": 91,
+          "postType": "post",
+          "slug": "why-do-i-like-soundhorizon",
+          "title": "サンホラを音楽的にどれくらい好きなのかをがんばって表現してみる",
+          "snippet": "<p>この手の文章は頭の中で構成を組み立てて書いていくのが難しい、 というよりそれでは結局まとめようとして言いたいことが自分でも分からなくなるため、あえて手を休めることなく徒然なるままに進めていくとする。<strong>読まないこと推奨。</strong></p> <div class=\"box-common box-alert\"> <p>※あえてですが、この記事はすごく偉そうで挑発的で自己中心的で内容が偏っています。 しかもいつもの僕とは全く違う文体で超うざいです。というかもう恥ずかしすぎて自分で読めないレベルなので削除したいくらい…。</p> <p>内容に関しては、ぜひ僕以外の方がどんな風に考えていらっしゃるかの意見は知りたいと思っているので、よければコメントとかどしどしお願い"
+        }
+      ]
+    },
+    {
+      "id": "ruby",
+      "group": "インライン装飾",
+      "label": "ルビ",
+      "detector": "`<ruby>` / `<rt>`",
+      "note": "ふりがな表現。",
+      "occurrences": 63,
+      "contentCount": 46,
+      "examples": [
+        {
+          "id": 186,
+          "postType": "post",
+          "slug": "soundhorizon-recommend",
+          "title": "サンホラを初心者におすすめするのに一番向いている曲はこれだ！",
+          "snippet": "=\"blank-box\">「ストーリーあるっていったって、音楽ってそういうの求めて聞きたいわけじゃないし。っていうかミュージカル色強すぎて曲っぽいとこは？？？」</div> <p>これはある。つまり、<strong>あくまでも音楽を勧める<ruby>体<rt>てい</rt></ruby>でいくのなら強く推すのは物語性やストコンとかではない</strong>というのは前提として置いておこう。彼は総合芸術的な要素がすごく好きだから、おそらく一番ストーリーが掴みやすいMoiraを選んでその主張を前面に出したのだと今では思っている。</p> <p>相手の立場に立つという意味では気をつける点だ。また、よく話に出る「セリフについて」だけど、これに関してはあとで別に説明する。</p> <p>みっつめ。</p> <div cla"
+        },
+        {
+          "id": 651,
+          "postType": "post",
+          "slug": "kirby-future-kirby",
+          "title": "次回作は？これからのカービィはどうなっていくのか考えてみた",
+          "snippet": "<p>カービィの音楽とまたたくさん関わる機会があって、「そういえば、カービィってどういうゲームだったんだっけ？」と、ふと原点に戻るというか改めて考えてみたわけ。そうしたら、この制作路線はいつまで続くのかな、いや<ruby>保<rt>も</rt></ruby>つのかなと少し不安になったので自分の考えを整理するがてら記事にしてみる。</p> <p>不安になったっていうのは、カービィシリーズ自体にファンとして不満を感じているわけじゃなくて、どっちかっていうと制作者目線での親のような気持ちに近いかも。まあ、どういうことかっていうのをこれから書いていきますよん。</p> <h2>最近のカービィ作品</h2> <p>まずね、最近のカービィを見ていると、「過去作を尊重している姿勢」がすごく伺える。"
+        },
+        {
+          "id": 861,
+          "postType": "post",
+          "slug": "game-ranking",
+          "title": "SFC/N64/GC/Wii(U)/Switch/PS1~4 などゲームソフト個人的おすすめランキング50選！",
+          "snippet": "h3> <p>[amazon asin=\"B075LC617B\" kw=\"スーパーマリオ オデッセイ\" title=\"スーパーマリオ オデッセイ - Switch\" size=\"l\"]</p> <p>順位もこの辺りまで来るとランキングの<ruby>体<rt>てい</rt></ruby>をなしていないというか、優劣の差はもう全く分かりません。なんとなくマリオ64のあとにマリオデを置いてますが特に意味はないです。</p> <p>というわけでマリオオデッセイ。このゲームは革新的でした。</p> <p>というのも、マリオ64が世界に与えた絶大な影響の上に発売される作品のはずなのに、世界中のその期待を軽く飛び越えまたもや最高峰のゲームが生み出されてしまったから。こんなことができるメーカーは僕は任天堂しか知らない。</p>"
+        },
+        {
+          "id": 992,
+          "postType": "post",
+          "slug": "memory-anki",
+          "title": "効率よく丸暗記する方法 - 物の覚え方とコツを知れば記憶力は必要ない",
+          "snippet": "ようになった。</p> <p>ちなみに僕は圧縮してm4aやmp3で聴いていたけれどめちゃめちゃ効果あったわけで、全て思い込みだったのかな…？（アホ</p> <p>話を戻すけど、極力人と一緒に勉強するのも避けるべきです。「教えてもらう」という<ruby>体<rt>てい</rt></ruby>でも、本当に分からない点だけをピックアップしてそれを聞くためだけに連絡を取るべきです。</p> <p>遊びたいなら勉強なんていう建前は取っ払って素直に友達と遊びに行く方が精神的にも楽なはず。</p> <h2>あとがき</h2> <p>いきなり終わったけれど、以上で説明は全て終了です。お疲れ様でした。</p> <p>で、実はこの記事、要点だけ伝えれば目的に対して十分意味のあるものになるにも関わらず、わざと簡潔に書かなかったり要らん話を添え"
+        },
+        {
+          "id": 1458,
+          "postType": "post",
+          "slug": "good-goods",
+          "title": "高いけど本当に買ってよかったもの総まとめ 40 選",
+          "snippet": "意。湿気ます。</p> <p>ちなみに僕が買っているのは「シトラス」という方ですが、標準は無印のものっぽいです。効果や成分に一切違いはないとのことなので、お好きな方をどうぞ。</p> <p>これで明日から僕の笑顔は美しいものに！（内面は<ruby>磨け<rt>・・</rt></ruby>ない）</p> <h3>無水エタノール（アルコール）</h3> <p>[amazon asin=\"B000TKDKA8\" kw=\"無水エタノール\" title=\"無水エタノール 500ml\" size=\"l\"]</p> <div class=\"box-common box-rewrite\"> <p><span class=\"rewrite-date\">追記 (2022/1/16) ：</span>これずっと紹介してきてたんですけ"
+        }
+      ]
+    },
+    {
+      "id": "inline_code",
+      "group": "コード・技術表現",
+      "label": "インラインコード",
+      "detector": "`<code>` / `inline-pre`",
+      "note": "本文中のコマンド名・コード断片。`inline-pre` は独自装飾。",
+      "occurrences": 709,
+      "contentCount": 110,
+      "examples": [
+        {
+          "id": 689,
+          "postType": "post",
+          "slug": "android-app",
+          "title": "誰も知らない超便利 Android アプリおすすめ 40 選",
+          "snippet": "に、真面目に出品しているだけ。そういうコツとかは別の記事にまとめましたので、気になる方は以下の記事をどうぞ。</p> <p>[/mercari-sell]</p> <p>「登録してみようかな」と思った方は、僕の招待コード<strong><code class=\"inline-pre\">Wrx677</code></strong>を入力していただくと<strong>500円分のクーポンが必ずもらえます！</strong>ぜひご利用ください。<br /> <i class=\"fas fa-hand-point-right\"></i> <a href=\"https://www.mercari.com/jp/signup/\">メルカリの新規会員登録はこちら</a></p> <p>ちなみにゲームソフトみたいなどうやっても劣化のしようがないものはこう"
+        },
+        {
+          "id": 786,
+          "postType": "post",
+          "slug": "music-analysis-entropy",
+          "title": "移動エントロピーで「音楽や曲が似ている感覚」を数値化できるかもしれない",
+          "snippet": "strong>になる。</p> <p class=\"r\">今回の思い付きでは<strong>計算の組み合わせ数は普通に10万とか超える</strong>ので、適当にプログラムを書いて計算した。</p> <p>ちなみに最終的には計算結果は<code class=\"inline-pre\">0.044003...</code>となる。これが移動エントロピーというものの値を示していることになる。</p> <h2>やったこと</h2> <p>ようやっと、今回の大筋を説明します。あらかたこんな感じ。</p> <ol class=\"num-ol\"> <li>実験のために用意した曲をA,Bの2つのグループに分ける。グループ内では曲が1組2曲の対になっている。Aには音楽的な関連がないと思われるもの、つまり多くの人が似ていないと感じるものを集め、Bにはその逆、音"
+        },
+        {
+          "id": 2243,
+          "postType": "post",
+          "slug": "mercari-sell",
+          "title": "メルカリで効率よく売る方法まとめ。コツは「親切丁寧に、でもズル賢く」",
+          "snippet": "品しつづけて50万を超えた</strong>という話です。ちなみにもともとモノは少ない人で、ゴミ屋敷を整理して全部売ったとかでもないです。</p></div> <p>ちなみにメルカリにまだ登録していない方は、僕の招待コード<strong><code class=\"inline-pre\">Wrx677</code></strong>を入力していただくと500円分のクーポンが必ずもらえますのでぜひどうぞ！登録は<a href=\"https://www.mercari.com/jp/signup/\">こちら</a>から。</p> <h2>はじめに</h2> <p><img class=\"aligncenter size-full wp-image-6384\" src=\"https://mirumi.media/recycle-reuse-sell"
+        },
+        {
+          "id": 2320,
+          "postType": "post",
+          "slug": "from-windows-to-android",
+          "title": "WindowsからAndroidのファイルにアクセスする方法",
+          "snippet": "<h3>PC側（ウェブブラウザで利用する）</h3> <p>ブラウザからファイルにアクセスしたい場合は、サービス中の画面に表示されているftpアドレスをブラウザのアドレスバーに打ち込めばOK。</p> <p>そうするとこんな画面になります。<code class=\"inline-pre\">device/</code>が端末のROM、<code class=\"inline-pre\">sdcard/</code>がSDカード。</p> <p><img class=\"sss aligncenter wp-image-11886\" src=\"https://mirumi.media/ftp-access-from-browser.png\" alt=\"ftp-access-from-browser\" width=\"459\" height=\"206\" /></"
+        },
+        {
+          "id": 2575,
+          "postType": "post",
+          "slug": "googleadsense-auto-display",
+          "title": "Google AdSense を本文にのみ適切に自動挿入する機能を自作した",
+          "snippet": "e 広告コードを設定する<br /> ・モバイルサイトやレスポンシブ デザインのサイトでコンテンツと広告が重なるような方法で広告ユニットを配置する</p> </blockquote> <p>一切抵触してません。<br /> CSSで<code class=\"inline-pre\">display:none;</code>を当ててしまうケースはありがちなので、今回に限らずみなさん注意しましょう。</p> <p>最後、ちょっと趣旨が変わりますが「ラベル」について。</p> <p><img src=\"https://mirumi.media/auto-ad-example-4.png\" alt=\"auto-ad-example-4\" width=\"536\" height=\"333\" class=\"aligncenter wp-image-11723\""
+        }
+      ]
+    },
+    {
+      "id": "pre_code_block",
+      "group": "コード・技術表現",
+      "label": "コードブロック・整形済みテキスト",
+      "detector": "`<pre>`",
+      "note": "最近の技術記事では `language-*` class のシンタックス指定もある。",
+      "occurrences": 339,
+      "contentCount": 85,
+      "examples": [
+        {
+          "id": 105,
+          "postType": "post",
+          "slug": "adblockplus-whitefilter",
+          "title": "「Adblock Plus」でホワイトリスト登録",
+          "snippet": "<li>テキスト編集に移ります。ここで広告をブロック/非ブロックしたいサイトのURLを打ち込むわけですが、 ここに「@@」（半角アットマーク２つ）を頭に足し、「$document」を末尾に足したものを入力します。 </li> </ol> <pre>@@https://mirumi.me/adblockplus-whitefilter$document</pre> <p>みたいに。</p> <p><img class=\"wp-image-9160 size-full\" style=\"text-align: center; color: #333333;\" title=\"ホワイトフィルタ登録\" src=\"https://mirumi.media/ad-block-plus-white-fileter.png\" alt=\"ad-block-plus-white-fileter\" width=\"751"
+        },
+        {
+          "id": 200,
+          "postType": "post",
+          "slug": "windows-launcher",
+          "title": "WindowsでMacみたいに下にアプリをかっこよく並べる方法（ランチャー）",
+          "snippet": "相対パス」と「絶対パス」という2種類あるのですが、今は基本的にすべて後者だと思って頂いて構いません。</p> <p>本来はこんな感じになります。（「\\」のところは「￥」という記号の半角です。貼り付ければ自動で変わると思います）</p> <pre>C:\\Program Files\\Internet Explorer\\iexplore.exe</pre> <p>これで、「CドライブのProgram FilesフォルダのInternet Explorerフォルダのiexplore.exeという実行ファイルの場所を示していることになります。</p> <p>で、マイコンピュータの場合は、「特殊フォルダのクラスID」というものを使って指定してあげる必要があるんです。<br /> 下に主な特殊フォルダの一覧を紹介しておきます。</p> <table> <tbody> <tr> <t"
+        },
+        {
+          "id": 372,
+          "postType": "post",
+          "slug": "supermario-rpg",
+          "title": "マリオRPGのサントラから広がる思い出",
+          "snippet": "mbed/o3opSDO3Sys\" allowfullscreen=\"allowfullscreen\"></iframe></p> <p>あと全然関係ないけど、このCM曲すごい変拍子ですねｗ<br /> 歌詞入るところから、</p> <pre>3/4,5/4,5/4(10/8),3/4(6/8),3/4,5/4,4/4,4/4</pre> <p>って感じであってるかな。<strong>うん、超どうでもいいね。</strong></p> <p>このゲームの音楽を生演奏で久しぶりに聴く機会があり、色々こみ上げてくるものがあったので記事にしてみる。</p> <p>僕と同じようにこのゲームを好きな人が「ああ、そうそう！そうなんだよね～」となるようなものを目指す。なれるかは別として。</p> <h2>任天堂のゲームとは趣を異にする独特の空気感</h2> <p>開発はスク"
+        },
+        {
+          "id": 689,
+          "postType": "post",
+          "slug": "android-app",
+          "title": "誰も知らない超便利 Android アプリおすすめ 40 選",
+          "snippet": "とかでも OK）、いい感じに見ることができる。恐ろしいほど便利。</p> <p>サイズと認識できるテキストのバリエーションもすごくて、何個か試してみたけどオールクリア。すごいなあ。</p> <p>例えば上の 2 枚目の写真は</p> <pre>横25cm縦30cm高さ40cm</pre> <p>という感じ。なんとなく実寸してみたけど、たしかにそれっぽい数字になってました（これがもし違ってたら笑う）。</p> <p>あと、初めて Android で AR を利用する場合には Google が提供するフレームワークみたいのを先にインストールしておかないとエラーになっちゃいます。</p> <div class=\"appreach\"><img src=\"https://lh3.googleusercontent.com/"
+        },
+        {
+          "id": 2085,
+          "postType": "post",
+          "slug": "excel-scroll-1",
+          "title": "【Excel】1スクロールの量が大きすぎてちょうどいいところで止まってくれない",
+          "snippet": "-complete\" width=\"682\" height=\"173\" /></p> <h4>必要な高さ分になるようセルを結合</h4> <p>貼り付けたいオブジェクトより少し大きめになるようにするか、ピッタリを狙いたいなら</p> <pre>1行分の高さ＝ピッタリの値÷結合する行数</pre> <p>とすればいい。</p> <p><img class=\"wp-image-2097 aligncenter\" src=\"https://mirumi.media/marge.png\" alt=\"marge\" width=\"682\" height=\"363\" /></p> <p>また、これと同時に横幅もオブジェクトに合わせる。</p> <p>これが1行分終わった状態。</p> <p><img class=\"wp-image"
+        }
+      ]
+    },
+    {
+      "id": "keyboard_key",
+      "group": "コード・技術表現",
+      "label": "キーボードキー表記",
+      "detector": "`keyboard-key` class",
+      "note": "ショートカットキーの UI 風表示。",
+      "occurrences": 506,
+      "contentCount": 46,
+      "examples": [
+        {
+          "id": 1497,
+          "postType": "post",
+          "slug": "pc-freesoft",
+          "title": "Windows にまず入れたいおすすめフリーソフト/便利アプリ 30 個くらい＋純正ソフト/PowerToys",
+          "snippet": "が好きな機能の紹介だけいくつかやっておきます：</p> <ul> <li>Advanced Paste <ul> <li>書式なしの「プレーンテキストで貼り付け」が OS 全体でできるようになる。他のソフトの慣習とあわせて <span class=\"keyboard-key\">Ctrl</span> + <span class=\"keyboard-key\">Shift</span> + <span class=\"keyboard-key\">V</span> にしておくのがおすすめ</li> </ul> </li> <li>コマンドパレット <ul> <li>Mac の <a href=\"https://support.apple.com/ja-jp/guide/mac-help/mchlp1008/mac\">Sp"
+        },
+        {
+          "id": 1765,
+          "postType": "post",
+          "slug": "windows10-goodpoint",
+          "title": "【Windows10のメリット】Windows10にしてみて良かった点を挙げまくる",
+          "snippet": "> <p>[/win-touchpad-soft]</p> <div class=\"box-common box-alert\"> <p><span class=\"color-red\">※おそらく僕の環境だけですが、「アサインするキーに<span class=\"keyboard-key\">Ctrl</span>キーがあると<span class=\"keyboard-key\">Ctrl</span>キーが効きっぱなしになったり意図しない動作を繰り返したりするバグ」に見舞われました。僕のコンピュータリテラシーをフル稼働させて思いつく限りのことをやってみましたが改善できず。結局、やりたい操作との間に一段HotkeyPを挟んで<span class=\"keyboard-key\">Ctrl</span>キーを使わないことで回避しています（そもそもノート"
+        },
+        {
+          "id": 1972,
+          "postType": "post",
+          "slug": "img-copyguard-break",
+          "title": "拾い物の画像にあるコピーガードみたいなやつをWindowsのペイントだけで消す",
+          "snippet": "る気</del></li> </ul> <p>実際そんな根気のいる作業でもないし、なんならわざわざ新しいソフトなり操作なり覚えるより僕は楽だと思った。</p> <h2>方法</h2> <h3>1.該当箇所へズーム</h3> <p><span class=\"keyboard-key\">Ctrl</span>を押しながらスクロールして「拡大縮小もできねーのかよ！」ってなる場合、<span class=\"keyboard-key\">Shift</span>も付ければいけます。<br /> ※なんでできるときとできないときがあるのか不明。Win7とWin10の違い？誰か教えて。</p> <h3>2.隣の色で消していく</h3> <p>作業の肝となる部分。背景である元の画像とコピーガードがどのパターンかによってやることが微妙に変わります。<"
+        },
+        {
+          "id": 2410,
+          "postType": "post",
+          "slug": "keybord-recommend",
+          "title": "【キーボードおすすめ10選！】13万円近く散財してきた僕が徹底的に比較します",
+          "snippet": "っているのでミスタイプも激減する。さらに少し窪み状になっているので指もキーに吸い寄せられるような「ハマりの良さ」を感じられる。</p> <p>デメリットも言っておこう。<strong><span class=\"color-red\">左下の<span class=\"keyboard-key\">Fn</span>キーと<span class=\"keyboard-key\">Ctrl</span>キーが逆である。</span></strong>もちろん分かって購入したのだけど、なんと「KeySwap」なんかに代表されるキースワップ系のソフトでも<span class=\"keyboard-key\">Fn</span>キーは対象外のようで、どうやっても逆にできなかった。</p> <p>ThinkPad PCならBIOSから<span class=\"k"
+        },
+        {
+          "id": 4679,
+          "postType": "post",
+          "slug": "vivaldi",
+          "title": "ブラウザ論争を終結させる最強ブラウザ「Vivaldi」の 10 のメリット",
+          "snippet": "管理できる「メモ」という機能が存在します。</p> <p>これらは「パネル」という統合されたインターフェースの中に格納されていて（もちろん個別でも利用可能）、使うときだけ任意の場所に、任意の方法で表示させられます。例えば僕はパネルの表示を<span class=\"keyboard-key\">F8</span>に割り当てています。</p> [caption id=\"attachment_4707\" align=\"aligncenter\" width=\"1366\"]<img class=\"wp-image-4707 size-full\" src=\"https://mirumi.media/vivaldi-panel.png\" alt=\"vivaldi-panel\" width=\"1366\" height=\"739\" /> 自分が使いたい自"
+        }
+      ]
+    },
+    {
+      "id": "image",
+      "group": "画像・メディア",
+      "label": "画像",
+      "detector": "`<img>`",
+      "note": "通常画像だけでなく、商品カード・アプリカード・吹き出しアイコン内の画像も含む総数。",
+      "occurrences": 6513,
+      "contentCount": 416,
+      "examples": [
+        {
+          "id": 2,
+          "postType": "page",
+          "slug": "profile",
+          "title": "このブログを書いている人",
+          "snippet": "すか。</p> <p>なので「一般論としてのねこももちろん好き」だと落ち着きがいい感じがする。</p> [caption id=\"attachment_18545\" align=\"aligncenter\" width=\"1171\"]<img class=\"wp-image-18545 size-large\" src=\"https://mirumi.media/my-cats-1-1999x1124.jpg\" alt=\"my-cats\" width=\"1171\" height=\"658\" /> 三毛トラが女の子、白黒のハチワレがメンズ。[/caption] <p><img class=\"aligncenter size-large wp-image-18544\" src=\"https://mirumi.media/my-cat-Lady-1999x1124.jpg\" alt=\"my-cat-Lady\" width=\"1171\" height=\"658\" /></p> <p><img class=\"aligncente"
+        },
+        {
+          "id": 270,
+          "postType": "page",
+          "slug": "what-is-this-blog",
+          "title": "このブログについて：みるめもとは",
+          "snippet": "> <div class=\"speech-wrap sb-id-1 sbs-stn sbp-l sbis-cb cf\"> <div class=\"speech-person\"> <figure class=\"speech-icon\"><img class=\"speech-icon-image\" src=\"https://mirumi.media/mirumi.png\" alt=\"みるみ\" /></figure> <div class=\"speech-name\">みるみ</div> </div> <div class=\"speech-balloon\"> <p>ただ、今やその SNS すらも業者やお金稼ぎ目的の人だらけになってきてしまっているので、本当にリアルな発信を見つけるのには相当高度なネットリテラシーを要求される時代になっちゃってますね。</p> </div> </div> <p>というわけで、最初の話である"
+        },
+        {
+          "id": 10328,
+          "postType": "page",
+          "slug": "nice-to-meet-you-10",
+          "title": "みるめもに来たらまずはこれをどうぞ。「はじめましての 10 記事」",
+          "snippet": "も」の玄関として使ってください。</p> <p>ちなみに運営者（みるみ）のプロフィールは<a href=\"/profile\">こちら</a>。併せてどうぞ。</p> <h2>１．Windows のフリーソフトおすすめ</h2> <p><img class=\"aligncenter size-full wp-image-11862\" src=\"https://mirumi.in/wp-content/uploads/windows-freesoft-recommend-milmemo.png\" alt=\"Windowsにまず入れるべきおすすめフリーソフト/便利アプリ40選\" width=\"1200\" height=\"630\" /></p> <p><i class=\"fas fa-hand-point-right\"></i><a href=\"https://mirumi.me/pc-freesoft\">https://mirumi.me/pc-freesoft</a></p> <p>小さいころからカスタマイズとか設定とかっていうものに目がなくて、気づけば電気製品をはじめ PC も隅から隅までいじくり回すようなタイプの人間になっていました。</p> <p>おか"
+        },
+        {
+          "id": 12717,
+          "postType": "page",
+          "slug": "home",
+          "title": "home",
+          "snippet": "widget-entry-card e-card cf\"> <figure id=\"top-img-1\" class=\"navi-entry-card-thumb widget-entry-card-thumb card-thumb\"><img class=\"top-4-eye-catch\" src=\"https://mirumi.media/windows-freesoft-recommend-list-412x216-1.webp\" alt=\"Windowsにまず入れるべきおすすめフリーソフト/便利アプリ40選\" width=\"412\" height=\"216\" /></figure> <div class=\"navi-entry-card-content widget-entry-card-content card-content\"> <div class=\"navi-entry-card-title widget-entry-card-title card-title\">Windowsにまず入れるべきおすすめフリーソフト/便利アプリ40選</div> </div> </div> </a"
+        },
+        {
+          "id": 36,
+          "postType": "post",
+          "slug": "shiren2-saihate",
+          "title": "【シレン2 徹底攻略！】最果てへの道を必ずクリアできる方法まとめ",
+          "snippet": "ら読み（聖域の巻物）、次点でどうくつマムルに向かって草を飲む（ドラゴン草、火炎草）など</li> </ul> [caption id=\"attachment_71\" align=\"aligncenter\" width=\"1280\"]<img class=\"wp-image-71 size-full\" src=\"https://mirumi.media/7d673dbf2317a3e8165833ab6777f44b.jpg\" alt=\"どうくつマムルを倒せたあと\" width=\"1280\" height=\"960\" /> 一匹倒すと初回はだいたい７レベル分上がります[/caption] <p>原則としてフロアは全部回ってマップは埋めていきます。9Fまでやることは特になし！</p> <p>モンスターハウスをここまでの低層で引けたらラッキー。特殊ハウスだったらご臨終。必ずワナチェックをしてください。拾った大量の未識別アイテムはこのあとに書いてある対応を参照するか、店を期待してまとめて持っておくか、荷物がいっぱいなら巻物から読んでいくなどがアリ（識別"
+        }
+      ]
+    },
+    {
+      "id": "captioned_image",
+      "group": "画像・メディア",
+      "label": "キャプション付き画像",
+      "detector": "`[caption ...]...[/caption]` / `wp-caption`",
+      "note": "クラシックエディタの caption shortcode が主。少数だけ `wp-caption` HTML もある。",
+      "occurrences": 1290,
+      "contentCount": 264,
+      "examples": [
+        {
+          "id": 2,
+          "postType": "page",
+          "slug": "profile",
+          "title": "このブログを書いている人",
+          "snippet": "r /> いや、好きなのはもちろん間違いないのですが、もはや家族となると好きとか嫌いとかそういう軸で捉えなくなるわけじゃないですか。</p> <p>なので「一般論としてのねこももちろん好き」だと落ち着きがいい感じがする。</p> [caption id=\"attachment_18545\" align=\"aligncenter\" width=\"1171\"]<img class=\"wp-image-18545 size-large\" src=\"https://mirumi.media/my-cats-1-1999x1124.jpg\" alt=\"my-cats\" width=\"1171\" height=\"658\" /> 三毛トラが女の子、白黒のハチワレがメンズ。[/caption] <p><img class=\"aligncenter size-large wp-image-18544\" src=\"https://mirumi.media/my-cat-Lady-1999x1124.jpg\" alt=\"my-cat-Lady\" width=\"1171\" height=\"658\" /></p> <p><img class=\"aligncenter size-large wp-image-18543\" src"
+        },
+        {
+          "id": 36,
+          "postType": "post",
+          "slug": "shiren2-saihate",
+          "title": "【シレン2 徹底攻略！】最果てへの道を必ずクリアできる方法まとめ",
+          "snippet": "壺にまとめておくと一括ダメージ</li> <li>その他持っているアイテムの利用。本当に何もなければまず巻物を置いてから読み（聖域の巻物）、次点でどうくつマムルに向かって草を飲む（ドラゴン草、火炎草）など</li> </ul> [caption id=\"attachment_71\" align=\"aligncenter\" width=\"1280\"]<img class=\"wp-image-71 size-full\" src=\"https://mirumi.media/7d673dbf2317a3e8165833ab6777f44b.jpg\" alt=\"どうくつマムルを倒せたあと\" width=\"1280\" height=\"960\" /> 一匹倒すと初回はだいたい７レベル分上がります[/caption] <p>原則としてフロアは全部回ってマップは埋めていきます。9Fまでやることは特になし！</p> <p>モンスターハウスをここまでの低層で引けたらラッキー。特殊ハウスだったらご臨終。必ずワナチェックをしてください。拾った大量の未識別アイテムはこのあとに書いてある対応を参照するか、店を期待してまとめて持っておくか、荷物がいっぱいなら巻物から読んでいくなどがアリ（識別の巻物のラッキーオール識別を狙う）。</p> <p>店を引けたら"
+        },
+        {
+          "id": 105,
+          "postType": "post",
+          "slug": "adblockplus-whitefilter",
+          "title": "「Adblock Plus」でホワイトリスト登録",
+          "snippet": "\"box-common box-rewrite\"><p><span class=\"rewrite-date\">追記 (2019/11/23) ：</span>現在はこんなことしなくても分かりやすく手軽に設定できるようになりました。</p> [caption id=\"attachment_9684\" align=\"aligncenter\" width=\"1171\"]<img class=\"wp-image-9684 size-large\" src=\"https://mirumi.media/adblock-plus-white-filter-1999x1077.png\" alt=\"adblock-plus-white-filter\" width=\"1171\" height=\"631\" /> ※Chromeのみで確認。<del>Firefoxなんて今はもう使ってる人ほぼいないだろうから確認しなくても問題はない</del>[/caption]</div> <ol> <li>まず、Chrome/Firefoxのメニュー項目から「アドオン」をクリックし、 開かれたページから「Adblock Plus」の「設定」を選択。さらに「フィルタ設定」を開きましょう。</li> <li>いじるのは「自作フィルタ」の右側になります（左側はフィルタをグループとしてまとめておける機能です）。 右側の上部右端に、「フィルタ追加」の項目があると思いますので、そこをクリック。</li> <li>"
+        },
+        {
+          "id": 110,
+          "postType": "post",
+          "slug": "albumartwork-puttogether",
+          "title": "同じアルバムのはずなのにバラバラに分かれてしまったり表示されない問題",
+          "snippet": "ことがあることを発見（たぶんどのソフトもだいたいニュートラルはこの設定のはず）。</p> <p>僕はもう何年もMusicBeeっていうソフト以外使っていないから分からないんだけど、どのソフトにもたぶん同じような項目があると思う。</p> [caption id=\"attachment_1561\" align=\"aligncenter\" width=\"555\"]<img class=\"wp-image-1561\" src=\"https://mirumi.media/album_artwork.png\" alt=\"音楽ファイルにアートワークを埋め込む\" width=\"555\" height=\"347\" /> だいたいこんな感じなはず[/caption] <div class=\"box-common box-rewrite\"><p><span class=\"rewrite-date\">追記 (2018/3/6) ：</span>それでもだめなときは、端末側のキャッシュ的な問題の可能性があることをさらに発見。端末側を色々クリアにした上で、曲も削除し直してから同期するなりするとうまくいく。ひどいときは埋め込まれている画像が更新されないこともあるようで（この辺まじで謎）、PC側の曲もコピー"
+        },
+        {
+          "id": 142,
+          "postType": "post",
+          "slug": "donkey-2-soundtrack",
+          "title": "ドンキー 2 のサントラになぜ 20 万もの値が付くのか考える",
+          "snippet": "事は偉大なのである。</p> <p>たとえば「タルタルこうざん」というステージを思い浮かべて欲しい。<br /> 実はこのステージは背景に関して、他のステージとやや相違する点がある。程度の差といえばそれまでなんだけれど。</p> [caption id=\"attachment_163\" align=\"aligncenter\" width=\"480\"]<img class=\"size-full wp-image-163\" title=\"タルタルこうざん\" src=\"https://mirumi.media/hqdefault.jpg\" alt=\"タルタルこうざん\" width=\"480\" height=\"266\" /> DKコインが最後まで見つからなかった方が多いに違いないステージNo.1では[/caption] [caption id=\"attachment_164\" align=\"aligncenter\" width=\"480\"]<img class=\"size-full wp-image-164\" title=\"船ぞこダイビング\" src=\"https://mirumi.media/24004804-e1466615716615.jpeg\" alt=\"船ぞこダイビング\" width=\"480\" height=\"266\" /> 水のステージ"
+        }
+      ]
+    },
+    {
+      "id": "audio_shortcode",
+      "group": "画像・メディア",
+      "label": "音声埋め込み",
+      "detector": "`[audio ...]...[/audio]`",
+      "note": "WordPress audio shortcode。",
+      "occurrences": 38,
+      "contentCount": 7,
+      "examples": [
+        {
+          "id": 1140,
+          "postType": "post",
+          "slug": "celtic-music",
+          "title": "【ケルト音楽とは？】北欧民謡を妙に懐かしく感じる理由を考えてみる",
+          "snippet": "のはずなのに</strong>。</p> <p>知らない生活と文化に思いを馳せて、でもなぜかそれが自分のスタンダードで自然な暮らしな気がして愛おしくなる。</p> <p>例えば、こんなの。（この画面のまま再生できます）</p> <p>[audio m4a=\"https://mirumi.media/2017/07/07-Island-Lake.m4a\"][/audio]</p> <p>あとは、こういうわちゃわちゃした楽しい酒場？みたいな雰囲気もたまんないよね！↓</p> <p>[audio m4a=\"https://mirumi.media/2017/07/10-The-Shore-House.m4a\"][/audio]</p> <p>実は、モンハンの集会所なんかはこのイメージを大切にしている。↓</p> <p>[audio mp3=\"https://mirumi.media/2017/07/"
+        },
+        {
+          "id": 5010,
+          "postType": "post",
+          "slug": "absolute-pitch",
+          "title": "「音感とはなに？」絶対音感と相対音感の違いとか色々",
+          "snippet": "r\" src=\"https://mirumi.media/churippu_music-sheet1.png\" alt=\"churippu_music-sheet1\" width=\"314\" height=\"138\" /></p> <p>[audio mp3=\"https://mirumi.media/music-sample0.mp3\"][/audio]</p> <p>「チューリップの歌」は「ド～レ～ミ～」と始まりますが（↑この音声）、実はピアノのここ↓から始めなくても曲は成立するんです。</p> <p><img class=\"wp-image-5029 aligncenter\" src=\"https://mirumi.media/piano_keybord.jpg\" alt=\"piano_keybord\" width=\"406\" height=\"233\" /></p> <p>"
+        },
+        {
+          "id": 6471,
+          "postType": "post",
+          "slug": "percussion-wind-orchestra",
+          "title": "吹奏楽でよく使われる打楽器を超主観的にひたすら紹介しまくってみる",
+          "snippet": "=\"\" width=\"100%\" height=\"auto\" /></div> <p>じゃあ「スネアが印象的な吹奏楽曲は？」ならどうかというと、やっぱりそれでもありすぎて選べないくらいだよね～。なので僕が好きなこの曲を。</p> <p>[audio mp3=\"https://mirumi.media/fa88e24d7f689413ededd32daf712f08.mp3\"][/audio]</p> <table style=\"height: 132px; width: 100%; margin-bottom: 3.37em; font-size: 0.77em; margin-top: auto;\"> <tbody> <tr style=\"height: 44px;\"> <td style=\"width: 25%; height: 44px;\">曲名</td> <td style=\"width: 75%; he"
+        },
+        {
+          "id": 7448,
+          "postType": "post",
+          "slug": "10th-sound-horizon",
+          "title": "次のサンホラアルバム（10th？8th？）の地平線を予想する",
+          "snippet": "rame></p> <p>あとは、終端の王と異世界の騎士なんかもそっちの系統ではよくあるリズムパターンである。運命の双子も近いかな？</p> <p>似たような曲貼っておきますね。なんの曲か知っていた人はかなりマニアックかも。</p> <p>[audio mp3=\"https://mirumi.media/5d6ee93b1dc54b04a5b0b2b3ba615823.mp3\"][/audio]</p> <p>と、まあそんな感じで、次に出る8thなのか10thなのか知らんけど、音楽的なテーマとしては「北欧」まで欲張らずとも「民謡系」とかだといいなあなんて。</p> <h2>そもそもいつ出るのよ</h2> <p>これですよ。</p> <p><span style=\"font-size: 1.35em;\">サンホラの曲いつ聞かせてくれんの！？</span></p> <p>と。</p> <p>Revo曲はまだしも、サンホラ曲は欠乏状"
+        },
+        {
+          "id": 8934,
+          "postType": "post",
+          "slug": "sound-horizon-15-anniv",
+          "title": "サンホラ15周年サイトでいきなり未発表曲が公開！！次の地平線が来るの…？",
+          "snippet": "Twitterとかが普及している時代だからこそって感じしますね、ほんとに。</p> <h2>未発表曲を聴く！！</h2> <p>とりあえず曲貼っときます。<br /> 普通のブラウザならどれでもそのまま再生できます。</p> <p>[audio mp3=\"https://mirumi.media/ComingNearestFuture.mp3\"][/audio]</p> <p>ちなみに現時点での曲名は「ComingNearestFuture」だということがソースから分かります。</p> <p><img class=\"aligncenter size-full wp-image-8949\" src=\"https://mirumi.media/sound-horizon-15-anniversary-special-site-5.png\" alt=\"sound-horizon-15-anniv"
+        }
+      ]
+    },
+    {
+      "id": "video_shortcode",
+      "group": "画像・メディア",
+      "label": "動画埋め込み",
+      "detector": "`[video ...]...[/video]`",
+      "note": "WordPress video shortcode。1 件だけ閉じタグ欠けの可能性あり。",
+      "occurrences": 20,
+      "contentCount": 13,
+      "examples": [
+        {
+          "id": 1698,
+          "postType": "post",
+          "slug": "auto-scroll",
+          "title": "【スマホアプリ】ご飯を食べながらTwitterをオートスクロールしたい",
+          "snippet": "。</p> <p>こいつがフローティングウィジェットみたいになっていて、オートスクロール開始と停止を担ってくれます。どこへでもフリーな配置がスムーズに可能でちょっと驚きです。</p> <p>で、スクロールはというと…。</p> <p>[video width=\"1920\" height=\"1080\" mp4=\"https://mirumi.media/smart-scroll-app-movie.mp4\"][/video]</p> <p>こんな感じ。</p> <p>適度に値を調整すればだいぶ現実的に使えます。まあこんなもんだろう！</p> <h2>おわりに</h2> <p>以上！</p> <p>最後にもう一度言うけど、ご飯を食べるときくらいは目の前のご飯とちゃんと向き"
+        },
+        {
+          "id": 2895,
+          "postType": "post",
+          "slug": "cats-goods",
+          "title": "ねこ用品のおすすめ10選を紹介！～男一人暮らしでの2匹飼い～",
+          "snippet": "シーンは見られたことがないんだけど、今度ジュースにでもして飲ませてやろうか笑<br /> <span style=\"color: #339966;\"><strong>→追記：見れました。</strong></span></p> <p>[video width=\"448\" height=\"428\" mp4=\"https://mirumi.media/my-cat-matatabi.mp4\"][/video]</p> <p>単純に喜ぶ子が多いので（無関心な子も一定数いるみたいだけど）、使ってみたことがない方はお試しでどうぞ。大量にどっさりとか来るわけじゃないので。</p> <p>ちなみに小分けが逆に使いにくくて好きな量ずつ使いたいならこういうタイプも市販してます。</p> <"
+        },
+        {
+          "id": 5922,
+          "postType": "post",
+          "slug": "cat-water",
+          "title": "猫用自動給水器レビュー！開封・設置、ねこちゃんの反応までを写真で紹介",
+          "snippet": "後のフラワーまで設置して完成！</p> <p>電源コードの先っぽをアダプターに挿し込んだら、それをコンセントに挿し込むのと同時に稼働スタートになります。スイッチみたいなものはなし。</p> <p>というわけでスタート！</p> <p>[video width=\"1920\" height=\"1080\" mp4=\"https://mirumi.media/cat-automatic-water-dispenser-review-27.mp4\"][/video]</p> <p>ぶーーん。</p> <p>まあとりあえず動いたのでおっけー。</p> <p>動画だと伝わりにくいですが、音はめちゃくちゃ静かです。全然気にならないしねこもびっくりしなかったよ。</p> <div cla"
+        },
+        {
+          "id": 6785,
+          "postType": "post",
+          "slug": "cocoon-active-category-centering",
+          "title": "【Cocoonカスタマイズ】スマホヘッダーメニューで今のカテゴリを自動で中央にスクロールさせる",
+          "snippet": "idth: 768px){ } </pre> <p>などで囲ってください。これでスマホだけに適用されます。</p> <h2>あとがき</h2> <p>というわけで、完成形を。ページを更新するときの様子の録画です。</p> <p>[video width=\"303\" height=\"500\" mp4=\"https://mirumi.media/mobile-header-menu-centering.mp4\" loop=\"true\" autoplay=\"true\"][/video]</p> <p>急いで調べ物をしているようなユーザーには効果がないかもしれないけど、わりとゆっくりしてくれる人には自分のブログのカテゴリを十分アピールできる良い方法だと思います。</p> <p"
+        },
+        {
+          "id": 7490,
+          "postType": "post",
+          "slug": "prime-video-fire-tv-stick",
+          "title": "AmazonPrimeVideo、FireTVStickで酷い雑音。音声をドルビー→ステレオで解決！",
+          "snippet": "re TV StickでAmazonプライムビデオの特定の映画を見始めた瞬間、耳をつんざくような凄まじい雑音、ノイズが発生するという問題。</p> <p>なくてもいいとは思ったけど、単純にすごい見てほしいので動画撮ってみた。</p> <p>[video width=\"1920\" height=\"1080\" mp4=\"https://mirumi.media/amazon-prime-video-fire-tv-stick-noise.mp4\"][/video]</p> <p style=\"margin-top: 3px;\"><span style=\"font-size: 0.8em;\">※お使いのブラウザでそのまま再生できます</span></p> <p>やばくない？？<br />"
+        }
+      ]
+    },
+    {
+      "id": "iframe_embed",
+      "group": "画像・メディア",
+      "label": "iframe 埋め込み",
+      "detector": "`<iframe>`",
+      "note": "主に YouTube 埋め込み。",
+      "occurrences": 40,
+      "contentCount": 23,
+      "examples": [
+        {
+          "id": 372,
+          "postType": "post",
+          "slug": "supermario-rpg",
+          "title": "マリオRPGのサントラから広がる思い出",
+          "snippet": "/kirby-sdx\">カービィスパデラ</a>とか、<a href=\"/donkey2-soundtrack\">ドンキー2</a>（リンクはどちらもそのゲームについて僕がなんか色々書いたもの）とかにもついてましたよねえ。</p> <p><iframe width=\"560\" height=\"314\" src=\"//www.youtube.com/embed/o3opSDO3Sys\" allowfullscreen=\"allowfullscreen\"></iframe></p> <p>あと全然関係ないけど、このCM曲すごい変拍子ですねｗ<br /> 歌詞入るところから、</p> <pre>3/4,5/4,5/4(10/8),3/4(6/8),3/4,5/4,4/4,4/4</pre> <p>って感じであってるかな。<strong>うん、超どうでもいいね。</strong></p> <p>このゲームの音楽を生演奏で久しぶりに聴く機会があり、色々こみ上げてくるものがあったので記事にしてみる。</"
+        },
+        {
+          "id": 770,
+          "postType": "post",
+          "slug": "chrono-trigger-symphony",
+          "title": "Chrono Trigger Symphonyは単なる「クロノ・トリガー」のアレンジアルバムではない",
+          "snippet": "大で美しいオーケストラアレンジだったのだから当然である。</p> <h3>Chrono Trigger Symphony</h3> <p>最初に作業用BGMの動画を貼っておくから、聴きながら読んでいただくのはいかが？笑</p> <p><iframe width=\"560\" height=\"314\" src=\"//www.youtube.com/embed/1Y10E2b1s6k\" allowfullscreen=\"allowfullscreen\"></iframe></p> <p>僕は自分が書くこの文章で、このアルバムがいかに素晴らしいかっていうことと、これを聴くことによって広がるクロノ・トリガーの世界に何度も感動したっていうことをたくさんの人に伝えたかったんだけど、どうも僕の語彙力では無理そうなのを抜きにしても、どうやったって言葉では表現できないものがあるだろうなとここまで来て感じてしまった。</p> <p>しかし、これは単なるゲームのサントラアレンジに収まるものではないということだけは改め"
+        },
+        {
+          "id": 1140,
+          "postType": "post",
+          "slug": "celtic-music",
+          "title": "【ケルト音楽とは？】北欧民謡を妙に懐かしく感じる理由を考えてみる",
+          "snippet": "ゃわちゃした感じとか賑やかな踊りの音楽にはもってこいなんです。</p> <p>タップダンスなんかの動きが細やかで素早い音楽にも非常にあっている。みなさんもよく知っている例を挙げるなら間違いなくこれでしょう！リバーダンス。</p> <p><iframe width=\"560\" height=\"314\" src=\"//www.youtube.com/embed/w0v_pu6miJ8\" allowfullscreen=\"allowfullscreen\"></iframe></p> <p>もう僕はリバーダンス大好きなんです！特に前半のボーイ・ソプラノのような雰囲気がたまらなく好き（タップダンスとかの例で出したのにごめんなさい笑）。<br /> エンヤとか知っている方は近しいものを感じるでしょう。ちなみに吹奏楽アレンジだとここはフルートなんだけど、さらにたまらない。</p> <p>しかも、6/8の例として挙げるにはちょっと変拍子すぎたかも。笑</p> <p>しかしリズムや構成としては非常に良い例です"
+        },
+        {
+          "id": 1597,
+          "postType": "post",
+          "slug": "xenoblade2-review",
+          "title": "ゼノブレイド2の評価は割れているみたいだけど、僕はすごいゲームだと思ったよという話",
+          "snippet": "体験はもう筆舌に尽くしがたいもので、開始して数時間は意味もなくSwitchをスピーカーに繋げてずっと森の中を歩き回ってました（森の曲大好き <i class=\"fas fa-hand-point-down\"></i> ）。</p> <p><iframe width=\"785\" height=\"393\" src=\"https://www.youtube.com/embed/OUCH8B-BMoc\" loading=\"lazy\" frameborder=\"0\" allow=\"accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture\" allowfullscreen=\"allowfullscreen\" data-mce-fragment=\"1\"></iframe></p> <p>「秘境」のような特に景色や眺めが良い隠された場所があったりするのは前作からおなじみだけど、今回は秘境じゃなかろうがその辺の普通のフィールドがもうめちゃめちゃ綺麗なので<strong>歩いているだけで楽しい</strong>。</p> <p>これ。これに尽きる。</p> <p>美しいフィールド散策に「ゲーム的な探索のワクワクさ」が付き、そこへ仕上げとして「最高峰のサントラ」がこの上ない冒険を提供してくれるんです。ゼノ"
+        },
+        {
+          "id": 2199,
+          "postType": "post",
+          "slug": "rain-traffic",
+          "title": "【渋滞学】雨が降ると道が混むのはなぜなのか？",
+          "snippet": "> <p>しかしそれと同時に感覚ではとても理解しにくく難しいところでもある。<br /> 少しでも分かりやすいイメージを持つために、以下の動画をご覧ください。さっきのアリさん観察の第一人者、西成教授たちの実験動画です。</p> <p><iframe width=\"560\" height=\"314\" src=\"//www.youtube.com/embed/TP_7uUG4e3o\" allowfullscreen=\"allowfullscreen\"></iframe></p> <p>これを見ると「車間距離を保つこと」が「渋滞を発生させないこと」とほぼ同義であることの意味がよく分かると思う。</p> <p>でも、自分だけのことを考えた場合、<strong>つまり1つの車単体で到着時間を計算したらやっぱり車間距離を空けて走っていた方が結局着くのが遅くなる気がする</strong>でしょう？</p> <p>実は違うんですよ。ここが一番感覚的に「渋滞」というものを理解しにくい原因だと思います。<br"
+        }
+      ]
+    },
+    {
+      "id": "youtube_lazy_embed",
+      "group": "画像・メディア",
+      "label": "YouTube 遅延読み込み風ブロック",
+      "detector": "`youtube` class + `data-video`",
+      "note": "iframe ではなくサムネイル画像と `data-video` を持つ独自埋め込み。",
+      "occurrences": 74,
+      "contentCount": 4,
+      "examples": [
+        {
+          "id": 861,
+          "postType": "post",
+          "slug": "game-ranking",
+          "title": "SFC/N64/GC/Wii(U)/Switch/PS1~4 などゲームソフト個人的おすすめランキング50選！",
+          "snippet": "ム製作に大容量となるシステムやグラフィックは必ずしも必要ではない」っていう彼らの意図は僕の考えとすごくマッチしていて、シンプルなゲームだけどたしかに面白さを追求してる感がある。</p> <p>曲も良くて、これとかとってもいい。</p> <div class=\"youtube\" data-video=\"https://www.youtube.com/embed/Dh_qhX6ni6Y?start=\"><img class=\"aligncenter\" src=\"https://img.youtube.com/vi/Dh_qhX6ni6Y/maxresdefault.jpg\" alt=\"\" width=\"100%\" height=\"auto\" /></div> <h3>第52位 ポケモンカードGB</h3> <p>[amazon asin=\"B0000645NM\" kw=\"ポケモンカード GB\" title=\"ポケモンカード GB\" size=\"l\"]</p> <p>ゲームボーイの8bitサウンドがもの凄く好きなんだけれど、このゲームの通常戦闘曲は特に好き。そんなに何曲も作ったわけじゃないですが、チップチューンアレンジばっかりやっていたのはひょっとしたらこの曲の影響が強いのかもしれない"
+        },
+        {
+          "id": 6471,
+          "postType": "post",
+          "slug": "percussion-wind-orchestra",
+          "title": "吹奏楽でよく使われる打楽器を超主観的にひたすら紹介しまくってみる",
+          "snippet": "ネア」とドラムセットの中にある「ドラムスネア」<span style=\"font-size: 0.8em;\">（っていう名称があるかは知らない）</span>はかなり別物。</p> <p>あとはマーチングスネアもありますよね。</p> <div class=\"youtube\" data-video=\"https://www.youtube.com/embed/_g3OU1BigxQ\"><img class=\"aligncenter\" src=\"https://img.youtube.com/vi/_g3OU1BigxQ/maxresdefault.jpg\" alt=\"\" width=\"100%\" height=\"auto\" /></div> <p>打楽器と言うからには叩くことが基本である以上、やっぱりこの楽器は全ての中心にいるというか、「楽器としての表現より前にもっと大切なことがあるんじゃないか？」「もっと向き合える姿勢があるんじゃないか？」とか思いながらいつも練習してます。</p> <p>この楽器を扱えずして他の打楽器を触ることは有り得ないと思うし、その逆もまたあってはいけないでしょう。</p> <h4>演奏方法や扱い方</h4> <p>この記事を一通り書き終わ"
+        },
+        {
+          "id": 10411,
+          "postType": "post",
+          "slug": "best-movie",
+          "title": "僕が好きなおすすめ映画(洋画) 25 選を紹介するやつ",
+          "snippet": "f=\"https://www.youtube.com/watch?v=vfd-Vc0fahY\">TENET</a>の方が衝撃度は上だったかも。もう順位付けるのは無理…。</p> <p>（最後の方に追記してます）</p> </div> <div class=\"youtube\" data-video=\"https://www.youtube.com/embed/ZfDm3s_IcqM\"><img class=\"aligncenter\" src=\"https://img.youtube.com/vi/ZfDm3s_IcqM/hqdefault.jpg\" alt=\"\" width=\"100%\" height=\"auto\" /></div> <p style=\"text-align: center;\"><span class=\"btn-wrap btn-wrap-orange btn-wrap-m\"><a href=\"https://amzn.to/3PPMOAY\">Amazonで「インセプション」を見る</a></span></p> <h3>２．96時間</h3> <p><img style=\"width: 37%;\" src=\"https://mirumi.me"
+        },
+        {
+          "id": 13074,
+          "postType": "post",
+          "slug": "indies-game-recommend",
+          "title": "個人的インディーズゲーム (Switch/PS/Steam) おすすめ 30 本くらいを紹介する！",
+          "snippet": "も持っています。あわせてプレイ時間は数百時間を超えているくらい。それでも普通の人間には完クリは無理だろうな…。</p> </div> <p>少しでも趣味に合いそうだったらこのゲームだけはどうかプレイをお願いします。なにとぞ！</p> <div class=\"youtube\" data-video=\"https://www.youtube.com/embed/iofYDsA2yqg\"><img class=\"aligncenter\" src=\"https://img.youtube.com/vi/iofYDsA2yqg/maxresdefault.jpg\" alt=\"\" width=\"100%\" height=\"auto\" /></div> <p>下記からオンラインコードで購入すると200円くらい安いです！</p> <p>[amazon asin=\"B07H8HJ17N\" kw=\"Celeste\" title=\"Celesteオンラインコード版\" size=\"l\"]</p> <h3>HUMAN Fall Flat</h3> <p><img class=\"aligncenter size-full wp-image-13078\" src=\"https://mirum"
+        }
+      ]
+    },
+    {
+      "id": "script_embed",
+      "group": "画像・メディア",
+      "label": "script 埋め込み",
+      "detector": "`<script>`",
+      "note": "ニコニコ動画埋め込み、Font Awesome 読み込み、記事固有スクリプトなど。",
+      "occurrences": 4,
+      "contentCount": 4,
+      "examples": [
+        {
+          "id": 186,
+          "postType": "post",
+          "slug": "soundhorizon-recommend",
+          "title": "サンホラを初心者におすすめするのに一番向いている曲はこれだ！",
+          "snippet": "/li> <li>最後はバッチリ盛り上がって終わるし、なんと素晴らしい絵になっていることか（其れでもお写しなさいカメラよ）</li> </ul> <p>いかがだろうか。</p> <p>ではぜひ見てくれッ！！！</p> <p><script type=\"application/javascript\" src=\"https://embed.nicovideo.jp/watch/sm6706173/script?w=720&h=480\"></script><noscript><a href=\"https://www.nicovideo.jp/watch/sm6706173\">Moira 死せる者達の物語</a><span id=\"mce_marker\" data-mce-type=\"bookmark\" data-mce-fragment=\"1\">​</span></noscript></p> <noscript><a href=\"http://www.nicovideo.jp/watc"
+        },
+        {
+          "id": 12407,
+          "postType": "post",
+          "slug": "milmemo-box-usage",
+          "title": "【ブログ用Webアプリ】好きなデザイン/アイコン/色を選べるタイトルボックス「みるめもぼっくす」",
+          "snippet": ": 11px; } .mbo { border: none; border-radius: 0px; } .mte { border-radius: 0; } </style> </p> <p><script defer src=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js\" crossorigin=\"anonymous\"></script></p> <p><a href=\"/milmemo-box/\">みるめもぼっくす</a> というWebサービスをリリースしました。</p> <p><img src=\"https://mirumi.media/milmemo-box-main-view-screenshot-1999x1286.png\" alt=\"milmemo-box-main-view-screenshot\" width=\"1171\" height=\"753\" c"
+        },
+        {
+          "id": 14554,
+          "postType": "post",
+          "slug": "comics",
+          "title": "個人的に好きな漫画を 20 作選んでみたので色々書いてみる(古いもの多め)",
+          "snippet": "！みなさんはどうですか？</p> <p>原作はドラえもんとのび太の絵柄がとても好きです。かわいい。</p> <p>あと全然関係ないけどこれめっちゃ面白いから見て。</p> <p style=\"text-align: center;\"><script type=\"application/javascript\" src=\"https://embed.nicovideo.jp/watch/sm8857041/script?w=720&h=480\"></script><noscript><a href=\"https://www.nicovideo.jp/watch/sm8857041\">ドラえもん のび太と七つの竜の玉～フリーザ編～ １／６</a><span id=\"mce_marker\" data-mce-type=\"bookmark\" data-mce-fragment=\"1\">​</span></noscript></p> <p>ドラえもんとドラゴンボールの雰囲気を秀逸に再現しつつよくできた"
+        },
+        {
+          "id": 22278,
+          "postType": "post",
+          "slug": "aws-rekognition",
+          "title": "AWS Rekognition の detect_labels を boto3(Python) で使う",
+          "snippet": "https://twitter.com/milmemo_net/status/1439923570428104710?ref_src=twsrc%5Etfw\">September 20, 2021</a></blockquote> <p><script async src=\"https://platform.twitter.com/widgets.js\" charset=\"utf-8\"></script></p> <p>ちなみに <code>\"BoundingBox\"</code> の中にも <code>\"Confidence\"</code> があるんですが、こっちは「バウンディングボックスの自信」らしいです。あまり値に差が出たことはない…。</p> <p>同じノリで顔認証も楽にできます。こちらはあらかじめ顔画像を登録しておいて一致度の数値を見る…のような処理になります。しきい値の決定が迷いどころですかね。</p> <h2 id="
+        }
+      ]
+    },
+    {
+      "id": "internal_related_card",
+      "group": "カード・埋め込み",
+      "label": "関連記事カード（slug 独自記法）",
+      "detector": "`[/slug]`",
+      "note": "`[/best-pillows]` のような単独記法。閉じショートコードではなく関連記事カード用の独自記法として扱う。",
+      "occurrences": 536,
+      "contentCount": 185,
+      "examples": [
+        {
+          "id": 2,
+          "postType": "page",
+          "slug": "profile",
+          "title": "このブログを書いている人",
+          "snippet": "/div> <p>ついでなので何か他の記事も読んでいってください（超最低）<br /> <i class=\"fas fa-hand-point-down\"></i> の「はじめましての 10 記事」というのがおすすめ。</p> <p>[/nice-to-meet-you-10]</p>"
+        },
+        {
+          "id": 270,
+          "postType": "page",
+          "slug": "what-is-this-blog",
+          "title": "このブログについて：みるめもとは",
+          "snippet": "ころをつまみ食いなどしていただくのはいかがでしょうか。</p> <p>何を読もうか困っちゃう方向けに <a href=\"/nice-to-meet-you-10\">はじめましての 10 記事</a> なんてのもあります。</p> <p>[/nice-to-meet-you-10]</p> <p>現代では年を追うごとにいわゆる個人ブログ的なサイトは減っていっており、もう自分も希少種の側に片足を突っ込んでいるのかも、なんて思うようにもなりました。</p> <p>また、このサイトはデザインも含めてゼロから自分でつくってメンテナンスも長年続けているのですが、その意味でも珍しいタイプだと思われます（ソフトウェアエンジニアは自分の技術ブログはよく作りがちだけど、このブログみたいに総合ジャンルのサイトでメンテし続けている"
+        },
+        {
+          "id": 82,
+          "postType": "post",
+          "slug": "iwannabetheguy-map",
+          "title": "I Wanna be the Guy の全体マップをつくった",
+          "snippet": "上です（小声</p> <p>&nbsp;</p> <p><span style=\"color: #339966;\"><strong>→追記：アイワナ派生シリーズのおすすめ記事書きました！</strong></span></p> <p>[/i-wanna-recommend]</p>"
+        },
+        {
+          "id": 142,
+          "postType": "post",
+          "slug": "donkey-2-soundtrack",
+          "title": "ドンキー 2 のサントラになぜ 20 万もの値が付くのか考える",
+          "snippet": "2。</p> <p>僕の大好きなゲームの1つです。たくさんあるゲームの中でも僕自身の総合ランキングで栄光の第１位を狙える数少ない作品でもあります。<br /> ちなみにそのランキングはこちら！(↓) １位はもちろん…</p> <p>[/game-ranking]</p> <p>僕にとっては当然のごとく、ある程度年齢を重ねた後にゲーム音楽的観点によってさらに好きになったわけなんだけど、そうすると当然サントラを聞きたいということになってくる。</p> <p>Amazonで検索。ﾎﾟﾁﾎﾟﾁ</p> <p>２万円？まあそんなもんか…</p> <p>んんっ？（カンマが真ん中…？）</p> <p><span style=\"font-size: 18.6667px;\">！？</span><br"
+        },
+        {
+          "id": 314,
+          "postType": "post",
+          "slug": "kazaguru-mouse",
+          "title": "「かざぐるマウス」で、ワンランク上のPC作業を手に入れる",
+          "snippet": "mon box-rewrite\"><p><span class=\"rewrite-date\">追記 (2020/12/17) ：</span>上記のようなかざぐるマウスへの複雑な対応状態について、１つの記事に全てまとめました。</p><p>[/kazaguru-mouse-matome]</p> <p>かざぐるマウスを起点として他の多くのWindowsカスタマイズにも触れる楽しい記事になりました。ぜひご一読ください。</p> </div> <h2>ダウンロード</h2> <p><a href=\"https://freesoft-100.com/review/kazagurumouse.php\">ダウンロードページ</a>からダウンロードしにいきましょう。<br /> <span style=\"font-siz"
+        }
+      ]
+    },
+    {
+      "id": "url_blogcard",
+      "group": "カード・埋め込み",
+      "label": "URL ブログカード",
+      "detector": "`blogcard-type` class + `[URL]`",
+      "note": "外部 URL や内部 URL をカード化するための囲み。",
+      "occurrences": 23,
+      "contentCount": 22,
+      "examples": [
+        {
+          "id": 2199,
+          "postType": "post",
+          "slug": "rain-traffic",
+          "title": "【渋滞学】雨が降ると道が混むのはなぜなのか？",
+          "snippet": "億年に渡る大実験の成果を発見できたらしい。</p> <p>この「アリは渋滞しない」という論文を世界で最もレベルの高い物理学雑誌に投稿したら一発でパスしたとかいう天才です。興味ある方は実際の論文を貼っておくので見てみてくだされ。</p> <div class=\"blogcard-type bct-detail\"> <p>[https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.102.108001]</p> </div> <div class=\"box-common box-rewrite\"><p><span class=\"rewrite-date\">追記 (2019/9/28) ：</span>たまたま、本当にたまたまネットサーフィンをしていたら「アリ」と「運転」というワード、そしてなんか見覚えのある顔が目に入った。</p><p>[https://smartdrivemagazine.jp/traffic/maas-ant/]</p> <p>とい"
+        },
+        {
+          "id": 2257,
+          "postType": "post",
+          "slug": "celeste-review",
+          "title": "【Celesteレビュー】心から楽しいと思える、人生に刻まれるゲームでした",
+          "snippet": "ど、そんな中\"本当にいいゲーム\"っていうものをがんばって作っているメーカーがあるんだなって今回初めて気付いて、すごい感動したんです。</p> <p>そんなわけで最近はもっぱらインディーズゲームばっかりやっているわけであります。</p> <div class=\"blogcard-type bct-related\"> <p>[/indiesgames]</p> </div> <p>にしてもこのゲーム、本当に筆舌に尽くしがたいポテンシャルを持った素晴らしい作品なので、ゲーム好きを自負している方にはひとりでも多く遊んでほしいと心から願うのです。そして購入という形で彼らを応援してほしいと思います。</p> <p>おもしろかったゲームについてただ話す記事は楽で楽しかった！笑</p> <p>それでは、お読みいただきありがとうございました。今回はこの辺で。</p>"
+        },
+        {
+          "id": 2895,
+          "postType": "post",
+          "slug": "cats-goods",
+          "title": "ねこ用品のおすすめ10選を紹介！～男一人暮らしでの2匹飼い～",
+          "snippet": "か色々試したけど色んな原因でうまくいかず、結局これだけは手動でやってます。<strong><span style=\"color: #339966;\">→追記：自動給水器導入しました！（手動と併用）</span></strong></p> <div class=\"blogcard-type bct-related\"> <p>[/cat-water]</p> </div> <p>ネットを見たりまわりの人の話を聞いたりすると、「ねこは水を飲まなすぎて病気になる」とか「なのにうちの子は全然飲んでくれない」とか、そんなんばっか見かけるけど、僕のところではそんなこと一切ないどころか、超飲む。</p> <p>きっとそれはこのお水を入れている容器のおかげかなと少なからず思っているので、水不足で困っている人はぜひお試しあれ。Amazonのレビューにも「水をたくさん飲んでくれるようになった！」のコメントがたくさんあ"
+        },
+        {
+          "id": 3283,
+          "postType": "post",
+          "slug": "altahr",
+          "title": "【Fitbit AltaHR 完全レビュー】AltaHRはお風呂でもずっと外せない相棒になった！",
+          "snippet": "\"fitbit-altahr-app\" width=\"1171\" height=\"921\" /></p> <p>で、その設定とかできるFitbit公式アプリですが。これすごく良く出来てます。アプリおすすめ記事に書きたいくらい。</p> <div class=\"blogcard-type bct-popular\"> <p>[/android-app]</p> </div> <p>こういうガジェットにおまけでついてくるメーカー純正アプリって本当に使えないゴミみたいなものが多い中、こいつはすごく多機能で分かりやすく、なおかつエンタメとして楽しませてくれます。</p> <p><img class=\"wp-image-3346 aligncenter\" src=\"https://mirumi.media/Screenshot_20181120-120803_Fitbit.jpg\" alt=\"Screensh"
+        },
+        {
+          "id": 3997,
+          "postType": "post",
+          "slug": "carnavi-size",
+          "title": "「自分の車には何インチが付く?」カーナビのサイズ/大きさの違いまとめ",
+          "snippet": "ですよ。[/caption] <p>気になった方は<a href=\"/portable-navigation\">ポータブルについての完全まとめ記事</a>をぜひどうぞ。ポータブルナビについて全てが分かるようになっています。</p> <div class=\"blogcard-type bct-detail\"> <p>[/portable-navigation]</p> </div> <p>この記事を読んでたくさんの方がポータブルナビを買っていかれております！<br /> 一番売れているのはやっぱりゴリラのバランスモデル <i class=\"fas fa-hand-point-down\"></i> 。</p> <p>[amazon asin=\"B07R23YTZP\" kw=\"CN-G730D\" title=\"パナソニック ポータブルナビ ゴリラ CN-G730D\" size=\"l\"]</p> <p>「ポータ"
+        }
+      ]
+    },
+    {
+      "id": "amazon_shortcode",
+      "group": "カード・埋め込み",
+      "label": "Amazon 商品カード shortcode",
+      "detector": "`[amazon ...]`",
+      "note": "ASIN 指定の旧商品カード。",
+      "occurrences": 519,
+      "contentCount": 146,
+      "examples": [
+        {
+          "id": 142,
+          "postType": "post",
+          "slug": "donkey-2-soundtrack",
+          "title": "ドンキー 2 のサントラになぜ 20 万もの値が付くのか考える",
+          "snippet": "-size: 24pt;\">20万！！？？</span></strong></p> <p>ってのはみんなが通る道だと思うので、今回はその理由を考えてみたい。という名のいつものごとく好きなことについてだらだら話したいだけ。</p> <p>[amazon asin=\"B00005FNW7\" kw=\"スーパードンキーコング2\" title=\"スーパードンキーコング2 サウンドトラック\" size=\"l\"]</p> <p><del>※2016/6/22現在Amazonでは中古の取り扱いすらなく、20万の画像は用意できませんでした。あしからず。</del><br /> <del>※2017/1/26に再度確認したら209,985円がありました！</del><br /> <del>※2018/1/16で197,350円確認。</del><br /> <del>※2018/8/19で169,999円確認。</del><br /> <d"
+        },
+        {
+          "id": 186,
+          "postType": "post",
+          "slug": "soundhorizon-recommend",
+          "title": "サンホラを初心者におすすめするのに一番向いている曲はこれだ！",
+          "snippet": "画】Moira 死せる者達の物語</a></noscript> <p>最後半音上がるので毎回鳥肌総立ちになる…。たまらない。。</p> <p>そしてDVDを持っていない方、いい機会だから絶対に買って見てくれ（露骨な布教</p> <p>[amazon asin=\"B001O9LFSM\" kw=\"Sound Horizon Moira DVD\" title=\"Sound Horizon 6th Story Concert「Moira」~其れでも、お征きなさい仔等よ~LIVE DVD 通常盤\" size=\"l\"]</p> <h2>まとめ</h2> <p>と、まあそんなわけで、もしサンホラを勧めたい機会があったら上述の動画を見せてみる、という選択肢をひとつご考慮いただけたらと思う。曲を聴かすよりURL１つ送るだけだし、ぜひ次から実践してみてくれ！</p> <p>黙したまま何も語らぬ…。それでいい。楽。</p>"
+        },
+        {
+          "id": 296,
+          "postType": "post",
+          "slug": "ibitunarushinen-sononahamaou-mp3",
+          "title": "「歪なる思念 其の名は魔王」の耳コピぴこぴこアレンジmp3配布ページ",
+          "snippet": "a></span></p> <div class=\"dot-line-brown\"> </div> <p>原曲の音源がどこで手に入るのかとよく聞かれますのでサントラを紹介しておきます。</p> <p>一般的にはこれ。</p> <p>[amazon asin=\"B00G7S902I\" kw=\"ブレイブリーデフォルト ドラマCD リユニオンの祝祭\" title=\"ブレイブリーデフォルト ドラマCD~リユニオンの祝祭~\" size=\"l\"]</p> <p>もしくは、サンホラ好きな方ならアソホラの初回限定デラックス盤の特典ディスクでもｗ</p> <p>[amazon asin=\"B00JIGHLVS\" kw=\"The Assorted Horizons\" title=\"The Assorted Horizons (初回限定デラックス盤) Blu-ray\" size=\"l\"]</p> <p>サンホラ好きというか、Revo曲好きな僕が彼のインスト曲で一番かっこいいと思って"
+        },
+        {
+          "id": 372,
+          "postType": "post",
+          "slug": "supermario-rpg",
+          "title": "マリオRPGのサントラから広がる思い出",
+          "snippet": "い方はぜひぜひ聴いて欲しい。</p> <p>2014年の3月26日というかなり最近に発売されたアルバムだ。ちなみに僕は、発売前に公式サイトへ行ってキングダムハーツのシオン戦の曲が流れた瞬間にAmazonへ行って予約したｗ</p> <p>[amazon asin=\"B00I3LHM5Y\" kw=\"memoria! 下村陽子\" title=\"memoria!/下村陽子25周年ベストアルバム\" size=\"l\"]</p> <p>下村さんの音楽が好きな人にはかなりおすすめ。収録されている楽曲は、マリオRPG、キングダムハーツ、ライブアライブ、聖剣伝説レジェマナなどなど。</p> <h3>最後の最後で情緒に訴えてくるエンディング</h3> <p>このゲーム極めつきの\"切なさ\"は最後に流れるエンディングで最高潮に達する。</p> <p>初めて見たときは、星の窓から見るこの世界の住人のアフターストーリーに心から感動したものだった。ああ、僕がカジ"
+        },
+        {
+          "id": 651,
+          "postType": "post",
+          "slug": "kirby-future-kirby",
+          "title": "次回作は？これからのカービィはどうなっていくのか考えてみた",
+          "snippet": "、必要がなければここまでやらないだろうってこともあって、やっぱり過去のサントラをアレンジするのは好きみたいですね。HAL研自身がやってますし。<br /> でも、良い曲多いので絶対聴いた方がいいと思いますこれは。安いし。</p> <p>[amazon asin=\"B01K40U47E\" kw=\"The Sound of Kirby Cafe\" title=\"The Sound of Kirby Cafe/サウンド・オブ・カービィカフェ\" size=\"l\"]</p> <p>ロボボプラネットのサントラはまだ買ってないからはやく買わないとな…</p> <p>でね、そのアレンジが多いっていうのはつまり、新曲が生まれる割合も少ないし（もちろん分母が変わらなければの話）、なにより「新しい音楽の印象がどんどん薄くなっていってしまう」と思っている。</p> <p>たしかに作品毎にテーマになるフレーズは必ずあって、それはだいたいタイトルで流れて、ボス戦でアレンジされてスタッフロールでもまた聴けて…っ"
+        }
+      ]
+    },
+    {
+      "id": "rakuten_shortcode",
+      "group": "カード・埋め込み",
+      "label": "楽天商品カード shortcode",
+      "detector": "`[rakuten ...]`",
+      "note": "少数の旧商品カード。",
+      "occurrences": 1,
+      "contentCount": 1,
+      "examples": [
+        {
+          "id": 2934,
+          "postType": "post",
+          "slug": "cats-toilet",
+          "title": "【超ラクで臭わない】ねこのトイレ問題解決テクニック",
+          "snippet": "ommon box-rewrite\"> <p><span class=\"rewrite-date\">追記 (2019/10/11) ：</span>もう今はこれは完全に使っていません。ケージはバカでかいの買いましたけど。</p> <p>[rakuten id=\"weimall:10006154\" kw=\"【ペットゲージ\"]</p> </div> <h2>トイレ自体を探す</h2> <p>というわけでまずトイレ自体を探す。</p> <p>どうやら「システムトイレ」なるものがいいらしい。システムといっても「トイレルームとごみ処理部分が分かれている」っていうアナログな感じで、名称から漂う値段の高さとかも全くなかった。</p> <p>色々調べて辿り着いたのは、ユニチャームの「デオトイレ」。</p> <p>[amazon asin=\"B000FQ6HA"
+        }
+      ]
+    },
+    {
+      "id": "product_card_html",
+      "group": "カード・埋め込み",
+      "label": "商品/アフィリエイトカード HTML",
+      "detector": "`amazon-item-box` / `product-item-box` / `rakuten-item-box`",
+      "note": "もしも・A8 などの HTML 商品カード。画像・ボタン・商品説明を内包する。",
+      "occurrences": 38,
+      "contentCount": 9,
+      "examples": [
+        {
+          "id": 1458,
+          "postType": "post",
+          "slug": "good-goods",
+          "title": "高いけど本当に買ってよかったもの総まとめ 40 選",
+          "snippet": "ば達成したい目的に対して大差はないものと思っています。</p> </div> <p>地味に防水もあって、太陽光で充電するような環境を考慮されているあたりも個人的にポイントが高かったです。</p> <h3>くそでか まな板</h3> <div class=\"amazon-item-box product-item-box no-icon pis-l no-after home cf\"> <figure class=\"amazon-item-thumb product-item-thumb\"><a class=\"amazon-item-thumb-link product-item-thumb-link image-thumb\" href=\"https://af.moshimo.com/af/c/click?a_id=616599&amp;p_id=54&amp;pc_id=54&amp;pl_id=616&amp;"
+        },
+        {
+          "id": 2895,
+          "postType": "post",
+          "slug": "cats-goods",
+          "title": "ねこ用品のおすすめ10選を紹介！～男一人暮らしでの2匹飼い～",
+          "snippet": "<h2 id=\"title\" class=\"a-size-large a-spacing-none\"><span id=\"productTitle\" class=\"a-size-large\">4.カリカリマシーン</span></h2> <div class=\"amazon-item-box product-item-box no-icon pis-l no-after shoes cf\"> <figure class=\"amazon-item-thumb product-item-thumb\"><a class=\"amazon-item-thumb-link product-item-thumb-link image-thumb\" title=\"カリカリマシーン 自動給餌器 猫犬用 タイマー式\" href=\"https://t.afi-b.com/visit.php?guid=ON&amp;a=b10675P-J360"
+        },
+        {
+          "id": 4775,
+          "postType": "post",
+          "slug": "office-chair",
+          "title": "【クレネ レビュー】おすすめのオフィスチェアと自分が気に入る椅子の選び方",
+          "snippet": "a-1999x871.png\" alt=\"KRENE-uchida\" width=\"1171\" height=\"510\" /></p> <p>クレネに限らず、どの製品も他の企業向けオフィス製品メーカーと同じくかなりの価格です。</p> <div class=\"rakuten-item-box product-item-box no-icon pis-m no-after office-shunin:10008228 cf\"> <figure class=\"rakuten-item-thumb product-item-thumb\"><a class=\"rakuten-item-thumb-link product-item-thumb-link\" title=\"内田洋行 オフィスチェア クレネ[ミドルバック]\" href=\"https://af.moshimo.com/af/c/click?a_id=616599&amp;p_id=54&amp;pc_i"
+        },
+        {
+          "id": 9464,
+          "postType": "post",
+          "slug": "cat-stay-at-home",
+          "title": "一人暮らしでの猫お留守番方法まとめ。社会人の男で2匹飼いだとこんな感じ",
+          "snippet": "> <p>でも、やっぱり決まった時間でかつ常に良い状態になっていて欲しいというのはあります。<strong>しかもそれが自動でできたら…</strong>と思いますよね。</p> <p>ありますよ。</p> <p>じゃん！</p> <div class=\"amazon-item-box product-item-box no-icon pis-l no-after shoes cf\"> <figure class=\"amazon-item-thumb product-item-thumb\"><a class=\"amazon-item-thumb-link product-item-thumb-link image-thumb\" title=\"カリカリマシーン 自動給餌器 猫犬用 タイマー式\" href=\"https://t.afi-b.com/visit.php?guid=ON&amp;a=b10675P-J360"
+        },
+        {
+          "id": 8165,
+          "postType": "post",
+          "slug": "cartolare-hammock-wallet",
+          "title": "これ以上の財布はない!!薄い&軽い&便利な二つ折り財布 Cartolareハンモックウォレットをレビュー",
+          "snippet": "な…？<br /> お待たせしました！！ここでついに <a href=\"https://www.cartolare.shop/c-item-list?category_id=1\">ハンモックウォレット</a>と出逢うんです！！</p> <div class=\"amazon-item-box product-item-box no-icon pis-l no-after shoes B00HJEHLC0 cf\"> <figure class=\"amazon-item-thumb product-item-thumb\"><a class=\"amazon-item-thumb-link product-item-thumb-link image-thumb\" href=\"https://px.a8.net/svt/ejp?a8mat=35O4IN+MMHRM+2XT6+BW8O2&amp;a8ejpredirect=https%3A%2F%2Fw"
+        }
+      ]
+    },
+    {
+      "id": "appreach_card",
+      "group": "カード・埋め込み",
+      "label": "アプリ紹介カード",
+      "detector": "`appreach` class",
+      "note": "Google Play / App Store リンク付きのアプリーチ HTML。",
+      "occurrences": 106,
+      "contentCount": 29,
+      "examples": [
+        {
+          "id": 689,
+          "postType": "post",
+          "slug": "android-app",
+          "title": "誰も知らない超便利 Android アプリおすすめ 40 選",
+          "snippet": "リンクは無料の方で統一してあるのでご安心ください。</p> <p>無料の体験版でだいたいの使用感は分かるので、気になったものはぜひインストールしてみましょうー！</p> </div> <h3>スマートアラーム（有料あり）</h3> <div class=\"appreach\"><img class=\"appreach__icon\" src=\"https://lh3.ggpht.com/iNKSpLHzfJ97quMcqZLElBvjjYZx17uOpDk_DBR7jHNCwCJA8Wy5ipSdVPMTAPt9Eg=s128\" alt=\"スマートアラーム 無料版（祝日対応の目覚まし時計）\" /> <div class=\"appreach__detail\"> <p class=\"appreach__name\">スマートアラーム 無料版（祝日対応の目覚まし時計）</p> <p class=\"appreach__info\"><span class=\"appreach__developper\">TanyuSoft</span><span class=\"appreach__price\">無料</span><span class=\"appreach__posted\">posted with<a title=\"アプリーチ\" href=\"http://mama-hack.com/app-reach/\" target=\"_top\" rel=\"nofollow noopener\">アプリーチ</a></span></p> </div> <div class=\"appreach__links\"><a class=\"appreach__gplink\" href=\"https://play.google.com/store/apps/details?id=jp.tanyu.SmartAlarmFree\" target=\"_top\" rel=\"nofollow noopener\"><img src=\"https://nabettu.github.io/appreach/i"
+        },
+        {
+          "id": 861,
+          "postType": "post",
+          "slug": "game-ranking",
+          "title": "SFC/N64/GC/Wii(U)/Switch/PS1~4 などゲームソフト個人的おすすめランキング50選！",
+          "snippet": "</strong>とかいう値段でしたｗ</p> </div> <p>レーシングにするかどうかもちょっと迷ったけど、ネタ的な意味も込めてこちらを選びました。</p> <h3>第53位 World of Goo（グーの惑星）</h3> <div class=\"appreach\"><img class=\"appreach__icon\" src=\"https://is4-ssl.mzstatic.com/image/thumb/Purple127/v4/89/5d/d3/895dd3a2-d553-efbf-d1c0-7be1bda61ddb/source/512x512bb.jpg\" alt=\"World of Goo\" /> <div class=\"appreach__detail\"> <p class=\"appreach__name\">World of Goo</p> <p class=\"appreach__info\"><span class=\"appreach__developper\">2D BOY</span><span class=\"appreach__price\">￥500</span><span class=\"appreach__posted\">posted with<a href=\"https://mama-hack.com/app-reach/\" target=\"_top\" rel=\"nofollow noopener\">アプリーチ</a></span></p> </div> <div class=\"appreach__links\"><a class=\"appreach__aslink\" href=\"https://apps.apple.com\" rel=\"nofollow\"><img class=\"alignnone\" src=\"https://nabettu.github.io/appreach/img/itune_ja.svg\" alt=\"\" width=\"135\" height=\"40\" /></"
+        },
+        {
+          "id": 1303,
+          "postType": "post",
+          "slug": "android-browser",
+          "title": "ぶっちぎりでおすすめのスマホブラウザアプリ「Sleipnir」を紹介",
+          "snippet": "在意義が怪しくなったけど、さっそく。</p> <h2>「Sleipnir」とはどんなブラウザか？</h2> <p>Sleipnirって、北欧神話に出てくる馬みたいなやつ。アイコンもそれっぽいよね。僕にはチェスのナイトに見えるけど。</p> <div class=\"appreach\"><img class=\"appreach__icon\" src=\"https://lh3.ggpht.com/BgNB_LcKn4uhNzeENro5yIF2GNCkJuyO8cPVhE1QMolv_QNyjOC5koDDRsAHqUAKfxKs=s128\" alt=\"Sleipnir Mobile\" /> <div class=\"appreach__detail\"> <p class=\"appreach__name\">Sleipnir Mobile</p> <p class=\"appreach__info\"><span class=\"appreach__developper\">Fenrir Inc.</span><span class=\"appreach__price\">無料</span><span class=\"appreach__posted\">posted with<a title=\"アプリーチ\" href=\"http://mama-hack.com/app-reach/\" target=\"_top\" rel=\"nofollow noopener\">アプリーチ</a></span></p> </div> <div class=\"appreach__links\"><a class=\"appreach__aslink\" href=\"https://itunes.apple.com/jp/app/sleipnir-mobile/id404732112?mt=8&amp;uo=4\" target=\"_top\" rel=\"nofollow noopener\"><img src=\"https://nabettu.github.io/appreac"
+        },
+        {
+          "id": 1698,
+          "postType": "post",
+          "slug": "auto-scroll",
+          "title": "【スマホアプリ】ご飯を食べながらTwitterをオートスクロールしたい",
+          "snippet": "いてみることにしました。</p> <p>ちなみに言っておくと、<strong>ご飯食べるときくらいスマホ置け</strong>。</p> <h2>必要なもの</h2> <p>以下の「Smart Scroll」というアプリ。</p> <div class=\"appreach\"><img src=\"https://lh3.googleusercontent.com/Ze3Q40V9nYw9thlb4yCiXsIaT65LZWYMrf9Xqx6J61HHF2nSd0ci2RFCnurX6LvtzYHF=s128\" alt=\"Smart Scroll\" class=\"appreach__icon\" /> <div class=\"appreach__detail\"> <p class=\"appreach__name\">Smart Scroll</p> <p class=\"appreach__info\"><span class=\"appreach__developper\">9to5++</span><span class=\"appreach__price\">無料</span><span class=\"appreach__posted\">posted with<a href=\"https://mama-hack.com/app-reach/\" title=\"アプリーチ\" target=\"_top\" rel=\"nofollow noopener\">アプリーチ</a></span></p> </div> <div class=\"appreach__links\"><a href=\"https://play.google.com/store/apps\" target=\"_top\" rel=\"nofollow noopener\" class=\"appreach__gplink\"><img src=\"https://nabettu.github.io/appreach/img/gplay_ja.png\" /></a></div> </di"
+        },
+        {
+          "id": 2288,
+          "postType": "post",
+          "slug": "indiesgames",
+          "title": "【ゲームのすすめ】インディーズゲームは決して「お手軽ゲーム」ではない！",
+          "snippet": "グーの惑星）というインディーズゲームを作成している人たちのまんま受け売り。社員は2人だけの会社なんだけど、彼らのこの考えに僕はすごく共感できた。実際このゲームも小規模なものなんだけど、まあその精神がよく表れているゲームだと思う。</p> <div class=\"appreach\"><img class=\"appreach__icon\" src=\"https://is4-ssl.mzstatic.com/image/thumb/Purple127/v4/89/5d/d3/895dd3a2-d553-efbf-d1c0-7be1bda61ddb/source/512x512bb.jpg\" alt=\"World of Goo\" /> <div class=\"appreach__detail\"> <p class=\"appreach__name\">World of Goo</p> <p class=\"appreach__info\"><span class=\"appreach__developper\">2D BOY</span><span class=\"appreach__price\">￥500</span><span class=\"appreach__posted\">posted with<a title=\"アプリーチ\" href=\"http://mama-hack.com/app-reach/\" target=\"_top\" rel=\"nofollow noopener\">アプリーチ</a></span></p> </div> <div class=\"appreach__links\"><a class=\"appreach__aslink\" href=\"https://apps.apple.com\" target=\"_top\" rel=\"nofollow noopener\"><img src=\"https://nabettu.github.io/appreach/img/itune_ja.svg\" /></a><a class=\"appreach__gpli"
+        }
+      ]
+    },
+    {
+      "id": "new_list_shortcode",
+      "group": "カード・埋め込み",
+      "label": "記事一覧 shortcode",
+      "detector": "`[new_list ...]`",
+      "note": "home 固定ページでカテゴリ別の新着一覧に使用。",
+      "occurrences": 9,
+      "contentCount": 1,
+      "examples": [
+        {
+          "id": 12717,
+          "postType": "page",
+          "slug": "home",
+          "title": "home",
+          "snippet": "ou-10\">はじめましての 10 記事はこちら</a></span></p> </div> <div class=\"column-right\"> <h3 class=\"entry-list-title\">新着記事</h3> <p>[new_list type=\"large_thumb\" count=\"4\" bold=\"1\" class=\"home-entry-card\" cats=\"all\"]</p> <p class=\"link-btn\"><span class=\"btn-wrap btn-wrap-brown btn-wrap-m\"><a href=\"/new-entries\">最新記事はこちら</a></span></p> </div> </div> <div class=\"column-wrap column-2 effect-fade\"> <div class=\"column-left\"> <h3 cl"
+        }
+      ]
+    },
+    {
+      "id": "manual_entry_card",
+      "group": "カード・埋め込み",
+      "label": "手書き記事カード",
+      "detector": "`navi-entry-card` / `widget-entry-card`",
+      "note": "home 固定ページの手書きカード。",
+      "occurrences": 5,
+      "contentCount": 1,
+      "examples": [
+        {
+          "id": 12717,
+          "postType": "page",
+          "slug": "home",
+          "title": "home",
+          "snippet": "<div class=\"navi-entry-cards widget-entry-cards no-icon card-large-image large-thumb card-title-bold home-entry-card\"><a class=\"navi-entry-card-link widget-entry-card-link a-wrap effect-fade effect-scroll\" href=\"https://mirumi.me/pc-freesoft\"> <div class=\"navi-entry-card widget-entry-card e-card cf\"> <figure id=\"top-img-1\" class=\"navi-entry-card-thumb widget-entry-card-thumb card-thumb\"><img class=\"top-4-eye-catch\" src=\"https://mirumi.media/windows-freesoft"
+        }
+      ]
+    },
+    {
+      "id": "link_button",
+      "group": "カード・埋め込み",
+      "label": "リンクボタン・CTA",
+      "detector": "`btn-wrap*` / `link-btn`",
+      "note": "色違いボタンを含むリンク装飾。",
+      "occurrences": 124,
+      "contentCount": 37,
+      "examples": [
+        {
+          "id": 12717,
+          "postType": "page",
+          "slug": "home",
+          "title": "home",
+          "snippet": "entry-card-title card-title\">「みるめも」のような雑記ブログで副業したい人のために頑張って書いた記事</div> </div> </div> </a></div> <p class=\"link-btn\"><span class=\"btn-wrap btn-wrap-brown btn-wrap-m\"><a href=\"/nice-to-meet-you-10\">はじめましての 10 記事はこちら</a></span></p> </div> <div class=\"column-right\"> <h3 class=\"entry-list-title\">新着記事</h3> <p>[new_list type=\"large_thumb\" count=\"4\" bold=\"1\" class=\"home-entry-card\" cats=\"all\"]</p> <p class=\"link-btn\"><span class=\"btn-wr"
+        },
+        {
+          "id": 296,
+          "postType": "post",
+          "slug": "ibitunarushinen-sononahamaou-mp3",
+          "title": "「歪なる思念 其の名は魔王」の耳コピぴこぴこアレンジmp3配布ページ",
+          "snippet": "> <p>ちょっと良いサンプリングしたのでわりかし音質良いと思います。チップチューン音源ならではのうるささというか耳につく感じはあるので、音量はお気をつけください。</p> <p style=\"text-align: center;\"><span class=\"btn-wrap btn-wrap-brown btn-wrap-m\"><a href=\"https://mirumi.media/maou-pikopiko.mp3\" target=\"_blank\" download=\"maou-pikopiko.mp3\" rel=\"noopener\">Download</a></span></p> <div class=\"dot-line-brown\"> </div> <p>原曲の音源がどこで手に入るのかとよく聞かれますのでサントラを紹介しておきます。</p> <p>一般的にはこれ。</p> <p>[amazon asin=\"B00G7S902I\" kw=\"ブレイブリーデフォルト ドラマCD リユニオンの祝祭\" title=\"ブレイブリーデフォルト ドラマCD~リユニオンの祝祭~\" size=\"l\""
+        },
+        {
+          "id": 2575,
+          "postType": "post",
+          "slug": "googleadsense-auto-display",
+          "title": "Google AdSense を本文にのみ適切に自動挿入する機能を自作した",
+          "snippet": "も掲載しますが、<code class=\"inline-pre\">.js</code>のファイルごとダウンロードできるようにもしておきました。下記のボタンからどうぞ。</p> <p style=\"text-align: center;\"><span class=\"btn-wrap btn-wrap-brown btn-wrap-m\"><a href=\"https://mirumi.media/auto-adsense.js\" target=\"_blank\" download=\"auto-adsense.js\" rel=\"noopener\">Download</a></span></p> <pre>$(document).ready(function () { const adCode = ''; //←の''の間に広告ユニットのコードを記入（改行とスペースの削除必須です） const entryContent = $(''); //←の''の間にコンテンツ本文を囲うclass名を記入（[.]も！） let entryContentHTML = entryContent.htm"
+        },
+        {
+          "id": 2840,
+          "postType": "post",
+          "slug": "protein-my-protein",
+          "title": "「安い・高品質・味が豊富」のマイプロテインが最強すぎるので徹底的にレビューする",
+          "snippet": "有り得ないことがご理解いただけたでしょう。笑</p> <p>一度使い始めると、「唯一メルマガが楽しみになる」とかいう要らんおまけまでついてくるので、超おすすめです。</p> <p style=\"text-align: center;\"><span class=\"btn-wrap btn-wrap-cyan btn-wrap-m\"><a href=\"https://amzn.to/4gfTzXx\" target=\"_blank\" rel=\"noopener\">マイプロテインをお試し購入してみる</a></span></p> <p>ではでは。</p>"
+        },
+        {
+          "id": 4718,
+          "postType": "post",
+          "slug": "antiperspirants",
+          "title": "【デトランスα レビュー】単品使用でも脇毛処理で効果倍増→手足の汗も普通肌用で改善！",
+          "snippet": "う！</p> </div> </div> <p>ということで、<strong>「お金で脇汗を止められるなら安い投資だ」</strong>と思い購入へ至りました。</p> <p style=\"text-align: center;\"><span class=\"btn-wrap btn-wrap-green btn-wrap-m\"><a href=\"https://www.you-up.com/products/country/denmark/detorance-alpha\" target=\"_blank\" rel=\"nofollow noopener\">「デトランスα」の購入サイトはこちら</a> </span><img src=\"https://www11.a8.net/0.gif?a8mat=356YDY+15OD4I+3142+ZPKV6\" alt=\"\" width=\"1\" height=\"1\" border=\"0\" /></p> <div class=\"micro-bottom micro-center\" style=\"margin-top: -3em;\">普通に買うより40%OFFです！</div> <h3>実際に"
+        }
+      ]
+    },
+    {
+      "id": "box_common",
+      "group": "独自ボックス",
+      "label": "独自ボックス共通",
+      "detector": "`box-common`",
+      "note": "`box-info`, `box-alert`, `box-rewrite` などの土台。",
+      "occurrences": 859,
+      "contentCount": 321,
+      "examples": [
+        {
+          "id": 12,
+          "postType": "page",
+          "slug": "contact",
+          "title": "お問い合わせ",
+          "snippet": "r /> ご意見・ご感想などももちろん嬉しいです…！お気軽にどうぞ。</p> <p>よりフランクな連絡手段をご希望の場合は <a href=\"https://x.com/__mirumi__\">X</a> もご検討ください。</p> <div class=\"box-common box-alert\" style=\"margin-bottom: 5em;\"> <p>※全てへの返信はお約束できませんが、必ず目は通していますのでご安心ください。</p> </div> <p>[contact-form-7 id=\"16\" title=\"Contact\"]</p>"
+        },
+        {
+          "id": 36,
+          "postType": "post",
+          "slug": "shiren2-saihate",
+          "title": "【シレン2 徹底攻略！】最果てへの道を必ずクリアできる方法まとめ",
+          "snippet": "<div class=\"box-common box-rewrite\"> <p><span class=\"rewrite-date\">追記：</span>皆様からのクリア報告をたくさん頂けて、いつも嬉しく思いながら拝見しています。ありがとうございます！<br /> 一度クリアした方ももう一度潜ってみてください！また違う楽しさがありますよ。<br /> （さらに物足りなくなってきた方はタイムアタックをやってみましょう…笑）</p> </div> <p>シレン２を持ってるけど最果てだけはクリアできない"
+        },
+        {
+          "id": 82,
+          "postType": "post",
+          "slug": "iwannabetheguy-map",
+          "title": "I Wanna be the Guy の全体マップをつくった",
+          "snippet": "にもそれらしいものはあったんだけどリンクマップだけで一枚絵ではない。似た趣旨のものも見つけたが注釈や矢印により画像のみではない。</p> <p>…これはまさか誰も試みていないのでは？ とﾑﾌﾌな感じでちょろっと作ってみました。</p> <div class=\"box-common box-info\"> <p>※画像引用元は<a href=\"http://ux.getuploader.com/I_wanna/\">アイワナマップ</a>より</p> </div> <p><img class=\"sss wp-image-85 size-full\" src=\"https://mirumi.media/IwannabetheguyAllMap.png\" alt=\"I wanna be the guy 全体図\" width=\"1260\""
+        },
+        {
+          "id": 91,
+          "postType": "post",
+          "slug": "why-do-i-like-soundhorizon",
+          "title": "サンホラを音楽的にどれくらい好きなのかをがんばって表現してみる",
+          "snippet": "構成を組み立てて書いていくのが難しい、 というよりそれでは結局まとめようとして言いたいことが自分でも分からなくなるため、あえて手を休めることなく徒然なるままに進めていくとする。<strong>読まないこと推奨。</strong></p> <div class=\"box-common box-alert\"> <p>※あえてですが、この記事はすごく偉そうで挑発的で自己中心的で内容が偏っています。 しかもいつもの僕とは全く違う文体で超うざいです。というかもう恥ずかしすぎて自分で読めないレベルなので削除したいくらい…。</p> <p>内容に関しては、ぜひ僕以外の方がどんな風に考えていらっしゃるかの意見は知りたいと思っているので、よければコメントとかどしどしお願いします！</p> </div> <h2>音楽が「良い」とはなんなのか</h2"
+        },
+        {
+          "id": 105,
+          "postType": "post",
+          "slug": "adblockplus-whitefilter",
+          "title": "「Adblock Plus」でホワイトリスト登録",
+          "snippet": "いといけない」という機会があって、 ホワイトフィルタなんかすぐ見つかるだろと思って探すも…<br /> いくら探しても見あたらない。</p> <p>しばしの間いじくりまわしアホみたいな簡単さで解決できましたので 一応備忘録として。</p> <div class=\"box-common box-rewrite\"><p><span class=\"rewrite-date\">追記 (2019/11/23) ：</span>現在はこんなことしなくても分かりやすく手軽に設定できるようになりました。</p> [caption id=\"attachment_9684\" align=\"aligncenter\" width=\"1171\"]<img class=\"wp-image-9684 size-large\" src=\"https://mirumi.medi"
+        }
+      ]
+    },
+    {
+      "id": "box_info",
+      "group": "独自ボックス",
+      "label": "情報ボックス",
+      "detector": "`box-info`",
+      "note": "補足・注意前の説明など。",
+      "occurrences": 533,
+      "contentCount": 267,
+      "examples": [
+        {
+          "id": 36,
+          "postType": "post",
+          "slug": "shiren2-saihate",
+          "title": "【シレン2 徹底攻略！】最果てへの道を必ずクリアできる方法まとめ",
+          "snippet": "span style=\"font-size: 80%;\">きっと</span></span></p> <p>つまるところ、やることは決まっているわけですね。間違っても運ゲーではありません。運を使うのは最初の何ヶ所かくらいです！</p> <div class=\"box-common box-info\"> <p>この記事を読まれる方として僕が想定しているのは、「攻略wikiなどは読んだことはあるが、具体的にイマイチなにをしたらいいのか分からず結局深く潜れない」みたいなプレイヤーさん、もしくは「めんどくさくてちゃんとやってなかったけどいい加減クリアしたいぜ！」みたいな方たち。ゆえに初歩的なことも多く書いてあります。ご了承ください。</p> <p>考えるべきことの順番で進めていくので、そのまま読んでいけば自ずと方向性が掴めるようになって"
+        },
+        {
+          "id": 82,
+          "postType": "post",
+          "slug": "iwannabetheguy-map",
+          "title": "I Wanna be the Guy の全体マップをつくった",
+          "snippet": "にもそれらしいものはあったんだけどリンクマップだけで一枚絵ではない。似た趣旨のものも見つけたが注釈や矢印により画像のみではない。</p> <p>…これはまさか誰も試みていないのでは？ とﾑﾌﾌな感じでちょろっと作ってみました。</p> <div class=\"box-common box-info\"> <p>※画像引用元は<a href=\"http://ux.getuploader.com/I_wanna/\">アイワナマップ</a>より</p> </div> <p><img class=\"sss wp-image-85 size-full\" src=\"https://mirumi.media/IwannabetheguyAllMap.png\" alt=\"I wanna be the guy 全体図\" width=\"1260\""
+        },
+        {
+          "id": 314,
+          "postType": "post",
+          "slug": "kazaguru-mouse",
+          "title": "「かざぐるマウス」で、ワンランク上のPC作業を手に入れる",
+          "snippet": "れもかなり便利。調整幅はこのあと設定可能。僕は２ずつにしています。</li> <li>「タスクボタンを～」：ブラウザでもこの操作は使っている方いるかもしれません。ホイールボタンで一発終了できます。これも便利。</li> </ul> <div class=\"box-common box-info\"> <p>僕はタスクバーのボタン設定を、昔ながらの「結合しない」にしています。ウィンドウ名見えないのは不便だし、同じソフトは重なっていちいちサムネイル表示されるの待ってからクリックなんてアホらしいことやってられません（ブラウザとかね）。皆様にもおすすめしたいです。</p> <p>詳しくはこちらの記事でも。</p> <p>[/windows-settings]</p> </div> [caption id=\"attachmen"
+        },
+        {
+          "id": 328,
+          "postType": "post",
+          "slug": "firefox-plugin",
+          "title": "Firefoxにとりあえず入れておきたいアドオンおすすめ13選",
+          "snippet": "なくなるはず。</p> <p>あ、ちなみに、Firefoxではこの便利な拡張機能のことを「アドオン」、システム的な外部ツールみたいなののことを「プラグイン」と呼んでいます。分かりにくいですよね。</p> <p>ではさっそく。</p> <div class=\"box-common box-info\"> <p>※各アイコン画像がダウンロードページへのリンクになっています。</p> </div> <h2>１．Adblock Plus</h2> <p><a href=\"https://addons.mozilla.org/ja/firefox/addon/adblock-plus/?src=search\"><img class=\"sss alignnone wp-image-339 size-full\" title=\"adbloc"
+        },
+        {
+          "id": 689,
+          "postType": "post",
+          "slug": "android-app",
+          "title": "誰も知らない超便利 Android アプリおすすめ 40 選",
+          "snippet": "iv> </div> <p>ではさっそく！<br /> 順番は適当、死ぬほど長いです。</p> <h2>１．日常生活で便利に使える系</h2> <p>まずは普段使い系のアプリから。ここは比較的有名なものも混ざってます。</p> <div class=\"box-common box-info\"> <p>僕は無料版と有料版あるものはすべて有料版を買っていますが<span style=\"font-size: 0.8em;\">（サブスク系除く）</span>、貼ってあるリンクは無料の方で統一してあるのでご安心ください。</p> <p>無料の体験版でだいたいの使用感は分かるので、気になったものはぜひインストールしてみましょうー！</p> </div> <h3>スマートアラーム（有料あり）</h3> <div class=\"a"
+        }
+      ]
+    },
+    {
+      "id": "box_alert",
+      "group": "独自ボックス",
+      "label": "警告/注意ボックス",
+      "detector": "`box-alert`",
+      "note": "注意喚起・免責など。",
+      "occurrences": 118,
+      "contentCount": 97,
+      "examples": [
+        {
+          "id": 12,
+          "postType": "page",
+          "slug": "contact",
+          "title": "お問い合わせ",
+          "snippet": "r /> ご意見・ご感想などももちろん嬉しいです…！お気軽にどうぞ。</p> <p>よりフランクな連絡手段をご希望の場合は <a href=\"https://x.com/__mirumi__\">X</a> もご検討ください。</p> <div class=\"box-common box-alert\" style=\"margin-bottom: 5em;\"> <p>※全てへの返信はお約束できませんが、必ず目は通していますのでご安心ください。</p> </div> <p>[contact-form-7 id=\"16\" title=\"Contact\"]</p>"
+        },
+        {
+          "id": 91,
+          "postType": "post",
+          "slug": "why-do-i-like-soundhorizon",
+          "title": "サンホラを音楽的にどれくらい好きなのかをがんばって表現してみる",
+          "snippet": "構成を組み立てて書いていくのが難しい、 というよりそれでは結局まとめようとして言いたいことが自分でも分からなくなるため、あえて手を休めることなく徒然なるままに進めていくとする。<strong>読まないこと推奨。</strong></p> <div class=\"box-common box-alert\"> <p>※あえてですが、この記事はすごく偉そうで挑発的で自己中心的で内容が偏っています。 しかもいつもの僕とは全く違う文体で超うざいです。というかもう恥ずかしすぎて自分で読めないレベルなので削除したいくらい…。</p> <p>内容に関しては、ぜひ僕以外の方がどんな風に考えていらっしゃるかの意見は知りたいと思っているので、よければコメントとかどしどしお願いします！</p> </div> <h2>音楽が「良い」とはなんなのか</h2"
+        },
+        {
+          "id": 328,
+          "postType": "post",
+          "slug": "firefox-plugin",
+          "title": "Firefoxにとりあえず入れておきたいアドオンおすすめ13選",
+          "snippet": "el\" src=\"https://mirumi.media/Default-Full-Zoom-Level.png\" alt=\"Default Full Zoom Level\" width=\"32\" height=\"13\" /></p> <div class=\"box-common box-alert\"> <p><span class=\"color-red\">消えてました。代替アドオンは<a href=\"https://addons.mozilla.org/ja/firefox/search/?platform=windows&amp;q=Default%20%20Zoom%20\">こちら</a>から探してみてください。</span></p> </div> <p>文字が小さくて読みづらいサイトを見つけたら、拡大しますよね？<br"
+        },
+        {
+          "id": 689,
+          "postType": "post",
+          "slug": "android-app",
+          "title": "誰も知らない超便利 Android アプリおすすめ 40 選",
+          "snippet": "tr> <tr> <td style=\"width: 35.4903%; \">有料版の価格</td> <td style=\"width: 64.5097%; \">-</td> </tr> </tbody> </table> <div class=\"box-common box-alert\"> <p>Playストアから消えました。</p> <p>で、このあとにも消されているアプリはたくさん登場するんですが、<strong>Android は「apk」というファイル自体をダウンロードしてきてアプリをインストールすることが可能</strong>なため、該当する apk ファイルがある場合は一応そのリンクを掲載しています。もちろん自己責任でお願いします。</p> <p>というわけでこの定規アプリの apk は<a href="
+        },
+        {
+          "id": 786,
+          "postType": "post",
+          "slug": "music-analysis-entropy",
+          "title": "移動エントロピーで「音楽や曲が似ている感覚」を数値化できるかもしれない",
+          "snippet": "<p>もっと違う趣旨の研究が必要なんでしょうね…。</p> </div> <p>で実は、今回の件も僕の主観が主軸になって話が進むから、ちょっと体をなしていない部分も多いんだけど、その辺については最後にまた書くことにする。</p> <div class=\"box-common box-alert\"> <p>別にこの思い付きがすごく成功してて意味があるもの！だとかは全く思っていなくて（むしろ結果の有意さも怪しいレベル）、ただ「ものすごく無駄なことに時間を費やしたこと自体を無駄にしたくないからせめて書き残しておこう」くらいに思っているだけなので、最後まで読んでから怒らないでください。</p> </div> <h2>つかうもの</h2> <p>数値化には、<strong>移動エントロピー</strong>というものを使う。たぶん"
+        }
+      ]
+    },
+    {
+      "id": "box_rewrite",
+      "group": "独自ボックス",
+      "label": "追記/更新ボックス",
+      "detector": "`box-rewrite` / `rewrite-date`",
+      "note": "追記日時付きの更新情報。",
+      "occurrences": 208,
+      "contentCount": 104,
+      "examples": [
+        {
+          "id": 36,
+          "postType": "post",
+          "slug": "shiren2-saihate",
+          "title": "【シレン2 徹底攻略！】最果てへの道を必ずクリアできる方法まとめ",
+          "snippet": "<div class=\"box-common box-rewrite\"> <p><span class=\"rewrite-date\">追記：</span>皆様からのクリア報告をたくさん頂けて、いつも嬉しく思いながら拝見しています。ありがとうございます！<br /> 一度クリアした方ももう一度潜ってみてください！また違う楽しさがありますよ。<br /> （さらに物足りなくなってきた方はタイムアタックをやってみましょう…笑）</p> </div> <p>シレン２を持ってるけど最果てだけはクリアできない…<br /> たくさん遊んだけどここだけは放っておいた…</p> <p>そんなあなたにお届けするこのページ。<br /> <strong>「これを読んだら間違いなくクリアできるようになります！」</strong><span style=\"font-size: 80%;\"><span style=\"font-size: 80%;\">きっと</span></span></p>"
+        },
+        {
+          "id": 105,
+          "postType": "post",
+          "slug": "adblockplus-whitefilter",
+          "title": "「Adblock Plus」でホワイトリスト登録",
+          "snippet": "いといけない」という機会があって、 ホワイトフィルタなんかすぐ見つかるだろと思って探すも…<br /> いくら探しても見あたらない。</p> <p>しばしの間いじくりまわしアホみたいな簡単さで解決できましたので 一応備忘録として。</p> <div class=\"box-common box-rewrite\"><p><span class=\"rewrite-date\">追記 (2019/11/23) ：</span>現在はこんなことしなくても分かりやすく手軽に設定できるようになりました。</p> [caption id=\"attachment_9684\" align=\"aligncenter\" width=\"1171\"]<img class=\"wp-image-9684 size-large\" src=\"https://mirumi.media/adblock-plus-white-filter-1999x1077.png\" alt=\"adblock-plus-white-filter\" width=\"1171\" height=\"631\" /> ※Chromeのみで確認。<del>Firefoxなんて今はもう使ってる人ほぼいないだろうから確認しなくても問題はない</del>[/caption]</div> <ol> <li>まず、Chrome/Firefoxのメニュー項目から「アドオン」をクリックし、 開かれたページから「Adblock Plus」の「設定」を選択。さらに「フィルタ設定」を開きましょう。</li> <li>いじるのは「自作フィルタ」の右側になります（左側はフィルタをグループとしてまとめておける機能です）。 右側の上部右端に、「フィルタ追加」の項目があると思いますので、そこをクリック。</li> <li>テキスト編集"
+        },
+        {
+          "id": 110,
+          "postType": "post",
+          "slug": "albumartwork-puttogether",
+          "title": "同じアルバムのはずなのにバラバラに分かれてしまったり表示されない問題",
+          "snippet": "げればいい。</p> <p>肝心のアルバムアーティストタグの内容は、実際には再生画面とかで普段目にすることは少ないと思うので共通してればなんでもいいと思いますが、私は一般的な「Various Artist」という表記にしています。</p> <div class=\"box-common box-rewrite\"><p><span class=\"rewrite-date\">追記 (2018/1/7) ：</span>どうやら音楽管理ソフトによってはデータ自体は空白（なし）でもチェックを入れて編集したことにすれば同一扱いにできる模様。</p></div> <p>これも一括編集をお忘れなく。</p> <h2>それでも解決しない場合</h2> <p>だいたいこういう問題って、今まで書いたような普通の対処法で解決しないよね。だからこれも含めて僕はいつも全部やってます。全部やっても3秒くらいだしね。</p> <p>iTunesなり管理ソフトの「曲のプロパティ」へ行くと「詳細」タブの下の方に「コンピレーション」という項目がある。これにチェックを入れる。<strong>まとめたいもの全てに一括で<"
+        },
+        {
+          "id": 186,
+          "postType": "post",
+          "slug": "soundhorizon-recommend",
+          "title": "サンホラを初心者におすすめするのに一番向いている曲はこれだ！",
+          "snippet": ">一応申し上げておきますが、普段からの好みとかでは選んでません。あくまでも記事の方向に則って客観的に選んだつもりです。この記事のサムネイルがRomanだったからRomanから選ぶと思いました？（そっちは特に意味は考えてなかった）</p> <div class=\"box-common box-rewrite\"><p><span class=\"rewrite-date\">追記 (2019/5/31) ：</span>むしろこの記事を書いて変に意識してしまったせいで、それ以降「死せる者達の物語」を異様に好きになってしまいましたｗ</p><p>でもこれほんと、いい曲だと思います。Revoの良さが色んな方向に、色んなところでにじみ出ていると思う。</p> </div> <h3 style=\"text-align: left;\">曲はいいとして、勧める方法は？</h3> <p>実はまだ終わらない。</p> <p>まあ速い話映像も見せようというだけなんだけど、ちょっと＋αある。</p> <p>この曲はストコンの映像の中でも完成度1、2を争うと思っている。使う映像は文句ないというわけです。</p> <p>でですね、この曲の映像がニコニコにあるんですが、これがコメントの雰囲気含めてかなり初めて見る"
+        },
+        {
+          "id": 296,
+          "postType": "post",
+          "slug": "ibitunarushinen-sononahamaou-mp3",
+          "title": "「歪なる思念 其の名は魔王」の耳コピぴこぴこアレンジmp3配布ページ",
+          "snippet": "<div class=\"box-common box-rewrite\"> <p><span class=\"rewrite-date\">追記 (2020/8/29) ：</span>以前はYouTubeで公開していたんですが、パクられまくったので公開をやめてブログでの配布だけにしました。現在YouTubeにある全ての類似動画は盗作です。このページで配符しているmp3は動画のものと微妙に異なるのでちゃんと聴いていただければ証明にもなるはずです。</p> </div> <p>「歪なる思念 其の名は魔王」のぴこぴこアレンジのmp3配布ページです。耳コピは地獄でした。</p> <p>ちょっと良いサンプリングしたのでわりかし音質良いと思います。チップチューン音源ならではのうるささというか耳につく感じはあるので、音量はお気をつけください。</p> <p style=\"text-align: center;\"><span class=\"btn-wrap btn-wrap-brown btn-wrap-m"
+        }
+      ]
+    },
+    {
+      "id": "waku_common",
+      "group": "独自ボックス",
+      "label": "枠囲みボックス",
+      "detector": "`waku-common`",
+      "note": "本文を枠で囲む強調ブロック。",
+      "occurrences": 234,
+      "contentCount": 96,
+      "examples": [
+        {
+          "id": 270,
+          "postType": "page",
+          "slug": "what-is-this-blog",
+          "title": "このブログについて：みるめもとは",
+          "snippet": "<p>方針やポリシー的なものを一応載せておこうということで、なんか色々書いてみたもの。</p> <p>読んでもいいことはありません。たぶん。</p> <h2>なんのブログ？</h2> <div class=\"waku-common\"> <p>自分の体験や経験内容を第一に考え、たとえどんなに需要がなかろうがそれをオリジナリティと捉えただ書きまくる！！</p> </div> <p>というのを基本スタンスにしています。</p> <p>いろんな記事で書いていることなのですが、僕はブログというものを「人生の資産化」であると考えていて、つまりは<strong>自分が生きてきた経験まるまるをコンテンツにできたらめっちゃユニークじゃない？</strong>という意図で運営を"
+        },
+        {
+          "id": 1309,
+          "postType": "post",
+          "slug": "car-navigation-choice",
+          "title": "社外品カーナビの選び方！目的を考えた選択をしよう",
+          "snippet": "r-navigation-systemjpg.jpg\" alt=\"choice-car-navigation-systemjpg\" width=\"1280\" height=\"474\" /></p> <p>今回僕が提案するのは、</p> <div class=\"waku-common\"> <p><strong>「新しいカーナビが必要になった最初のきっかけ」を大切に、その需要を満たせるような商品選択をしていく</strong></p> </div> <p>というもの。</p> <p>これの利点は、</p> <ul> <li>その人の潜在的なニーズからブレにくい</li> <li>「自分の目的から選んだ」という自覚があるので、自己納得感が強い（＝失敗したと思いにくい）</li> <li>単純に選びやす"
+        },
+        {
+          "id": 2141,
+          "postType": "post",
+          "slug": "carnavigation-connect",
+          "title": "【保存版】社外品カーナビを買うとき、他に必要なものとその調べ方まとめ",
+          "snippet": "は多々あり＆有名メーカー用に廉価版部品が存在するケースなども除く）ので、今回はナビ本体については度外視して進めます。</p> <h2>今自分の車についているナビについて知る</h2> <p>取り付けに必要なものを調べるために</p> <div class=\"waku-common\"> <p>「今のあなたの車になんらかのカーナビが付いている場合、それは純正品か社外品か」</p> </div> <p>を知る必要性が出てくることがあります。</p> <p>その調べ方は別記事にて解説しておりますので、自信がない方はまずこちら（↓）から読んでいただけると良いかと思います。</p> <p>[/carnavi-distinguish]</p> <p>カーナビの純正品（メーカーオプション/ディーラーオプション）、社外品"
+        },
+        {
+          "id": 3008,
+          "postType": "post",
+          "slug": "out-of-body",
+          "title": "【歴 8 年】体外離脱(幽体離脱) のやり方・コツ・概要を徹底的にまとめたよ",
+          "snippet": "719\" /></p> <p>まずは体外離脱の根本原理から。<br /> <strong>成功率に超影響するので「面倒くさい」と思って読み飛ばさないことをおすすめします。</strong></p> <p>まず理解するべきは</p> <div class=\"waku-common\"> <p>「身体は眠っているけど脳は起きている」</p> </div> <p>という状態。<br /> 今回の話の全てはここにあります。</p> <p>この状態だと何が起こるかというと、<strong>脳は「身体を動かしている」と思い込んでいるのに実際の身体は動いていない→脳はその異常を修正するために「動かした命令に対するフィードバック＝五感の感覚」</strong><strong>を勝手に作り出してしまう</strong>んで"
+        },
+        {
+          "id": 3256,
+          "postType": "post",
+          "slug": "visualization",
+          "title": "【ビジュアライゼーションの方法】鮮明な想像で夢を創り出そう",
+          "snippet": "p>この記事では、実際に練習してみながら一緒に進めるスタイルを基本にしつつ他の項目への足がかり等を絡めながら説明をしていきます。</p> <h2>Practice１：思考の目</h2> <p>さて、いきなり練習をしてみます。</p> <div class=\"waku-common\"> <p>あなたの職場（学校）での自席からの風景にはなにが見えますか？</p> </div> <p>この文章を読んだだけで、「想像しよう」と思ってもいないのにいつも見ている風景が「なんとなく」浮かんだはずです。</p> <p>しかし細かいディティールを隅々まではっきりと描けてはいないでしょう。普段置いてある大きいものなどは幾分はっきりしていても、ペンやノートなど日々場所が変わるようなものまではなかなか鮮明に想像できていないはずです"
+        }
+      ]
+    },
+    {
+      "id": "blank_box",
+      "group": "独自ボックス",
+      "label": "プレーンな引用/発言風ボックス",
+      "detector": "`blank-box`",
+      "note": "囲みだけの短文・発言風テキスト。",
+      "occurrences": 27,
+      "contentCount": 22,
+      "examples": [
+        {
+          "id": 186,
+          "postType": "post",
+          "slug": "soundhorizon-recommend",
+          "title": "サンホラを初心者におすすめするのに一番向いている曲はこれだ！",
+          "snippet": "またま覚えているのがそこなだけできっと良い曲も聴かせてくれていた（のだろう）</p> <div class=\"dot-line-brown\"> </div> <p>このときの僕の感想を見ていこう。</p> <p>ひとつめ。</p> <div class=\"blank-box\">「えーなんかそんなわけ分かんないハードメタルみたいなむちゃくちゃロックとかめんどくさそう」</div> <p>辛辣すぎて草</p> <p>ふたつめ。</p> <div class=\"blank-box\">「ストーリーあるっていったって、音楽ってそういうの求めて聞きたいわけじゃないし。っていうかミュージカル色強すぎて曲っぽいとこは？？？」</div> <p>これはある。つまり、<strong>あくまでも音楽を勧める<ruby>体<rt>てい</rt></ruby>でいくのなら強く推すのは物語性やストコンとかではない</strong"
+        },
+        {
+          "id": 786,
+          "postType": "post",
+          "slug": "music-analysis-entropy",
+          "title": "移動エントロピーで「音楽や曲が似ている感覚」を数値化できるかもしれない",
+          "snippet": "ープAの方は確かに似ている印象を受けたし、グループBの方は関連性を感じにくいと思った。後付け感がやばいけど、本当に思っているので勘弁してくださいｗ</p> <p>↓より言い訳がましくなってますが、一応曲を聴いたときの感想です。</p> <div class=\"blank-box\">Aの「交響曲第九番『歓喜の歌』より」と「交響曲第九番『新世界』より」は、どっちもメロディの進行が「1つの音を土台としてそこから離れるとすぐ基準の音へ戻ってくる」っていうスタイルがフレーズの始まりから終わりまで共通していました。音符情報の並びも近いものになっていたと思われる。<br /> Bの「きらきら星変奏曲 Var.Ⅱ 第2フレーズ」と「きらきら星変奏曲 Var.Ⅶ 第2フレーズ」は、どっちも16分音符が続くフレーズなんだけれど、前者は単体でメロディとして聞こえるような構成で作られたフレーズじゃなくて、後者のメロディ性の強いフレーズとはやっぱり似ているとは言えないなと感じた。</div> <p>最後に、グループBの最小値であり今回の実験結果の中でも最も小さい値（0.007254）であった「朝鮮民謡の主題による変奏曲 主題」と「朝鮮民謡の主題による変奏曲 Var.Ⅱ」については、やはりほとんど同じものに聞こえるフレーズであったので、如実に数字に表れているなと思った。</p> <p>でもなんでここだけこうなったかっていうと、これはこのメロディ単体で聴いたときのことであって、<strong>実験に使用したメロディ以外、つ"
+        },
+        {
+          "id": 992,
+          "postType": "post",
+          "slug": "memory-anki",
+          "title": "効率よく丸暗記する方法 - 物の覚え方とコツを知れば記憶力は必要ない",
+          "snippet": "だければなと思います。</p> <p>つまり、この「重要度分け」のメリットとして<strong>重要度を考える上で暗記していたことの「理解」に繋がる、つまり「知る/覚える」へ近づける</strong>ということが挙げられるんです。</p> <div class=\"blank-box bb-red\">頭に取り入れるときは効率よく暗記する → 取り入れたあと頭を整理するのと同時に「知る/覚える」へ持っていく</div> <p>基本はこれの繰り返しです。そうすることでインプットの全体量は効率の良い暗記方法で増量しつつ、なおかつその一部を「知る/覚える」に変えられるからです。</p> <p>以上がここでのキーです。</p> <h3>２．情報のジャンル分けを行う</h3> <p><img class=\"aligncenter size-full wp-image-6379\" src=\"https://mirumi.media/file-filing.jpg"
+        },
+        {
+          "id": 2141,
+          "postType": "post",
+          "slug": "carnavigation-connect",
+          "title": "【保存版】社外品カーナビを買うとき、他に必要なものとその調べ方まとめ",
+          "snippet": "ているのは<strong>「電源ケーブル」と呼ばれるもののみ</strong>。</p> <p>またこの名前のせいでさらにややこしいんだけど、こいつは素直にカーナビに挿しておきましょう。</p> <p>いいですか？とりあえず</p> <div class=\"blank-box bb-red\"><strong>電源ケーブルの片側は、カーナビにそのままカプラー（※）で挿入する</strong></div> <p>というところを抑えましょう。反対側のことは今は考えないで大丈夫です。</p> <div class=\"box-common box-info\"> <p>※カプラーって、線がいっぱいまとまっているのをコネクタ1つで接続できるようにしているやつのこと。</p> [caption id=\"attachment_2149\" align=\"aligncenter\" width=\"363\"]<img class=\" wp-ima"
+        },
+        {
+          "id": 2243,
+          "postType": "post",
+          "slug": "mercari-sell",
+          "title": "メルカリで効率よく売る方法まとめ。コツは「親切丁寧に、でもズル賢く」",
+          "snippet": "ass=\"micro-bottom micro-center\">「合計金額が一緒になるように安くするから着払いに…」とか複雑なことをやると、頭を使ってくれない購入者は「着払い」の表記を見ただけで逃げてしまうのでやめましょう。</div> <div class=\"blank-box bb-red\">「らくらくメルカリ便」は<strong>サイズで値段が決まる</strong>ので重い物を出品する。<span class=\"color-red\">小さく梱包を意識。</span><br /> 「定形外郵便」は<strong>重さで値段が決まる</strong>ので大きいものを出品する。<span class=\"color-red\">余計な梱包資材で重さが増えないように意識。</span></div> <p>いずれも発送地域に関わらず配送料は固定です。</p> <h3>２．売却単価を上げる</h3> <p>こちらは「どうやって高い価格で売り抜けるか」を考えるところです。</p> <h4>値段設定はわりと強気で行っていい</h4> <p>僕は意外と初っ端から高い価格設定をしています。<br /> というのも、<strong><span class=\"color-red\">あとで下げることはできても上げることは基本的にタブー"
+        }
+      ]
+    },
+    {
+      "id": "milmemo_box",
+      "group": "独自ボックス",
+      "label": "みるめもぼっくす生成ボックス",
+      "detector": "`mbo` / `mte` / `mti`",
+      "note": "専用 Web アプリで生成したタイトル付きボックス。",
+      "occurrences": 17,
+      "contentCount": 1,
+      "examples": [
+        {
+          "id": 12407,
+          "postType": "post",
+          "slug": "milmemo-box-usage",
+          "title": "【ブログ用Webアプリ】好きなデザイン/アイコン/色を選べるタイトルボックス「みるめもぼっくす」",
+          "snippet": "trong></li> </ul> </div> <p>などの方！！<br /> かなり初心者さんを意識したアプリケーションにしてみましたので、ぜひご利用ください。</p> <p>この記事で使い方を丁寧にご紹介します。</p> <div class=\"mbo mbo-5\" style=\"margin: 2em 1%;\"> <div class=\"mte\" style=\"padding: 20px; color: #333; background: #f2fdff; border: solid 3px rgba(0,0,0,0);\"> <div class=\"mti\" style=\"position: relative; margin: 0 0 .6em 1em; color: #81b6f2; font-size: 1.15em; font-wei"
+        }
+      ]
+    },
+    {
+      "id": "speech_balloon",
+      "group": "独自ボックス",
+      "label": "吹き出し",
+      "detector": "`speech-wrap`",
+      "note": "アイコン・名前・発言本文を持つ会話風ブロック。",
+      "occurrences": 472,
+      "contentCount": 146,
+      "examples": [
+        {
+          "id": 270,
+          "postType": "page",
+          "slug": "what-is-this-blog",
+          "title": "このブログについて：みるめもとは",
+          "snippet": "当然のものでした。</p> <p>発信者が見えない情報はもはや価値を失いつつあるということですね。というか「誰でも調べられるもの」は情報ではないとさえ言えるのかもしれないです（これはまあもともとそうだと僕は思っていたけど…）。</p> <div class=\"speech-wrap sb-id-1 sbs-stn sbp-l sbis-cb cf\"> <div class=\"speech-person\"> <figure class=\"speech-icon\"><img class=\"speech-icon-image\" src=\"https://mirumi.media/mirumi.png\" alt=\"みるみ\" /></figure> <div class=\"speech-name\">みるみ</div> </div> <div class=\"speech-balloon\"> <p>ただ、今やその SNS すらも業者やお金稼ぎ目的の人だらけになってきてしまっているので、本当にリアルな発信を見つけるのには相当高度なネットリテラシーを要求される時代になっちゃってますね。</p> </div> </div> <p>というわけで、最初の話である「ユニークな～～～」のところに繋がるという感じです。</p> <p>誰でも書ける記事を自分のブログで書い"
+        },
+        {
+          "id": 689,
+          "postType": "post",
+          "slug": "android-app",
+          "title": "誰も知らない超便利 Android アプリおすすめ 40 選",
+          "snippet": "></li> </ol> <p>iOS 版もあるアプリはリンクを掲載しています<span style=\"font-size: 0.8em;\">（全体の 1/4 くらいは iOS/Android 両対応アプリ</span>）。</p> <div class=\"speech-wrap sb-id-1 sbs-stn sbp-l sbis-cb cf\"> <div class=\"speech-person\"> <figure class=\"speech-icon\"><img src=\"https://mirumi.media/mirumi.png\" alt=\"みるみ\" class=\"speech-icon-image\" /></figure> <div class=\"speech-name\">みるみ</div> </div> <div class=\"speech-balloon\"> <p>本記事を PC でご覧の場合、Google Play のリンクから自分の Android に遠隔インストールすることもできますよ～</p> </div> </div> <p>ではさっそく！<br /> 順番は適当、死ぬほど長いです。</p> <h2>１．日常生活で便利に使える系</h2> <p>まずは普段使い系のアプリから。ここは比較的有名なものも混ざって"
+        },
+        {
+          "id": 861,
+          "postType": "post",
+          "slug": "game-ranking",
+          "title": "SFC/N64/GC/Wii(U)/Switch/PS1~4 などゲームソフト個人的おすすめランキング50選！",
+          "snippet": "タイトル画面を見ただけで「これは絶対に神ゲーに違いない」と確信したからプレイを決めました。その直後それが下村さん作曲であることを知り十分に納得し、ますますやりたくなっていきました。僕の心を掴んだタイトル画面No.1のゲームです。</p> <div class=\"speech-wrap sb-id-1 sbs-stn sbp-l sbis-cb cf\"> <div class=\"speech-person\"> <figure class=\"speech-icon\"><img class=\"speech-icon-image\" src=\"https://mirumi.media/mirumi.png\" alt=\"みるみ\" /></figure> <div class=\"speech-name\">みるみ</div> </div> <div class=\"speech-balloon\"> <p>ちなみに他に思いつくのはキングダムハーツとかなんだけど、これも下村さんっていう…。</p> </div> </div> <p>このゲームについては話し出すとキリがないので音楽の話だけ。</p> <p>ゼノブレイドのサントラの豪華さはハンパではないです。複数人の作曲者を起用するっていう珍しいタイプで、参加した面々は本当に素晴らしい音楽を提供してくださいました。こ"
+        },
+        {
+          "id": 1458,
+          "postType": "post",
+          "slug": "good-goods",
+          "title": "高いけど本当に買ってよかったもの総まとめ 40 選",
+          "snippet": "ze=\"l\"]</p> <p>料理・掃除は大好き、洗濯もまあいいが<strong>洗濯物を干す作業だけが永遠に好きになれない</strong>のです。なぜこんな技術進化がめざましい現代でこんなアナログなことをせにゃならんのだ。</p> <div class=\"speech-wrap sb-id-1 sbs-stn sbp-l sbis-cb cf\"> <div class=\"speech-person\"> <figure class=\"speech-icon\"><img class=\"speech-icon-image\" src=\"https://mirumi.media/mirumi.png\" alt=\"みるみ\" /></figure> <div class=\"speech-name\">みるみ</div> </div> <div class=\"speech-balloon\"> <p>もちろんだけど、乾燥機があるなら話は別かと。住宅の制約や経済的な事情がない限りは僕もそうすべきだと思っていて、次こそは全自動のスゴイやつを買ってやるんだ…！</p> </div> </div> <div class=\"box-common box-rewrite\"> <p><span class=\"rewrite-date\">追記 (2022/12/18) ："
+        },
+        {
+          "id": 1765,
+          "postType": "post",
+          "slug": "windows10-goodpoint",
+          "title": "【Windows10のメリット】Windows10にしてみて良かった点を挙げまくる",
+          "snippet": "<p>職場で強制的にWindows10へアップグレードされたりした方へ届けたいこの記事。</p> <p>不本意ながら泣く泣く使わざるを得ない状況になっているたくさんの人！こいつは実はそんなに悪いやつじゃないんですよ！</p> <div class=\"speech-wrap sb-id-1 sbs-stn sbp-l sbis-cb cf\"> <div class=\"speech-person\"> <figure class=\"speech-icon\"><img src=\"https://mirumi.media/mirumi.png\" alt=\"みるみ\" class=\"speech-icon-image\" /></figure> <div class=\"speech-name\">みるみ</div> </div> <div class=\"speech-balloon\"> <p>一応言っておくけどWindows自体はクソ。</p> </div> </div> <h2>なぜ嫌なイメージしかないのか</h2> <p>先にここを解決しておこう。</p> <h3>勝手なアップグレード</h3> <p>まあこれでしょう。</p> <p>望んでもいないものが突然訪れたら誰だって嫌になる。PCに詳しいわけでもない多くの人は、突然「このPCは勝"
+        }
+      ]
+    },
+    {
+      "id": "micro_caption",
+      "group": "独自ボックス",
+      "label": "小さめ補足キャプション",
+      "detector": "`micro-bottom` / `micro-center`",
+      "note": "画像やカード直下の小さな補足文。",
+      "occurrences": 132,
+      "contentCount": 28,
+      "examples": [
+        {
+          "id": 689,
+          "postType": "post",
+          "slug": "android-app",
+          "title": "誰も知らない超便利 Android アプリおすすめ 40 選",
+          "snippet": "ligncenter wp-image-6006\" src=\"https://mirumi.media/Smart-Alarm.jpg\" alt=\"Smart-Alarm\" width=\"316\" height=\"598\" /></p> <div class=\"micro-bottom micro-center\">複数のアラームを左に並ぶボタンのタップ 1 回で ON/OFF できるのがかなり便利。ちなみに一番上の「金縛り」ってやつがなんのことなのか気になる人は <a href=\"/out-of-body\">体外離脱についての記事</a> をどうぞ。</div> <p>特に</p> <ul> <li>ON/OFF がワンタッチで出来る</li> <li>「次回のアラームをスキップ」</li> </ul> <p>が気に入っています。実生活上で毎日使うことをちゃんと想定されている感じがする！</p> <p>音無し・バイブなしとかを自由に設定できるからリマインダーがわりにも使えるし、イヤホンを付けているときの動作なども個別に設定できて素晴らしい。でも<strong><span cl"
+        },
+        {
+          "id": 1458,
+          "postType": "post",
+          "slug": "good-goods",
+          "title": "高いけど本当に買ってよかったもの総まとめ 40 選",
+          "snippet": "ps://mirumi.in/wp-content/uploads/apple-healthcare-app.png\" alt=\"apple-healthcare-app\" width=\"357\" height=\"644\" /></p> <div class=\"micro-bottom micro-center\">メインのデータはあまり見せたいものではないのであまり面白くないスクショになってしまいましたが、こんな感じ。ハードウェアが変わらなくても取れるようになるデータがどんどん増えたり面白い可視化が増えたりして、普通に楽しいです。</div> <p>あと、僕が買う前に一番気にしていた「いつもつけてたら PC 作業するときとかあり得ないくらい邪魔でしょ！」ってやつ、マジで杞憂でした。どの公式バンドもたいてい下側<span style=\"font-size: 0.8em;\">（リスカする側といえばいいかなｗ）</span>が分厚くならないようにうまく設計されていて、たとえばノート PC の上に手を乗せてキーボードを使うようなシーンでも問題は起きにくいです。バンドが二重に重なら"
+        },
+        {
+          "id": 2243,
+          "postType": "post",
+          "slug": "mercari-sell",
+          "title": "メルカリで効率よく売る方法まとめ。コツは「親切丁寧に、でもズル賢く」",
+          "snippet": "ligncenter\" src=\"https://mirumi.media/mercari-Sales-up-1.jpg\" alt=\"mercari-Sales-up-1\" width=\"353\" height=\"663\" /></p> <div class=\"micro-bottom micro-center\">画像の掲載枚数は一瞬で分かってしまうし、出品を開いた人はまず画像を横にスワイプするので写真が1枚しかないと「なんだよこれやめよ」ってなりがちです。</div> <p>表（おもて）だけ分かれば十分なパッケージ類などでも、裏、中身、詳細記入欄のアップなど必ず４枚撮る。めんどくさいけど、それはつまり購入者側からしたら「ひとつひとつの出品を大切にしているイメージ」となります。</p> <p>転売屋が写真１枚とタイトルだけで量産しているのの逆をやろうというわけです。</p> <p>また、１枚目は本体のアップ写真にして、２枚目以降に付属品等全体の写真を撮るのはかなりおすすめ。写真いっぱいに付属品が"
+        },
+        {
+          "id": 2323,
+          "postType": "post",
+          "slug": "amazon-shopping-success",
+          "title": "【保存版】Amazonなどネットショッピングで失敗しない５つの方法",
+          "snippet": "\"https://mirumi.media/amazon-review-star-percent.png\" alt=\"amazon-review-star-percent\" width=\"204\" height=\"199\" /></p> <div class=\"micro-bottom micro-center\">「レビュー点数の分布率」とはこれのこと。実はそんなにパターン数は多くないんです。</div> <p>いずれにしても、これまで話してきたように低評価の内容を確認するのは忘れずに。<strong>Amazonのレビューを見るときまず最初にすることは「星1つ」のリンクをクリックすること</strong>です。</p> [caption id=\"attachment_2364\" align=\"aligncenter\" width=\"218\"]<img class=\"sss wp-image-2364\" src=\"https:/"
+        },
+        {
+          "id": 4679,
+          "postType": "post",
+          "slug": "vivaldi",
+          "title": "ブラウザ論争を終結させる最強ブラウザ「Vivaldi」の 10 のメリット",
+          "snippet": "src=\"https://mirumi.media/Vivaldi-Android-Beta-app.jpg\" alt=\"Vivaldi-Android-Beta-app\" width=\"320\" height=\"620\" /></p> <div class=\"micro-bottom micro-center\">スマホのブラウザは物理的な配置などUI自体がそのまま使いやすさに直結するのでPCほど話は単純にいきません。ブラウザとしての性能はたしかに良いところはあると感じましたが、僕の候補には入りませんでした。</div> <p>少し使ってみましたが、たしかに Vivaldi の良いところはかなり継承できている様子。ただし僕の場合、スマホのブラウザアプリに関しては <a href=\"/android-browser\">Sleipnirという神ブラウザ</a> に敵うものはやはりないな、という感想でした。ここが置き換わる未来はそう来ないでしょう。</p> <p>[/android-browser]</p> <p>気になる人は Android 版もイン"
+        }
+      ]
+    },
+    {
+      "id": "review_voice",
+      "group": "独自ボックス",
+      "label": "レビュー引用カード",
+      "detector": "`voice_wrap`",
+      "note": "レビュー本文・星評価・引用元リンクを持つカード。",
+      "occurrences": 61,
+      "contentCount": 5,
+      "examples": [
+        {
+          "id": 9724,
+          "postType": "post",
+          "slug": "cyber-navi-review-score",
+          "title": "サイバーナビのAmazonレビューが微妙に点数低めなのはなぜ？販売者の視点で分析",
+          "snippet": "７インチ無印とかは減っていくかもしれませんね（でもホンダ車とかは基本７インチしかつかないのでそれもないか…）。</p> </div> <p>[/carnavi-size]</p> <h3>AVIC-CZ902（７インチ）</h3> <div class=\"voice_wrap cf\"> <figure><img class=\"voice_icon\" src=\"https://mirumi.media/review_man_star2.png\" /></figure> <div class=\"voice_main\"> <div class=\"voice_title\"><span class=\"voice_title_p\">期待したんだけど機能が…</span> <div class=\"ranking-item-rating\"><span class=\"rating-star\"> <span class=\"fas fa-star\" aria-hidden=\"true\"></span> <span class=\"fas fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"> </span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> </span></div> </div> <div class=\"voice_content\">音質も前より悪い気がします。<br /> 音質に期待して楽ナビでなくサイバーナビにしたんだけれど…。</div> <div class=\"voice_link\"><a href=\"https://www.amazon.co.jp/gp/customer-reviews/R3M92MS4NWY4KF/ref=cm_cr_dp_d_rvw_ttl?ie=UTF8&"
+        },
+        {
+          "id": 13232,
+          "postType": "post",
+          "slug": "technogel-pillow-reviews",
+          "title": "【テクノジェルピローの口コミまとめ】4種類の低評価を分析すれば購入の不安は消える",
+          "snippet": "設計ですが、人によっては「ほぼずっと横向きでしか寝ない」など就寝スタイルは千差万別になるので、ここはよく吟味すべきポイントと言えそうですよね。</p> <p>というわけでまずはこの「就寝スタイル」に関するレビューを見てみます。</p> <div class=\"voice_wrap cf\"> <figure><img class=\"voice_icon\" src=\"https://mirumi.media/review_woman_star1.png\" /></figure> <div class=\"voice_main\"> <div class=\"voice_title\"><span class=\"voice_title_p\">首と腰が痛くて痛くて</span> <div class=\"ranking-item-rating\"><span class=\"rating-star\"> <span class=\"fas fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> </span></div> </div> <div class=\"voice_content\"><strong>横向きに寝る</strong>僕がいけないのでしょうね。<br /> 毎朝起きると首と腰が痛くて整骨院に通っています。<br /> <strong>仰向けに寝る人には良いと思います。</strong></div> <div class=\"voice_link\"><a href=\"https://www.shopch.jp/ProdReview"
+        },
+        {
+          "id": 13318,
+          "postType": "post",
+          "slug": "sleep-merge-pillow-reviews",
+          "title": "【スリープマージピローの口コミまとめ】こんなに低評価がない枕は珍しい！",
+          "snippet": "/></p> <p>枕のクチコミで必ずあるのが「この枕は私には全く合いませんでした」というもの。というか枕の低評価は概ねこれに分類されます。当然ですが。</p> <p>とりあえず先にどんなレビューがあったか見てみましょう。</p> <div class=\"voice_wrap cf\"> <figure><img src=\"https://mirumi.media/review_man_star1.png\" class=\"voice_icon\" /></figure> <div class=\"voice_main\"> <div class=\"voice_title\"><span class=\"voice_title_p\"> （タイトルなし） </span> <div class=\"ranking-item-rating\"><span class=\"rating-star\"> <span class=\"fas fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> </span></div> </div> <div class=\"voice_content\">期待して買ったのに、<strong>私にはまったく合いませんでした…</strong> 値段が高いから良い枕とは限りませんね… 高額な枕だったので、かなりショックです！ お金をドブに捨ててしまいました…</div> <div class=\"voice_link\"><a href=\"https://review.rakuten.co.jp/item/1/20579"
+        },
+        {
+          "id": 13818,
+          "postType": "post",
+          "slug": "motton-reviews",
+          "title": "【高反発まくらモットンの口コミまとめ】高さ調節機能と高反発さが目的の人におすすめ",
+          "snippet": "すい枕ではあるけれど、良いポイントを見つけられない方が「自分には合わなかったかも」とレビューする傾向があるみたいです（否定はしてません、調節のラクさも含めて質だと思うので！）。</p> <p>まずは下記クチコミをご覧ください。</p> <div class=\"voice_wrap cf\"> <figure><img class=\"voice_icon\" src=\"https://mirumi.media/review_man_star1.png\" /></figure> <div class=\"voice_main\"> <div class=\"voice_title\"><span class=\"voice_title_p\">たすけて</span> <div class=\"ranking-item-rating\"><span class=\"rating-star\"> <span class=\"fas fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> </span></div> </div> <div class=\"voice_content\">なかなか私の肩に合わず、<strong>足したり引いたりやってみましたが</strong>肩コリが悪化具合も悪くなり使っていません。<br /> がまた調整に挑戦してみます、モットンを買ったことを後悔した</div> <div class=\"voice_link\"><a href=\"https://review.rakuten.co.jp/item/1/363"
+        },
+        {
+          "id": 14070,
+          "postType": "post",
+          "slug": "rokkakunou-makura-reviews",
+          "title": "【六角脳枕の口コミまとめ】難しい枕なのでネットの評価など事前調査をおすすめ",
+          "snippet": "六角脳枕は高価格帯の枕にも関わらず高さ調節ができない</strong>という点ではやや見劣りします。このこと自体を評価しているクチコミは少ないものの、原因の本質はやっぱりここにある気がします。</p> <p>レビューをどうぞ。</p> <div class=\"voice_wrap cf\"> <figure><img class=\"voice_icon\" src=\"https://mirumi.media/review_woman_star2.png\" /></figure> <div class=\"voice_main\"> <div class=\"voice_title\"><span class=\"voice_title_p\">自分に合わない</span> <div class=\"ranking-item-rating\"><span class=\"rating-star\"> <span class=\"fas fa-star\" aria-hidden=\"true\"></span> <span class=\"fas fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> </span></div> </div> <div class=\"voice_content\"><strong>高さが低くて</strong>横向きに寝る自分には合わないです。<br /> 肩こり首痛に悩まされて、いろいろためしてるのですがこちらでも合いませんでした。</div> <div class=\"voice_link\"><a href=\"https://shopping.yahoo.co.jp/review/item/list?store_id="
+        }
+      ]
+    },
+    {
+      "id": "rating_star",
+      "group": "独自ボックス",
+      "label": "星評価",
+      "detector": "`rating-star`",
+      "note": "レビュー引用カードやランキング内の星表示。",
+      "occurrences": 124,
+      "contentCount": 7,
+      "examples": [
+        {
+          "id": 9724,
+          "postType": "post",
+          "slug": "cyber-navi-review-score",
+          "title": "サイバーナビのAmazonレビューが微妙に点数低めなのはなぜ？販売者の視点で分析",
+          "snippet": "oice_main\"> <div class=\"voice_title\"><span class=\"voice_title_p\">期待したんだけど機能が…</span> <div class=\"ranking-item-rating\"><span class=\"rating-star\"> <span class=\"fas fa-star\" aria-hidden=\"true\"></span> <span class=\"fas fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"> </span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> </span"
+        },
+        {
+          "id": 12130,
+          "postType": "post",
+          "slug": "i-wanna-recommend",
+          "title": "死ぬほど遊んだアイワナ派生シリーズのおすすめ16選まとめ",
+          "snippet": "lign: center; height: 43px;\"><strong>難しさ</strong></td> <td style=\"width: 54.3677%; text-align: center; height: 43px;\"><span class=\"rating-star\"><span class=\"far fa-star\" aria-hidden=\"true\"></span><span class=\"far fa-star\" aria-hidden=\"true\"></span><span class=\"far fa-star\" aria-hidden=\"true\"></span><span class=\"far fa-star\" aria-hidden=\"true\"></span><span class=\"far fa-star\" aria-hidden=\"true\"></span></span></td>"
+        },
+        {
+          "id": 13232,
+          "postType": "post",
+          "slug": "technogel-pillow-reviews",
+          "title": "【テクノジェルピローの口コミまとめ】4種類の低評価を分析すれば購入の不安は消える",
+          "snippet": "\"voice_main\"> <div class=\"voice_title\"><span class=\"voice_title_p\">首と腰が痛くて痛くて</span> <div class=\"ranking-item-rating\"><span class=\"rating-star\"> <span class=\"fas fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> </span>"
+        },
+        {
+          "id": 13318,
+          "postType": "post",
+          "slug": "sleep-merge-pillow-reviews",
+          "title": "【スリープマージピローの口コミまとめ】こんなに低評価がない枕は珍しい！",
+          "snippet": "\"voice_main\"> <div class=\"voice_title\"><span class=\"voice_title_p\"> （タイトルなし） </span> <div class=\"ranking-item-rating\"><span class=\"rating-star\"> <span class=\"fas fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> </span>"
+        },
+        {
+          "id": 13818,
+          "postType": "post",
+          "slug": "motton-reviews",
+          "title": "【高反発まくらモットンの口コミまとめ】高さ調節機能と高反発さが目的の人におすすめ",
+          "snippet": "class=\"voice_main\"> <div class=\"voice_title\"><span class=\"voice_title_p\">たすけて</span> <div class=\"ranking-item-rating\"><span class=\"rating-star\"> <span class=\"fas fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> <span class=\"far fa-star\" aria-hidden=\"true\"></span> </span>"
+        }
+      ]
+    },
+    {
+      "id": "toggle_block",
+      "group": "インタラクティブ・フォーム",
+      "label": "開閉/トグルブロック",
+      "detector": "`toggle-wrap` / `toggle_switch`",
+      "note": "チェックボックス + label で本文内に開閉要素や実動スイッチ風 UI を置いている。",
+      "occurrences": 5,
+      "contentCount": 5,
+      "examples": [
+        {
+          "id": 689,
+          "postType": "post",
+          "slug": "android-app",
+          "title": "誰も知らない超便利 Android アプリおすすめ 40 選",
+          "snippet": "Androidカスタマイズ系</h2> <p>紹介ついでに言っておきたいことがあるのでちょっと囲っておきます。<br /> <span style=\"font-size: 0.8em;\">（読まなくていいです）</span></p> <div class=\"toggle-wrap\"><input id=\"toggle-checkbox-20200328221749\" class=\"toggle-checkbox\" type=\"checkbox\" /><label class=\"toggle-button\" for=\"toggle-checkbox-20200328221749\">ひとりごと</label><span class=\"toggle-content\">こういう系のアプリはアテもなしに探すのがすごく大変なの"
+        },
+        {
+          "id": 16629,
+          "postType": "post",
+          "slug": "iphone-android-spec",
+          "title": "iPhoneとAndroidの本質的な違いを理解すればスペック論争のアホさが分かる",
+          "snippet": "<p>そしてこの「統一感」という概念は、Appleが個々のアプリに対して敷いている厳しい制限事項と裏返しでもあります。</p> <p>例えばある操作を行ったときにフィードバックとして鳴動する短いバイブレーションがありますよね。</p> <div class=\"toggle_switch\"><input type=\"checkbox\" name=\"xxx\" id=\"cb_toggle_switch\" checked=\"checked\" /> <label for=\"cb_toggle_switch\"></label></div> <p style=\"margin-top: 0.6em; font-size: 0.7em; text-align: center; line-height: 1.4;\">こういうスイッチをON"
+        },
+        {
+          "id": 17173,
+          "postType": "post",
+          "slug": "subscription-or-purchase",
+          "title": "サブスクか買い切りか。アンケート結果によってみんなと一緒に成長していく記事",
+          "snippet": "strong>2021/8/1追記：</strong>想定していた最低限の人数くらいにはお答えいただけたので、ギフト券のプレゼントはやめようと思います。アンケート自体は公開しておくのでいつでもご回答いただけます！</p> </div> <div class=\"toggle-wrap\"><input id=\"toggle-checkbox-20210301082540\" class=\"toggle-checkbox\" type=\"checkbox\" /><label class=\"toggle-button\" for=\"toggle-checkbox-20210301082540\">抽選結果履歴</label><span class=\"toggle-content\">2021年2月分：回答者<strong>31人</s"
+        },
+        {
+          "id": 17135,
+          "postType": "post",
+          "slug": "iphone-and-android",
+          "title": "iPhone と Android の比較まとめ：14 項目の比較で見る両者の世界観と需要",
+          "snippet": "うと離れないようになっている</strong>んですよね。</p> <p>「iPhone の世界観」。これを紐解くキーワードは \"<strong>統一感\"</strong> にあると思っています。</p> <p>例えばこれ。</p> <div class=\"toggle_switch\"><input type=\"checkbox\" name=\"xxx\" id=\"cb_toggle_switch\" checked=\"checked\" /> <label for=\"cb_toggle_switch\"></label></div> <p>iPhone 上で山ほど見かけるいつものスイッチですが、これを触ったときにフィードバックとしてのバイブが鳴りますよね。<span style=\"font-size: 0.8em;\">（これ"
+        },
+        {
+          "id": 17944,
+          "postType": "post",
+          "slug": "easy-to-save-image-as",
+          "title": "「名前を付けて画像を保存」とかを一瞬でできるChrome拡張機能を作った！！",
+          "snippet": "探しとかを頻繁にする方にはまあお役に立てるかも！と思います～<br /> Mac でも動作確認してます（<span class=\"keyboard-key\">option</span>キー混ぜると変なキー名表記になるけどね）。</p> <div class=\"toggle-wrap\"><input id=\"toggle-checkbox-20210422221935\" class=\"toggle-checkbox\" type=\"checkbox\" /><label class=\"toggle-button\" for=\"toggle-checkbox-20210422221935\">細かい仕様</label><span class=\"toggle-content\">・「名前を付けて画像を保存」はブラウザ側の「ダウンロー"
+        }
+      ]
+    },
+    {
+      "id": "contact_form",
+      "group": "インタラクティブ・フォーム",
+      "label": "問い合わせフォーム shortcode",
+      "detector": "`[contact-form-7 ...]`",
+      "note": "Contact Form 7。",
+      "occurrences": 1,
+      "contentCount": 1,
+      "examples": [
+        {
+          "id": 12,
+          "postType": "page",
+          "slug": "contact",
+          "title": "お問い合わせ",
+          "snippet": "iv class=\"box-common box-alert\" style=\"margin-bottom: 5em;\"> <p>※全てへの返信はお約束できませんが、必ず目は通していますのでご安心ください。</p> </div> <p>[contact-form-7 id=\"16\" title=\"Contact\"]</p>"
+        }
+      ]
+    },
+    {
+      "id": "search_form",
+      "group": "インタラクティブ・フォーム",
+      "label": "検索フォーム HTML",
+      "detector": "`<form class=\"search-box ...\">`",
+      "note": "全記事一覧固定ページ。",
+      "occurrences": 1,
+      "contentCount": 1,
+      "examples": [
+        {
+          "id": 17582,
+          "postType": "page",
+          "slug": "all-entries",
+          "title": "全記事一覧",
+          "snippet": "ain .search-box { margin: 2em 13.5% 4em; text-align: center; } h1 { margin-bottom:0; } </style> </p> <form class=\"search-box input-box\" method=\"get\" action=\"/\" autocomplete=\"off\"><input type=\"text\" placeholder=\"\" name=\"s\" class=\"search-edit\" aria-label=\"input\" value=\"\" /> <button type=\"submit\" class=\"search-submit\" aria-label=\"button\"><span class=\"fa fa-search\" aria-hidden=\"true\"></span></button></form> <!-- SITEMAP CONTENT REPLACE POINT -->"
+        }
+      ]
+    },
+    {
+      "id": "sitemap_placeholder",
+      "group": "インタラクティブ・フォーム",
+      "label": "サイトマップ差し込みコメント",
+      "detector": "`<!-- SITEMAP CONTENT REPLACE POINT -->`",
+      "note": "全記事一覧固定ページの置換ポイント。",
+      "occurrences": 1,
+      "contentCount": 1,
+      "examples": [
+        {
+          "id": 17582,
+          "postType": "page",
+          "slug": "all-entries",
+          "title": "全記事一覧",
+          "snippet": "ubmit\" class=\"search-submit\" aria-label=\"button\"><span class=\"fa fa-search\" aria-hidden=\"true\"></span></button></form> <!-- SITEMAP CONTENT REPLACE POINT -->"
+        }
+      ]
+    },
+    {
+      "id": "inline_style",
+      "group": "記事固有コード",
+      "label": "記事内 CSS",
+      "detector": "`<style>`",
+      "note": "記事固有の微調整 CSS。",
+      "occurrences": 17,
+      "contentCount": 17,
+      "examples": [
+        {
+          "id": 17582,
+          "postType": "page",
+          "slug": "all-entries",
+          "title": "全記事一覧",
+          "snippet": "<p> <style> main .search-box { margin: 2em 13.5% 4em; text-align: center; } h1 { margin-bottom:0; } </style> </p> <form class=\"search-box input-box\" method=\"get\" action=\"/\" autocomplete=\"off\"><input type=\"text\" placeholder=\"\" name=\"s\" class=\"search-edit\" aria-label=\"input\" value=\"\" /> <button type=\"submit\" class=\"search-subm"
+        },
+        {
+          "id": 5107,
+          "postType": "post",
+          "slug": "tasker-example",
+          "title": "Android 最強アプリ「Tasker」のユニークな使い方例 7 選！",
+          "snippet": "<p> <style> .toc-list li ul { display: none; } </style> </p> <p>僕がもし「Android を使っている理由は？」と訊かれたら「Tasker があるから」と即答するでしょう。</p> <p>Android のアイデンティティといえるくらいのカスタマイズ性を見事に体現したこの最強アプリを使いこなさないわけにはいかない！ということで、今回は僕がオリジナルで考えたユニークな自動化を紹介してみます。例によって、独自性が強すぎて全然参考にならない可能性アリ。</p> <p><stron"
+        },
+        {
+          "id": 6471,
+          "postType": "post",
+          "slug": "percussion-wind-orchestra",
+          "title": "吹奏楽でよく使われる打楽器を超主観的にひたすら紹介しまくってみる",
+          "snippet": "<p> <style> .toc-list > li > ul > li > ul { display: none; } </style> </p> <p>ちょっと思い立って、「主に吹奏楽で使われる打楽器をとにかく紹介してみる」っていうのが楽しそうなのでやってみます。アホみたいに長いので暇つぶしにでもどうぞ。</p> <p>吹奏楽ファンの人にも楽しんでいただけるように、その楽器が印象的な参考曲も収録アルバムとかと併せて紹介してみます。僕の趣味が多分に介入しているとは思うけど。</p> <p>分類は大きく３つにしてみた。</p> <ol class=\"num-ol"
+        },
+        {
+          "id": 11324,
+          "postType": "post",
+          "slug": "usb-complete-guide",
+          "title": "[保存版/図解あり] USB 完全ガイド (規格/端子, Type-C/Thunderbolt 3, 充電/USB PD)",
+          "snippet": "<p> <style> .sss { border-radius: 0 !important; } </style> </p> <p>この記事では、今まで僕が培ってきた総力を挙げて USB について解説をしています。</p> <div class=\"waku-common\"> <ul> <li>USB ケーブルやパソコン選びのときに調べてみたけど意味不明</li> <li>今まで何度調べても結局覚えることができず、毎度毎度同じことを調べてしまう</li> <li>そもそも USB って結局なんなの！？？！！？（怒）</li> <"
+        },
+        {
+          "id": 12407,
+          "postType": "post",
+          "slug": "milmemo-box-usage",
+          "title": "【ブログ用Webアプリ】好きなデザイン/アイコン/色を選べるタイトルボックス「みるめもぼっくす」",
+          "snippet": "<p> <style> .mbo p { margin: 0 0 0.7em; padding: 0; } .mbo ul, .mbo ol { margin: 0.75em 0; padding: 0 0.1em 0 1.5em; } .mbo p:last-child, .mbo ul:last-child, .mbo ol:last-child { margin: 0; } .mbo li { margin: 5px 0; padding: 0; } .mbo { margin: 2.3em 0; color: #666666; font-size: 0.95em; border: solid 2.7px #f1f1f1; border-radius: 11px; } .mte { padding: 0.7em 1.5em 0.6em; border-radius: 11px; } .mbo { border: none; border-radius: 0px; } .mte { border-radius: 0; } </style> </p> <p><script defer src=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js\" crossorigin=\"anonymous\"></script></p> <p><a href=\"/milmemo-box/\">みるめもぼっくす</a> というWebサービスをリリースしました。</p> <p><img src"
+        }
+      ]
+    },
+    {
+      "id": "dynamic_inline_shortcode",
+      "group": "記事固有コード",
+      "label": "動的インライン shortcode",
+      "detector": "`[age]`, `[today_date]`, `[today_year]`",
+      "note": "年数や現在日付などを本文内で差し込む。ブロックではなく inline 扱い。",
+      "occurrences": 8,
+      "contentCount": 8,
+      "examples": [
+        {
+          "id": 2,
+          "postType": "page",
+          "slug": "profile",
+          "title": "このブログを書いている人",
+          "snippet": "op; height: 131px;\">副業歴</td> <td style=\"width: 67.49%; height: 131px;\">・ブログ<span style=\"font-size: 0.8em;\">（無料ブログ時代含めたら[age birth=\"2011/6/1\" unit=\"年\"]/800記事くらいは書いたと思う）</span><br /> ・YouTube<span style=\"font-size: 0.8em;\">（一時期結構稼げてたけど今は敗戦中）</span><br /> ・ライター/寄稿<span style=\"font-size: 0.8em;\">（もうほぼやってない）</span><br /> ・エンジニアとしてフリー案件受注<span style=\"font-size: 0.8em;\">（"
+        },
+        {
+          "id": 1066,
+          "postType": "post",
+          "slug": "best-sneakers",
+          "title": "疲れにくくて歩きやすい！長持ちのとにかく軽いスニーカー「BROOKS HERITAGE VANGUARD」",
+          "snippet": "ll wp-image-1075\" title=\"購入履歴\" src=\"https://mirumi.media/afadafa.png\" alt=\"購入履歴\" width=\"1400\" height=\"206\" /></p> <p>↑今[age birth=\"2016/2/23\" unit=\"年\"]近く履いて、</p> <p><img class=\"wp-image-1288 size-full aligncenter\" title=\"実際に履いている靴\" src=\"https://mirumi.media/unnamed-1.jpg\" alt=\"実際に履いている靴\" width=\"379\" height=\"433\" /></p> <p>なんとこんなに良い状態！！</p> <p>しかもこれで最後に洗ったの結構前なんです。洗っ"
+        },
+        {
+          "id": 1309,
+          "postType": "post",
+          "slug": "car-navigation-choice",
+          "title": "社外品カーナビの選び方！目的を考えた選択をしよう",
+          "snippet": "、<strong>お子さんがいる場合はどうやらそうではない</strong>みたいですね。とにかく子どもが飽きないようにひたすらDVDを再生させたりする需要もあるみたいです。</p> <p><strong>Blue-rayを見られるナビは[today_date]現在パナソニックのナビだけ</strong>ですが、当然DVDは全てのメーカーの社外ナビで見られますので、ここもあまり気にする必要はありません。</p> <p>まあ画質の差などはないわけではないですが…。</p> <h4>今のナビがもっさりしすぎていて、もっとサクサク動くのがいい</h4> <p><img class=\"aligncenter size-full wp-image-7075\" src=\"https://mirumi"
+        },
+        {
+          "id": 2895,
+          "postType": "post",
+          "slug": "cats-goods",
+          "title": "ねこ用品のおすすめ10選を紹介！～男一人暮らしでの2匹飼い～",
+          "snippet": "1\" height=\"1\" style=\"border: none;\" gyo0mvktr=\"\" /><br /> 僕の環境は、</p> <ul> <li>男の一人暮らし</li> <li>ねこちゃんは2匹、オスとメス！どちらも[age birth=\"2017/5/17\"]です（あなたがこの記事を見ている時点でのリアルタイムの年齢になってるよ！）<br /> 我が家のにゃんこたちの紹介は<a href=\"/profile\">僕のプロフィール</a>をどうぞ</li> <li>無駄に広い賃貸！2階！</li> </ul> <p>って感じです。</p> <h2 id=\"title\" class=\"a-size-large a-spacing-none\"><span id=\"productTitle"
+        },
+        {
+          "id": 6062,
+          "postType": "post",
+          "slug": "cat-cost",
+          "title": "ねこを飼うのにお金はいくらかかる？実際に2匹飼っている僕が計算！",
+          "snippet": "n-book-tana\" width=\"1171\" height=\"658\" /></p> <p>同い年の男の子と女の子の2匹。<br /> 2人とも雑種です。ハチワレと三毛トラです。</p> <p>この記事をあなたが読んでいる時点で[age birth=\"2017/5/17\"]です。（ここの年齢は自動更新されます）</p> <p>体重は、</p> <p><img class=\"aligncenter wp-image-6072 size-large\" src=\"https://mirumi.media/my-cat-male-1999x1288.jpg\" alt=\"my-cat-male\" width=\"1171\" height=\"755\" /></p> <p>オスのこいつが3.8kgで、</p> <"
+        }
+      ]
+    },
+    {
+      "id": "gutenberg_comment",
+      "group": "除外確認",
+      "label": "Gutenberg ブロックコメント",
+      "detector": "`<!-- wp:* -->`",
+      "note": "ユーザー申告通り、実データでも検出なし。",
+      "occurrences": 0,
+      "contentCount": 0,
+      "examples": []
+    },
+    {
+      "id": "empty_content",
+      "group": "除外確認",
+      "label": "本文空",
+      "detector": "trim 後空文字",
+      "note": "固定ページ `new-entries` が該当。",
+      "occurrences": 1,
+      "contentCount": 1,
+      "examples": [
+        {
+          "id": 12748,
+          "postType": "page",
+          "slug": "new-entries",
+          "title": "最新記事",
+          "snippet": ""
+        }
+      ]
+    }
+  ]
+}
