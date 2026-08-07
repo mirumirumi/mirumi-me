@@ -49,7 +49,8 @@ switch (p.category) {
   case "game":
     contentBody.value = "1 歳でコントローラーを持つ。ここ数年はインディーズゲームにお熱。"
     break
-  case "computer-science":
+  case "tech":
+  case "investment":
     contentBody.value = "暗号資産業界で働いています。"
     break
   case "blog":
