@@ -23,16 +23,13 @@
           </template>
         </template>
       </template>
-      <div v-if="5 <= allComments.length" class="load_more" @click="loadMore()">
+      <div v-if="0 < remainingAllComments.length" class="load_more" @click="loadMore()">
         <PartsBaseButton
           v-if="loadMoreStatus !== 'completed'"
           :type="'text'"
           :isSubmitting="loadMoreStatus === 'loading'"
           :spinner-color="'var(--color-text)'"
-          >すべて読み込む ({{
-            remainingAllComments.flat(Infinity).length
-          }}
-          件)</PartsBaseButton
+          >すべて読み込む ({{ remainingAllComments.length }} 件)</PartsBaseButton
         >
       </div>
       <div v-show="loadMoreStatus === 'completed'">
