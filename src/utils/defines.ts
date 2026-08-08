@@ -1,7 +1,7 @@
 export interface PageMeta {
   title: string
-  description: string
-  keywords: string
+  description?: string
+  keywords?: string
   thumbnail?: string
   url: string
   createdAt?: string
