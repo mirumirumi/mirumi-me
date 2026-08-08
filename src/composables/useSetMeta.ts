@@ -22,18 +22,22 @@ export default (p: PageMeta) => {
       else return `${title} | みるみのブログ`
     },
     meta: [
-      { name: "description", content: p.description },
-      { name: "keywords", content: p.keywords },
+      ...(p.description
+        ? [
+            { name: "description", content: p.description },
+            { property: "og:description", content: p.description },
+            { name: "twitter:description", content: p.description },
+          ]
+        : []),
+      ...(p.keywords ? [{ name: "keywords", content: p.keywords }] : []),
       { name: "thumbnail", content: p.thumbnail },
       { property: "article:published_time", content: p.createdAt },
       { property: "article:modified_time", content: p.updatedAt },
-      { property: "og:description", content: p.description },
       { property: "og:title", content: p.title },
       { property: "og:url", content: urlWithTrailingSlash },
       { property: "og:image", content: p.thumbnail },
       { name: "twitter:title", content: p.title },
       { name: "twitter:url", content: urlWithTrailingSlash },
-      { name: "twitter:description", content: p.description },
       { name: "twitter:image", content: p.thumbnail },
     ],
     link: [{ rel: "canonical", href: urlWithTrailingSlash }],

@@ -21,43 +21,41 @@ export default (p: PageMeta) => {
 
   useSetMeta(p)
 
-  const schema = `
-{
-  "@context": "https://schema.org",
-  "@type": "Article",
-  "mainEntityOfPage": {
-    "@type": "WebPage",
-    "@id": "${p.url}"
-  },
-  "headline": "${p.title.replaceAll('"', "")}",
-  "image": {
-    "@type": "ImageObject",
-    "url": "${p.thumbnail ?? "https://mirumi.media/main-visual.png"}",
-    "width": 1200,
-    "height": 630
-  },
-  "datePublished": "${p.createdAt}",
-  "dateModified": "${p.updatedAt}",
-  "author": {
-    "@type": "Person",
-    "name": "みるめも",
-    "url": "${appConfig.siteFullPath}"
-  },
-  "publisher": {
-    "@type": "Organization",
-    "name": "みるめも",
-    "logo": {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": p.url,
+    },
+    headline: p.title.replaceAll('"', ""),
+    image: {
       "@type": "ImageObject",
-      "url": "https://mirumi.media/main-visual.png",
-      "width": 114,
-      "height": 60
-    }
-  },
-  "description": "${p.description.replaceAll('"', "")}"
-}
-`
+      url: p.thumbnail ?? "https://mirumi.media/main-visual.png",
+      width: 1200,
+      height: 630,
+    },
+    datePublished: p.createdAt,
+    dateModified: p.updatedAt,
+    author: {
+      "@type": "Person",
+      name: "みるめも",
+      url: appConfig.siteFullPath,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "みるめも",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://mirumi.media/main-visual.png",
+        width: 114,
+        height: 60,
+      },
+    },
+    description: p.description,
+  }
 
   useHead({
-    script: [{ type: "application/ld+json", children: schema }],
+    script: [{ type: "application/ld+json", children: JSON.stringify(schema) }],
   })
 }

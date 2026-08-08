@@ -2,7 +2,6 @@
   <div class="category_view indexes_single_column">
     <h1 class="title">
       <span v-html="category.categoryName"></span>
-      {{ content.meta_keywords.includes("#taglike") ? "の記事" : "" }}
     </h1>
     <ModulesPaginationBase
       :currentPage="page"
@@ -41,7 +40,7 @@ const { data: resCategory } = await useFetch(
   `/mirumi/category_id_with_category_slug/${route.params.categoryName}`,
   {
     baseURL: appConfig.baseURL,
-  }
+  },
 )
 
 // Hack for JSON parse error (unexpected token)
@@ -64,29 +63,15 @@ const { data: postSummaries } = await useFetch(
   {
     baseURL: appConfig.baseURL,
     parseResponse: JSON.parse,
-  }
+  },
 )
 posts.value = postSummaries.value as PageSummary[]
-
-/**
- * Prepare category page content body
- */
-const { data: resCategoryContent } = await useFetch(
-  `/mirumi/category_content/${category.categoryId}`,
-  {
-    baseURL: appConfig.baseURL,
-    parseResponse: JSON.parse,
-  }
-)
-const content = resCategoryContent.value as Record<string, string>
 
 /**
  * Utils
  */
 usePageInfo({
   title: category.categoryName,
-  description: content.meta_description,
-  keywords: content.meta_keywords,
   url: appConfig.siteFullPath + route.fullPath,
 })
 </script>
