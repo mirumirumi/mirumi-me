@@ -4,6 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "nuxt dev --host",
+    "biome": "biome check --write --diagnostic-level=error",
+    "biome:ci": "biome ci --diagnostic-level=error",
+    "tsc": "tsc --noEmit -p tsconfig.json",
+    "test": "bun run --cwd app test && bun run --cwd server test",
     "generate": "nuxt generate"
   },
   "dependencies": {
@@ -16,7 +20,7 @@
     "vue-toastification": "^2.0.0-rc.5"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "2.4.12",
     "@types/uuid": "^9.0.8",
     "@typescript-eslint/eslint-plugin": "^7.9.0",
     "@typescript-eslint/parser": "^7.9.0",
