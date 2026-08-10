@@ -3,34 +3,49 @@
     <header itemscope itemtype="https://schema.org/WPHeader">
       <div class="site_logo" itemscope itemtype="https://schema.org/WebSite">
         <NuxtLink :to="{ path: '/', force: true, replace: true }" itemprop="url">
-          <img src="@/assets/svgs/site-icon.svg" alt="site-icon" aria-label="みるめも" width="48" height="48" itemprop="name about">
+          <img
+            src="@/assets/svgs/site-icon.svg"
+            alt="site-icon"
+            aria-label="みるめも"
+            width="48"
+            height="48"
+            itemprop="name about"
+          />
         </NuxtLink>
       </div>
-      <nav role="navigation" aria-label="グローバルメニュー" itemscope itemtype="https://schema.org/SiteNavigationElement">
+      <nav
+        role="navigation"
+        aria-label="グローバルメニュー"
+        itemscope
+        itemtype="https://schema.org/SiteNavigationElement"
+      >
         <ul class="menu">
           <li>
-            <NuxtLink to="/entries/">
-              記事一覧
-            </NuxtLink>
+            <NuxtLink to="/entries/">記事一覧</NuxtLink>
           </li>
           <li>
-            <div class="category_menu_wrap" @mouseenter="(isHoveredCategory = true)" @mouseleave="(isHoveredCategory = false)" @click="onClick">
-              <span aria-label="カテゴリーメニュー">
-                かてごり
-              </span>
-              <PartsSvgIcon :icon="'angle_down'" :color="'var(--color-gray)'" :hoverOn="isHoveredCategory" :hoverColor="hoverStyle" :class="{ 'rotate': isShownCategoryMenu }" />
-              <ModulesTheCategoryMenu :isShown="isShownCategoryMenu" @interruptChoose="interruptChooseCategory" />
+            <div
+              class="category_menu_wrap"
+              @mouseenter="isHoveredCategory = true"
+              @mouseleave="isHoveredCategory = false"
+              @click="onClick"
+            >
+              <span aria-label="カテゴリーメニュー">かてごり</span>
+              <PartsSvgIcon
+                :icon="'angle_down'"
+                :color="'var(--color-gray)'"
+                :hoverOn="isHoveredCategory"
+                :hoverColor="hoverStyle"
+                :class="{ rotate: isShownCategoryMenu }"
+              />
+              <ModulesTheCategoryMenu
+                :isShown="isShownCategoryMenu"
+                @interruptChoose="interruptChooseCategory"
+              />
             </div>
           </li>
           <li>
-            <NuxtLink to="/what-is-this-blog/">
-              みるめも？
-            </NuxtLink>
-          </li>
-          <li>
-            <NuxtLink to="/profile/">
-              書いている人
-            </NuxtLink>
+            <NuxtLink to="/profile/">書いている人</NuxtLink>
           </li>
         </ul>
       </nav>
@@ -101,7 +116,8 @@ const interruptChooseCategory = () => {
             font-weight: bold;
             text-decoration: none;
           }
-          a, .category_menu_wrap {
+          a,
+          .category_menu_wrap {
             display: flex;
             align-items: center;
             height: 100%;
@@ -148,7 +164,7 @@ const interruptChooseCategory = () => {
           }
         }
         @include mobile {
-          gap: 1.3em;
+          gap: 1.7em;
           width: 100%;
         }
       }
