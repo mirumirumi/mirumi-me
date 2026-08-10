@@ -55,24 +55,26 @@ jobs:
         env:
           ENV_NAME: ${{ github.ref_name == 'main' && 'prd' || 'dev' }}
         run: |
-          aws s3 rm \
+          bucket="s3://mirumime-${ENV_NAME}-mirumi-me"
+          aws configure set default.s3.max_concurrent_requests 40
+
+          aws s3 sync \
             --region ap-northeast-1 \
-            --recursive \
-            --exclude "apps/*" \
-            --exclude "assets/components/*" \
-            s3://mirumime-${ENV_NAME}-mirumi-me/
-          aws s3 cp \
+            --cache-control "public,max-age=31536000,immutable" \
+            --exclude "builds/*" \
+            .output/public/_nuxt/ "${bucket}/_nuxt/"
+          aws s3 sync \
             --region ap-northeast-1 \
-            --recursive \
-            --cache-control "max-age=31536000" \
-            .output/public/_nuxt/ s3://mirumime-${ENV_NAME}-mirumi-me/_nuxt/
-          aws s3 cp \
+            --cache-control "no-cache" \
+            .output/public/_nuxt/builds/ "${bucket}/_nuxt/builds/"
+          aws s3 sync \
             --region ap-northeast-1 \
-            --recursive \
+            --delete \
             --cache-control "no-cache" \
             --exclude "_nuxt/*" \
+            --exclude "apps/*" \
             --exclude "assets/components/*" \
-            .output/public/ s3://mirumime-${ENV_NAME}-mirumi-me/
+            .output/public/ "${bucket}/"
 
       - name: Purge CDN caches
         env:
