@@ -2,10 +2,12 @@
   "files": {
     "includes": [
       "**",
+      "!**/*.json",
       "!**/nuxt.config.ts",
       "!**/.nuxt",
       "!!**/.output",
       "!!**/dist",
+      "!**/tools",
       "!**/worker-configuration.d.ts",
       "!**/.wrangler"
     ]
