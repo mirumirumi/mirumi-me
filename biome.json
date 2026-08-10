@@ -3,7 +3,6 @@
     "includes": [
       "**",
       "!**/*.json",
-      "!**/nuxt.config.ts",
       "!**/.nuxt",
       "!!**/.output",
       "!!**/public/assets/components",

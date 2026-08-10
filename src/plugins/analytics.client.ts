@@ -1,15 +1,16 @@
-import VueGtag from "vue-gtag"
+import { createGtag } from "vue-gtag"
 
 export default defineNuxtPlugin((nuxtApp) => {
   const router = useRouter()
 
   nuxtApp.vueApp.use(
-    VueGtag,
-    {
+    createGtag({
+      tagId: "G-Y7HSDMHBW5",
       appName: "みるめも",
-      pageTrackerScreenviewEnabled: true,
-      config: { id: "G-Y7HSDMHBW5" },
-    },
-    router,
+      pageTracker: {
+        router,
+        useScreenview: true,
+      },
+    }),
   )
 })

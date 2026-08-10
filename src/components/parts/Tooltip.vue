@@ -57,7 +57,7 @@ const isAutoWidth = computed(() => {
   text-decoration: none;
   border-radius: 7px;
   background-color: #434343;
-  box-shadow: 1px 1px 1px 0 rgba(0, 0, 0, 0.17);
+  box-shadow: 1px 1px 1px 0 rgb(0, 0, 0, 0.17);
   white-space: nowrap;
   z-index: 1;
 

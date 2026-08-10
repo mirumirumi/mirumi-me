@@ -35,13 +35,17 @@
 <script setup lang="ts">
 import type { PageSummary } from "@/utils/defines"
 
+interface PostId {
+  id: number
+}
+
 const router = useRouter()
 const appConfig = useAppConfig()
 
 const keyword = ref(router.currentRoute.value.query.q)
 const page = ref(Number(router.currentRoute.value.query.p ?? 1))
 
-const posts = ref<PageSummary[] | null>(null)
+const posts = ref<Array<PageSummary> | null>(null)
 const pageCount = ref(0)
 const itemCount = ref(0)
 const isLoading = ref(false)
@@ -91,20 +95,20 @@ async function search() {
   pageCount.value = Number(res.headers.get("x-wp-totalpages"))
   itemCount.value = Number(res.headers.get("x-wp-total"))
 
-  const postIdObjs = res._data as Record<string, number>[]
+  const postIdObjs = res._data as Array<PostId>
   if (postIdObjs.length === 0) {
     posts.value = []
     isLoading.value = false
     return
   }
 
-  const postIds: number[] = []
+  const postIds: Array<number> = []
   for (const p of postIdObjs) {
     postIds.push(p.id)
   }
 
-  posts.value = await $fetch<PageSummary[]>(
-    `/mirumi/post_summaries_with_post_ids/${(postIds as number[]).join(",")}`,
+  posts.value = await $fetch<Array<PageSummary>>(
+    `/mirumi/post_summaries_with_post_ids/${postIds.join(",")}`,
     {
       baseURL: appConfig.baseURL,
       parseResponse: JSON.parse,
