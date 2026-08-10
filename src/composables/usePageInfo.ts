@@ -56,6 +56,6 @@ export default (p: PageMeta) => {
   }
 
   useHead({
-    script: [{ type: "application/ld+json", children: JSON.stringify(schema) }],
+    script: [{ type: "application/ld+json", textContent: JSON.stringify(schema) }],
   })
 }

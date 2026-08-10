@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { useToast } from "vue-toastification/dist/index.mjs"
+import { useToast } from "@/utils/vue-toastification"
 
 const p = withDefaults(
   defineProps<{
@@ -75,7 +75,7 @@ const p = withDefaults(
   }>(),
   {
     reply_to: "0",
-  }
+  },
 )
 
 const route = useRoute()
@@ -107,7 +107,7 @@ const submit = async () => {
     method: "POST",
     headers: {
       Authorization: `Basic ${window.btoa(
-        runtimeConfig.userName + ":" + runtimeConfig.applicationPassword
+        runtimeConfig.userName + ":" + runtimeConfig.applicationPassword,
       )}`,
     },
     body: {

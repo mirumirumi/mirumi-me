@@ -1,0 +1,10 @@
+@mixin mobile {
+  @media screen and (max-width: 428px) {  // iPhone 12 Pro Max
+    @content;
+  }
+}
+@mixin tablet {
+  @media screen and (max-width: 1024px) {
+    @content;
+  }
+}

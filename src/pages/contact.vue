@@ -106,7 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import { useToast } from "vue-toastification/dist/index.mjs"
+import { useToast } from "@/utils/vue-toastification"
 
 const route = useRoute()
 const appConfig = useAppConfig()
@@ -150,7 +150,7 @@ const submit = async () => {
         subject: subject.value,
         body: body.value,
       },
-    }
+    },
   )
   if (error.value) {
     isSubmitting.value = false
@@ -169,8 +169,7 @@ const submit = async () => {
 
 usePageInfo({
   title: "お問い合わせ",
-  description:
-    "みるめも、もしくは運営者自身へのお問い合わせ等を受け付けているページです。",
+  description: "みるめも、もしくは運営者自身へのお問い合わせ等を受け付けているページです。",
   keywords: "みるめも,お問い合わせ,Contact,Inquiry",
   url: appConfig.siteFullPath + route.fullPath,
   createdAt: appConfig.createdAt,

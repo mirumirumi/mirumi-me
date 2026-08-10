@@ -1,6 +1,7 @@
 import secret from "./src/secrets"
 
 export default defineNuxtConfig({
+  compatibilityDate: "2024-04-03",
   app: {
     baseURL: "/",
     head: {
@@ -49,6 +50,13 @@ export default defineNuxtConfig({
       script: [],
     },
   },
+  css: [
+    "~/assets/styles/main.scss",
+    "~/assets/styles/main-dark.scss",
+    "~/assets/styles/content.scss",
+    "~/assets/styles/content-dark.scss",
+    "~/assets/styles/syntaxhighlight.scss",
+  ],
   modules: [
     "@vueuse/nuxt",
     ["@nuxtjs/google-adsense", {
@@ -75,11 +83,7 @@ export default defineNuxtConfig({
       preprocessorOptions: {
         scss: {
           additionalData: `
-            @import "@/assets/styles/main.scss";
-            @import "@/assets/styles/main-dark.scss";
-            @import "@/assets/styles/content.scss";
-            @import "@/assets/styles/content-dark.scss";
-            @import "@/assets/styles/syntaxhighlight.scss";
+            @use "@/assets/styles/mixins" as *;
           `,
         },
       },
