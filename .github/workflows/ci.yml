@@ -22,7 +22,7 @@ jobs:
           bun run tsc
           bun run --cwd server type:check
 
-  biome:
+  lint-and-format:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,7 +36,7 @@ jobs:
 
       - name: Check lint and format
         run: |
-          bun run biome:ci
+          bun run lint-and-format:ci
 
   audit:
     runs-on: ubuntu-latest

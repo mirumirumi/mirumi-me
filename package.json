@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "nuxt dev --host",
-    "biome": "biome check --write --diagnostic-level=error",
-    "biome:ci": "biome ci --diagnostic-level=error",
-    "tsc": "tsc --noEmit -p tsconfig.json",
+    "lint-and-format": "biome check --write --diagnostic-level=error && stylelint \"src/**/*.{css,scss,vue}\" --fix",
+    "lint-and-format:ci": "biome ci --diagnostic-level=error && stylelint \"src/**/*.{css,scss,vue}\"",
+    "tsc": "nuxt prepare && tsc --noEmit -p tsconfig.json",
     "test": "bun run --cwd app test && bun run --cwd server test",
     "generate": "nuxt generate"
   },
