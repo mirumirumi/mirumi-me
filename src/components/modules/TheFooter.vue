@@ -193,7 +193,6 @@ const onEnter = () => {
       }
 
       .theme_switch {
-
         @include mobile {
           transform: scale(1.23) translateY(0px);
         }
