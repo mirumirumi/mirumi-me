@@ -1,3 +1,4 @@
+@use "./mixins" as *;
 .Vue-Toastification__container {
   &.bottom-left {
     left: 2.7em;
