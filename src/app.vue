@@ -94,13 +94,16 @@ function shapeSlug(path: string): string {
 <style lang="scss">
 #app {
   background-color: var(--color-background);
+
   #container {
     width: var(--width-max-screen);
     margin: 0 auto;
     padding: 0.9em 0.5em 2.3em;
+
     @include tablet {
       width: 100%;
     }
+
     @include mobile {
       width: 100%;
       padding: 1em 0.87em;

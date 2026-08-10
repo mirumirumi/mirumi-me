@@ -16,7 +16,7 @@
       </ul>
     </div>
     <form autocomplete="off">
-      <div class="form" style="margin-bottom: 1.7em">
+      <div class="form" style="margin-bottom: 1.7em;">
         <label for="comment" class="form_label">
           コメント
           <span class="required">*</span>
@@ -138,24 +138,30 @@ const submit = async () => {
 <style lang="scss" scoped>
 .comment_form {
   margin-top: 4em;
+
   .description {
     margin-bottom: 1.7em;
     font-size: 0.7em;
     line-height: 1.5;
+
     ul {
       padding-left: 2em;
+
       li {
         margin: 0.5em 0;
         list-style: disc;
       }
+
       @include mobile {
         padding-left: 1.2em;
       }
     }
   }
+
   form {
     label {
       font-size: 0.9em;
+
       .required {
         margin-left: 0em;
         padding: 0;
@@ -165,15 +171,18 @@ const submit = async () => {
         transform: translateY(0.05em);
       }
     }
+
     .button {
       margin-top: 2.3em;
       text-align: center;
     }
   }
+
   @include mobile {
     padding: 0 0.3em;
   }
 }
+
 .dark {
   .comment_form {
     form {

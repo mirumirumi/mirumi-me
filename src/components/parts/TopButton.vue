@@ -41,19 +41,23 @@ const scrollToTop = () => {
   cursor: pointer;
   transition: 0.1s all ease;
   z-index: 3;
+
   &:hover {
     box-shadow: none;
   }
+
   svg {
     position: absolute;
     inset: 0;
     margin: auto;
     width: 1.1em;
+
     path {
       fill: #c7bfba;
       transition: 0.29s all ease;
     }
   }
+
   @include mobile {
     width: 2.6em;
     height: 2.6em;

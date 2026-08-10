@@ -62,6 +62,7 @@ watch(
 .post_indexes {
   margin: 2em 0 3.5em;
   padding: 0 2em;
+
   a.post {
     display: block;
     width: 100%;
@@ -72,19 +73,23 @@ watch(
     border-radius: 11px;
     background-color: var(--color-background);
     transition: 0.23s all ease;
+
     .title {
       margin: 0 0 0.8em;
       color: var(--color-text);
       line-height: 1.3;
       font-size: 0.87em;
       font-weight: bold;
+
       @include mobile {
         margin-bottom: 0.3em;
       }
     }
+
     .meta {
       margin-top: 0.17em;
       line-height: 1;
+
       .created_at,
       .updated_at {
         position: relative;
@@ -92,32 +97,39 @@ watch(
         margin: auto 1.3em;
         color: var(--color-gray);
         font-size: 0.7em;
+
         svg {
           left: -1.1em;
           width: 0.8em;
         }
       }
+
       .updated_at svg {
         top: 1px;
       }
     }
+
     &:hover {
       filter: brightness(0.98);
     }
+
     @include mobile {
       margin-bottom: 1.5em;
       padding: 0.65em 1.3em 0.8em;
     }
   }
+
   @include mobile {
     margin-bottom: 2.7em;
     padding: 0 0.7em;
   }
 }
+
 .dark {
   .post_indexes {
     a.post {
       border-color: #686868;
+
       &:hover {
         filter: brightness(1.1);
       }

@@ -82,6 +82,7 @@ onUnmounted(() => {
   inset: 0;
   display: flex;
   z-index: 2;
+
   .modal_body {
     margin: auto;
     position: relative;
@@ -92,6 +93,7 @@ onUnmounted(() => {
     background-color: var(--color-background);
     box-shadow: 1px 3px 5px rgba(#636363, 0.666);
     border-radius: 7px;
+
     svg {
       top: 10px;
       right: 19px;
@@ -105,15 +107,18 @@ onUnmounted(() => {
 body.modal {
   overflow-y: hidden;
   padding-right: 16px;
+
   @include tablet {
     overflow-y: auto;
     padding-right: 0;
   }
+
   @include mobile {
     overflow-y: auto;
     padding-right: 0;
   }
 }
+
 .modal_base {
   .modal_body {
     .title {
@@ -121,6 +126,7 @@ body.modal {
       font-weight: bold;
       text-align: center;
     }
+
     & > div {
       margin: 19px auto;
     }

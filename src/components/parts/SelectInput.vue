@@ -125,6 +125,7 @@ function tabindexToId(to: number, maxlength: number): string {
 .select_input {
   position: relative;
   width: v-bind(_width);
+
   button {
     width: v-bind(_width);
     padding: 0.375rem calc(0.75rem + 7px) 0.375rem 0.75em;
@@ -139,6 +140,7 @@ function tabindexToId(to: number, maxlength: number): string {
       border-color 0.15s ease-in-out,
       box-shadow 0.15s ease-in-out;
     cursor: pointer;
+
     .dropdown_caret {
       position: absolute;
       top: 2.1px;
@@ -155,6 +157,7 @@ function tabindexToId(to: number, maxlength: number): string {
       border-left-color: transparent;
     }
   }
+
   ul {
     position: absolute;
     width: 100%;
@@ -167,6 +170,7 @@ function tabindexToId(to: number, maxlength: number): string {
     box-shadow: 2px 2px 4px 0px rgba(0, 0, 0, 0.19);
     overflow-y: auto;
     z-index: 14;
+
     li {
       position: relative;
       padding: 0.15em 1em 0.01em;
@@ -174,14 +178,17 @@ function tabindexToId(to: number, maxlength: number): string {
       color: #2d2d2d;
       white-space: nowrap;
       cursor: pointer;
+
       &:hover {
         background-color: #eeeeee;
       }
+
       &:focus {
         background-color: #eeeeee;
         outline: 0;
       }
     }
+
     @include mobile {
       margin: 0.6em 0 0 10px;
       // width: 50%;
@@ -189,6 +196,7 @@ function tabindexToId(to: number, maxlength: number): string {
     }
   }
 }
+
 .placeholder {
   color: #d2d2d2;
 }

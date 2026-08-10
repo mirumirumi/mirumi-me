@@ -129,22 +129,27 @@ usePageInfo({
 <style lang="scss" scoped>
 .search_view {
   padding-top: 2em !important;
+
   .search_box {
     max-width: 33em;
     margin: -0.9em auto 2.5em;
   }
+
   .no_keywords {
     height: 44.4vh;
     font-size: 0.9em;
     text-align: center;
   }
+
   .loading {
     height: 100vh;
     text-align: center;
+
     > * {
       margin-top: 3em;
     }
   }
+
   .no_contents {
     height: 222px;
     font-size: 0.9em;

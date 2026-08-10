@@ -58,6 +58,7 @@ const move = async () => {
   position: relative;
   width: 100%;
   height: 100%;
+
   input {
     padding-left: 1.3em;
     padding-right: 3.3em;
@@ -66,11 +67,13 @@ const move = async () => {
     border: 1.9px solid var(--color-input-border);
     border-radius: 31px;
     background-color: transparent;
+
     &::placeholder {
       font-size: 0.85em;
       transform: translateY(-0.5px);
     }
   }
+
   svg {
     right: 1.7em;
     cursor: pointer;

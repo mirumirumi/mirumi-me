@@ -213,16 +213,20 @@ usePageInfo({
   .row {
     display: flex;
     justify-content: space-between;
+
     > * {
       width: 45%;
+
       @include mobile {
         width: 100%;
       }
     }
+
     @include mobile {
       flex-direction: column;
     }
   }
+
   h3 {
     padding: 1em;
     color: #a39d98;
@@ -231,24 +235,29 @@ usePageInfo({
     font-weight: bold;
     text-align: center;
     user-select: none;
+
     @include mobile {
       padding: 0 0 0.9em;
     }
   }
+
   .more {
     margin-bottom: 4.3em;
     font-size: 0.93em;
     font-weight: bold;
     text-align: center;
+
     a {
       color: var(--color-link);
       user-select: none;
+
       &:hover {
         filter: saturate(0.7);
       }
     }
   }
 }
+
 .dark {
   h3 {
     color: #8e8c8b;

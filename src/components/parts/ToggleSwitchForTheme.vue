@@ -38,9 +38,11 @@ const icon = computed(() => {
 .toggle_switch {
   display: inline-block;
   font-size: 20px;
+
   input {
     display: none;
   }
+
   label {
     display: block;
     position: relative;
@@ -52,6 +54,7 @@ const icon = computed(() => {
     transition: 0.31s cubic-bezier(0.08, 0.56, 0.61, 0.91) 0.07s;
     border: solid 1.5px #e0dbd8;
     box-sizing: content-box;
+
     &::before {
       position: absolute;
       content: "";
@@ -64,21 +67,26 @@ const icon = computed(() => {
       transition: 0.31s cubic-bezier(0.08, 0.56, 0.61, 0.91) 0.07s;
       box-shadow: 0px 0px 1.7px 0px rgb(0 0 0 / 19%);
     }
+
     > svg {
       width: 0.7em;
       transition: 0.31s cubic-bezier(0.08, 0.56, 0.61, 0.91) 0.07s;
+
       &.light {
         left: 2px;
       }
+
       &.dark {
         left: calc(2px + 100% - 1em + 0.05em);
         transform: rotate(-19deg);
       }
     }
   }
+
   input:checked + label {
     border-color: #b8b7ba;
     background-color: #99989b;
+
     &::before {
       left: calc(100% - 1em + 0.05em);
       background-color: #3a394b;

@@ -4,7 +4,7 @@
       :currentPage="page"
       :pageCount="pageCount"
       :isCsr="false"
-      style="margin-top: 0"
+      style="margin-top: 0;"
     />
     <ModulesPostIndexes :posts="posts" />
     <ModulesPaginationBase :currentPage="page" :pageCount="pageCount" :isCsr="false" />

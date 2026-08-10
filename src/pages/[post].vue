@@ -102,7 +102,7 @@
             bottom: 0;
             right: 2.1em;
             font-size: 0.8em;
-          "
+"
         />
       </Teleport>
     </ClientOnly>

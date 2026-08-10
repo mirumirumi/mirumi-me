@@ -146,37 +146,46 @@ const interruptChoose = () => {
   background-color: var(--color-background);
   box-shadow: 0px 2.9px 11px -4px rgb(0 0 0 / 23%);
   z-index: 14;
+
   ul {
     li {
       padding: 0 0.9em;
       line-height: 2;
       text-align: left;
       border-radius: 7px;
+
       .others_wrap {
         cursor: default;
+
         .others_title {
           position: relative;
+
           span {
             &.current {
               color: var(--color-text);
             }
           }
+
           svg {
             right: 0em;
             width: 0.7em;
             transition: 0.13s all ease-in-out;
+
             &.rotate {
               transform: rotate(-180deg);
             }
           }
         }
+
         ul {
           margin-top: 0.3em;
+
           li {
             a {
               color: var(--color-gray);
               font-size: 0.94em;
               line-height: 1.9;
+
               &:hover {
                 color: var(--color-text);
               }
@@ -184,43 +193,53 @@ const interruptChoose = () => {
           }
         }
       }
+
       a,
       span,
       .others_wrap > .others_title > span {
         display: block;
         color: var(--color-gray);
         text-decoration: none;
+
         &.current {
           color: var(--color-text) !important;
         }
       }
+
       .current {
         color: var(--color-text);
       }
+
       &:hover {
         background-color: #f8f5f2;
+
         a {
           color: var(--color-text);
         }
+
         &.others_li_wrap {
           background-color: var(--color-background);
         }
       }
     }
   }
+
   @include tablet {
     left: -50%;
   }
+
   @include mobile {
     left: -71%;
   }
 }
+
 .dark {
   .category_menu {
     ul {
       li {
         &:hover {
           background-color: #504f4f;
+
           &.others_li_wrap {
             background-color: var(--color-background);
           }
