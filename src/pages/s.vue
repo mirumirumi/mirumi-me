@@ -7,20 +7,22 @@
       :itemCount="itemCount"
       :isCsr="true"
     />
-    <div v-if="!keyword" class="no_keywords"> 検索ワードを入力してください :) </div>
-    <template v-else>
-      <div v-if="isLoading || !posts" class="loading">
-        <PartsLoadSpinner :kind="'long'" />
-      </div>
+    <ClientOnly>
+      <div v-if="!keyword" class="no_keywords"> 検索ワードを入力してください :) </div>
       <template v-else>
-        <ModulesPostIndexes
-          v-if="posts && 1 <= posts.length"
-          :posts="posts"
-          :loaded="!isLoading"
-        />
-        <div v-else class="no_contents"> ちょっと見つけられませんでした :) </div>
+        <div v-if="isLoading || !posts" class="loading">
+          <PartsLoadSpinner :kind="'long'" />
+        </div>
+        <template v-else>
+          <ModulesPostIndexes
+            v-if="posts && 1 <= posts.length"
+            :posts="posts"
+            :loaded="!isLoading"
+          />
+          <div v-else class="no_contents"> ちょっと見つけられませんでした :) </div>
+        </template>
       </template>
-    </template>
+    </ClientOnly>
     <ModulesPaginationBase
       :currentPage="page"
       :pageCount="pageCount"
