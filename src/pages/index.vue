@@ -83,8 +83,7 @@ let posts: PageSummary[] = [
   {
     slug: "out-of-body",
     title: "この記事で人生変わるかも？体外離脱 (幽体離脱) 総まとめ",
-    thumbnailUrl:
-      "https://mirumi.media/taigai-ridatsu-lucid-dreaming-milmemo-412x216-1.webp",
+    thumbnailUrl: "https://mirumi.media/taigai-ridatsu-lucid-dreaming-milmemo-412x216-1.webp",
   },
 ]
 
@@ -195,7 +194,7 @@ const { data: postSummaries } = await useFetch(
   {
     baseURL: appConfig.baseURL,
     parseResponse: JSON.parse,
-  }
+  },
 )
 posts = posts.concat(postSummaries.value as Array<PageSummary>)
 

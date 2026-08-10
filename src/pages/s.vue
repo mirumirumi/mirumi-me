@@ -59,7 +59,7 @@ watch(
       page.value = Number(newValue.query.p ?? 1)
       await search()
     }
-  }
+  },
 )
 
 const onEnter = async () => {
@@ -106,7 +106,7 @@ async function search() {
     {
       baseURL: appConfig.baseURL,
       parseResponse: JSON.parse,
-    }
+    },
   )
 
   isLoading.value = false

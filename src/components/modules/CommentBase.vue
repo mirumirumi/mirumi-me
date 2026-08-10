@@ -65,17 +65,14 @@ const formatContent = (content: string) => {
       .replaceAll(/\r?\n([^<])/gim, "<br />$1")
       // https://regex101.com/r/bjsDHH/1
       .replaceAll(
-        /((<p>)|<br \/>)?(https?:\/\/[\w\/:;%#\$&\?\(\)~\.=\+\-]+)(\r?\n)?((<\/p>)|<br \/>)/gim,
-        '$1<a href="$3" rel="nofollow ugc">$3</a>$5'
+        /((<p>)|<br \/>)?(https?:\/\/[\w/:;%#$&?()~.=+-]+)(\r?\n)?((<\/p>)|<br \/>)/gim,
+        '$1<a href="$3" rel="nofollow ugc">$3</a>$5',
       )
   )
 }
 
 const formatTimestamp = (timestamp: string) => {
-  return timestamp.replace(
-    /(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2}):\d{2}/gim,
-    "$1/$2/$3 $4"
-  )
+  return timestamp.replace(/(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2}):\d{2}/gim, "$1/$2/$3 $4")
 }
 </script>
 

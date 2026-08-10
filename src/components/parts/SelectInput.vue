@@ -1,11 +1,26 @@
 <template>
   <div class="select_input">
-    <button type="button" class="select_button" :class="{ 'invalid': _isInvalid }" @click="toggleIsSelecting(); disableInvalid()">
+    <button
+      type="button"
+      class="select_button"
+      :class="{ invalid: _isInvalid }"
+      @click="
+        toggleIsSelecting()
+        disableInvalid()
+      "
+    >
       {{ selectName || currentItem }}
       <span class="dropdown_caret"></span>
     </button>
     <ul v-show="isSelecting">
-      <li v-for="item, index in items" @click="decideSelect(item)" :id="'item_' + uuid + '_' + index" @keydown.prevent="selectWithKeys($event, item)" tabindex="-1" :key="item">
+      <li
+        v-for="(item, index) in items"
+        @click="decideSelect(item)"
+        :id="'item_' + uuid + '_' + index"
+        @keydown.prevent="selectWithKeys($event, item)"
+        tabindex="-1"
+        :key="item"
+      >
         {{ item }}
       </li>
     </ul>
@@ -19,23 +34,23 @@
 import { v4 as uuidv4 } from "uuid"
 
 const p = defineProps<{
-  items: Array<string>,
-  selectName?: string,
-  current?: string,
-  width?: string,
-  isDisable?: boolean,
-  isInvalid?: boolean,
+  items: Array<string>
+  selectName?: string
+  current?: string
+  width?: string
+  isDisable?: boolean
+  isInvalid?: boolean
 }>()
 
 const emit = defineEmits<{
-  (e: "changeValue", value: string): void,
-  (e: "disableInvalid"): void,
+  (e: "changeValue", value: string): void
+  (e: "disableInvalid"): void
 }>()
 
 const uuid = uuidv4()
 const isSelecting = ref(false)
 const currentItem = ref(p.current)
-const width = ref(p.width)
+const _width = ref(p.width)
 const _isInvalid = ref(p.isInvalid)
 
 watch(p, () => {
@@ -58,11 +73,14 @@ const toggleIsSelecting = (): void => {
       break
     }
   }
-  setTimeout(() => document.getElementById("item_" + uuid + "_" + selectedPosition.toString())?.focus(), 1)
+  setTimeout(
+    () => document.getElementById("item_" + uuid + "_" + selectedPosition.toString())?.focus(),
+    1,
+  )
 }
 
 const selectWithKeys = (e: KeyboardEvent, item: string): void => {
-  const now = parseInt((e.target as HTMLElement).id.replace(/item_.*?_/gmi, ""))
+  const now = parseInt((e.target as HTMLElement).id.replace(/item_.*?_/gim, ""))
 
   if (e.key === "Enter") {
     decideSelect(item)
@@ -106,9 +124,9 @@ function tabindexToId(to: number, maxlength: number): string {
 <style lang="scss" scoped>
 .select_input {
   position: relative;
-  width: v-bind(width);
+  width: v-bind(_width);
   button {
-    width: v-bind(width);
+    width: v-bind(_width);
     padding: 0.375rem calc(0.75rem + 7px) 0.375rem 0.75em;
     color: var(--color-text);
     font-size: 1em;
@@ -117,7 +135,9 @@ function tabindexToId(to: number, maxlength: number): string {
     border: 1px solid #ced4da;
     border-radius: 0.25rem;
     appearance: none;
-    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    transition:
+      border-color 0.15s ease-in-out,
+      box-shadow 0.15s ease-in-out;
     cursor: pointer;
     .dropdown_caret {
       position: absolute;

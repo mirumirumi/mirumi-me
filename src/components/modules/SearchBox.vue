@@ -18,9 +18,7 @@ const p = defineProps<{
   query?: string
 }>()
 
-const emit = defineEmits<{
-  (e: "onEnter"): void
-}>()
+const emit = defineEmits<(e: "onEnter") => void>()
 
 const router = useRouter()
 const _query = ref(p.query)
@@ -30,7 +28,7 @@ watch(
   () => p.query,
   () => {
     _query.value = p.query ?? ""
-  }
+  },
 )
 
 const move = async () => {

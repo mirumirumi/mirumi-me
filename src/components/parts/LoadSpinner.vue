@@ -44,7 +44,7 @@ withDefaults(
   }>(),
   {
     color: "#8b8b8b",
-  }
+  },
 )
 </script>
 

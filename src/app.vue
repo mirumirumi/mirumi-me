@@ -55,7 +55,7 @@ watch(
   async (newValue) => {
     const slug = shapeSlug(newValue.path)
     await incrementAccessCounter(slug)
-  }
+  },
 )
 
 async function incrementAccessCounter(slug: string): Promise<void> {

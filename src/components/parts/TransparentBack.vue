@@ -3,11 +3,14 @@
 </template>
 
 <script setup lang="ts">
-const p = withDefaults(defineProps<{
-  zIndex?: number
-}>(), {
-  zIndex: 13
-})
+const p = withDefaults(
+  defineProps<{
+    zIndex?: number
+  }>(),
+  {
+    zIndex: 13,
+  },
+)
 
 const zIndex = ref(p.zIndex)
 </script>

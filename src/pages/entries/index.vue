@@ -45,7 +45,7 @@ const { data: postSummaries } = await useFetch(
   {
     baseURL: appConfig.baseURL,
     parseResponse: JSON.parse,
-  }
+  },
 )
 posts.value = postSummaries.value as PageSummary[]
 

@@ -6,7 +6,7 @@ export default async (durationScale: number | null) => {
   let duration = 131.3
   for (const n of nodes) {
     n.classList.add("run")
-    
+
     if (durationScale) {
       await delay(duration)
       duration *= durationScale

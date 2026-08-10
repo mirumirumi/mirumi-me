@@ -9,8 +9,8 @@
 import { v4 as uuidv4 } from "uuid"
 
 const p = defineProps<{
-  value: boolean,
-  switchName: string,
+  value: boolean
+  switchName: string
 }>()
 
 const isOn = ref(p.value)

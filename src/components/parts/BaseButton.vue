@@ -41,8 +41,7 @@ onMounted(async () => {
   await nextTick()
 
   width.value = (((button.value as HTMLElement).offsetWidth ?? 0) + 1)?.toString() + "px" // roundup
-  height.value =
-    (((button.value as HTMLElement).offsetHeight ?? 0) + 1)?.toString() + "px" // roundup
+  height.value = (((button.value as HTMLElement).offsetHeight ?? 0) + 1)?.toString() + "px" // roundup
 })
 
 const isAutoWidth = computed(() => {

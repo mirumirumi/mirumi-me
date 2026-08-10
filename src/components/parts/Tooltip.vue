@@ -6,8 +6,8 @@
 
 <script setup lang="ts">
 const p = defineProps<{
-  position: "above" | "below",
-  shift: string,
+  position: "above" | "below"
+  shift: string
 }>()
 
 const MAX_WIDTH = 200
@@ -20,7 +20,7 @@ const isBelow = ref(false)
 const isDecidedWidth = ref(false)
 
 onMounted(() => {
-  const renderedWidth = tooltip.value.offsetWidth + 1  // roundup
+  const renderedWidth = tooltip.value.offsetWidth + 1 // roundup
 
   if (MAX_WIDTH <= renderedWidth) {
     width.value = MAX_WIDTH.toString() + "px"
@@ -34,7 +34,8 @@ onMounted(() => {
 
   if (p.position === "above") {
     isAbove.value = true
-  } else {  // "below"
+  } else {
+    // "below"
     isBelow.value = true
   }
 })

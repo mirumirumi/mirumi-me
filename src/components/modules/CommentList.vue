@@ -110,7 +110,7 @@ for (const [i, r] of res.entries()) {
 // Compare the comment_ID of the `comments` with the comment_parent of the remaining comments
 // This will always be depth 4, so put all in the parent found here (this would also limit indentation to 4 times)
 const remainingIndecies: number[] = [...Array(res.length).keys()].filter(
-  (i) => used.indexOf(i) === -1
+  (i) => used.indexOf(i) === -1,
 )
 const remainingComments: Record<string, any>[] = []
 for (const index of remainingIndecies) {
@@ -131,7 +131,7 @@ for (const r of remainingComments) {
   }
 }
 const cleanRemainingComments: Record<string, any>[] = remainingComments.filter(
-  (x) => !_toDelete.includes(x.comment_ID)
+  (x) => !_toDelete.includes(x.comment_ID),
 )
 
 // Merge them!

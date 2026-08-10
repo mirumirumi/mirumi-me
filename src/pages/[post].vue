@@ -147,8 +147,8 @@ onMounted(async () => {
   // Insert toc hash links
   headings.value = Array.from(
     document.querySelectorAll<HTMLHeadingElement>(
-      "#content h2, #content h3, #content h4, #content h5, #content h6"
-    )
+      "#content h2, #content h3, #content h4, #content h5, #content h6",
+    ),
   )
   headings.value.forEach((el, i) => {
     // Bind mouse hover evenets for HashLink component

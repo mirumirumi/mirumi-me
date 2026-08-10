@@ -30,7 +30,7 @@
 // @ts-nocheck
 
 defineProps<{
-  kind: "目次上" | "h2" | "記事下ディスプレイ" | "Multiplex",
+  kind: "目次上" | "h2" | "記事下ディスプレイ" | "Multiplex"
 }>()
 
 // In `insert_toc_from_cocoon_code()` of endpoints.php
@@ -44,12 +44,12 @@ defineProps<{
 // data-full-width-responsive="true"></ins>
 
 // <!-- h2 -->
-// <ins 
-// class="adsbygoogle" 
-// style="display:block" 
-// data-ad-client="ca-pub-2873410957106428" 
-// data-ad-slot="2068327194" 
-// data-ad-format="auto" 
+// <ins
+// class="adsbygoogle"
+// style="display:block"
+// data-ad-client="ca-pub-2873410957106428"
+// data-ad-slot="2068327194"
+// data-ad-format="auto"
 // data-full-width-responsive="true"></ins>
 
 // <!-- 記事下ディスプレイ -->
@@ -63,16 +63,16 @@ defineProps<{
 
 // <!-- Multiplex -->
 // <ins
-// class="adsbygoogle" 
-// style="display:block" 
-// data-ad-format="autorelaxed" 
-// data-ad-client="ca-pub-2873410957106428" 
-// data-ad-slot="4732944866" 
+// class="adsbygoogle"
+// style="display:block"
+// data-ad-format="autorelaxed"
+// data-ad-client="ca-pub-2873410957106428"
+// data-ad-slot="4732944866"
 // 公式ヘルプに「本カスタマイズはサポートを終了した」との記述があり、一度も表示されない問題と関連があるかも不明なので
 // 念のためレンダリングからもなくしている。データは別で残っているとはいえテストした結果ではあるのでコード部分もコメント状態で保管。
-// data-matched-content-ui-type="image_stacked,image_stacked" 
-// data-matched-content-rows-num="4,2" 
-// data-matched-content-columns-num="1,2"></ins> 
+// data-matched-content-ui-type="image_stacked,image_stacked"
+// data-matched-content-rows-num="4,2"
+// data-matched-content-columns-num="1,2"></ins>
 </script>
 
 <style lang="scss" scoped>

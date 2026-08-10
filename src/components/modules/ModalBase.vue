@@ -17,25 +17,25 @@ defineProps<{
   className: string
 }>()
 
-const emit = defineEmits<{
-  (e: "closeModal"): void
-}>()
+const emit = defineEmits<(e: "closeModal") => void>()
 
 const isOpenModalBack = ref(true)
 
 onMounted(() => {
   if (isOverThanScreen()) {
-    ; (document.getElementsByTagName("body")[0] as HTMLBodyElement).classList.add("modal")
+    ;(document.getElementsByTagName("body")[0] as HTMLBodyElement).classList.add("modal")
   }
 })
 
 function isOverThanScreen(): boolean {
-  return document.documentElement.clientHeight < (document.getElementsByTagName("body")[0] as HTMLBodyElement).offsetHeight
+  return (
+    document.documentElement.clientHeight <
+    (document.getElementsByTagName("body")[0] as HTMLBodyElement).offsetHeight
+  )
 }
 
 const clickedToCloseModal = (e: any = null) => {
-  if (e.target.id === "modal_body")
-    return
+  if (e.target.id === "modal_body") return
 
   let isModalChild = false
   let parent = e.target.parentElement
@@ -47,8 +47,7 @@ const clickedToCloseModal = (e: any = null) => {
     parent = parent.parentElement
   }
 
-  if (isModalChild)
-    return
+  if (isModalChild) return
 
   closeModal()
 }
@@ -60,7 +59,7 @@ const closeModal = async () => {
 
   emit("closeModal")
 
-  ; (document.getElementsByTagName("body")[0] as HTMLBodyElement).classList.remove("modal")
+  ;(document.getElementsByTagName("body")[0] as HTMLBodyElement).classList.remove("modal")
 }
 
 function keydownEscape(e: KeyboardEvent): void {

@@ -54,7 +54,7 @@ watch(
     if (newValue === true) {
       _loaded.value = true
     }
-  }
+  },
 )
 </script>
 

@@ -84,14 +84,14 @@ watch(
   () => p.isShown,
   () => {
     _isShown.value = p.isShown
-  }
+  },
 )
 
 watch(
   () => route.path,
   async () => {
     await setIsCurrentCategory()
-  }
+  },
 )
 
 async function setIsCurrentCategory() {
@@ -107,13 +107,10 @@ async function setIsCurrentCategory() {
     const pagePath = route.path.replaceAll("/", "")
 
     // https://github.com/nuxt/nuxt/discussions/??? (The page is gone... (cause by unifying repos for Nuxt 2~3))
-    categorySlug = await $fetch<string>(
-      `/mirumi/category_slug_with_post_slug/${pagePath}`,
-      {
-        baseURL: appConfig.baseURL,
-        parseResponse: JSON.parse,
-      }
-    )
+    categorySlug = await $fetch<string>(`/mirumi/category_slug_with_post_slug/${pagePath}`, {
+      baseURL: appConfig.baseURL,
+      parseResponse: JSON.parse,
+    })
   }
 
   for (const category of categories) {

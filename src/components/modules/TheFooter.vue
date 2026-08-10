@@ -70,7 +70,7 @@ watch(
   () => router.currentRoute.value.fullPath,
   () => {
     query.value = router.currentRoute.value.query.q as string
-  }
+  },
 )
 
 const onEnter = () => {
