@@ -161,7 +161,7 @@ onMounted(async () => {
   })
 
   // Load post scripts
-  // biome-ignore lint/complexity/useOptionalChain:
+  // biome-ignore lint/complexity/useOptionalChain: 既存踏襲
   ps.POST_SCRIPTS_MAP[slug] && ps.POST_SCRIPTS_MAP[slug](post.content)
 })
 

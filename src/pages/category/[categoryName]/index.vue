@@ -44,7 +44,6 @@ const { data: resCategory } = await useFetch(
 )
 
 // Hack for JSON parse error (unexpected token)
-// biome-ignore lint:
 const category = JSON.parse(JSON.stringify(resCategory.value as any))
 
 const { data } = await useFetch("/mirumi/post_ids", {

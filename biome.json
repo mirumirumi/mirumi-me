@@ -6,6 +6,8 @@
       "!**/nuxt.config.ts",
       "!**/.nuxt",
       "!!**/.output",
+      "!!**/public/assets/components",
+      "!!**/public/assets/prism.js",
       "!!**/dist",
       "!**/tools",
       "!**/worker-configuration.d.ts",
