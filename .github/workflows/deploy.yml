@@ -6,7 +6,7 @@ on:
     branches:
       - main
       # Enable only when in use
-      # - dev
+      - chore/migrate-nuxt-4
 
 jobs:
   deploy:
