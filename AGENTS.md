@@ -32,6 +32,9 @@
 
 ## その他
 
+- Notion を操作・調査するときは、Notion プラグインの MCP と公式 CLI の `ntn` を併用することを考慮する
+    - Codex のシェルに `NOTION_KEYRING` が継承されていない場合は、コマンド単位で `NOTION_KEYRING=0` を指定する
+    - `ntn` の認証が利用できない場合は MCP のみで作業を継続する
 - 現在の linter/formatter は以下のようになっており、Vue の template 部分はリポジトリ設定や CI には何もないことに留意する
     - Vue の script、js/ts：Biome
     - Vue の style、css/scss：stylelint
