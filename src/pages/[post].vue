@@ -95,7 +95,7 @@
       <Teleport v-for="[i, tocId] in tocIds.entries()" :to="`#${tocId}`" :key="tocId">
         <PartsHashLink
           :hash-link="`#${tocId.replace('-heading', '')}`"
-          :hover="hover[i]"
+          :hover="hover[i] ?? false"
           style="
             position: absolute;
             top: 0.6em;
@@ -151,11 +151,16 @@ onMounted(async () => {
     ),
   )
   headings.value.forEach((el, i) => {
+    const headingContent = el.children.item(0)
+    if (!headingContent) {
+      return
+    }
+
     // Bind mouse hover evenets for HashLink component
     el.addEventListener("mouseenter", () => onMouseEnter(i))
     el.addEventListener("mouseleave", () => onMouseLeave(i))
     // Give ids
-    const spanId = `${el.children[0].id}-heading`
+    const spanId = `${headingContent.id}-heading`
     el.id = spanId
     tocIds.value.push(spanId)
   })

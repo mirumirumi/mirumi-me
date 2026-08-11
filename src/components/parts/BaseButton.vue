@@ -119,6 +119,6 @@ const isAutoHeight = computed(() => {
 
 .btn-check:focus + .btn_primary[data-v-4ba94436],
 .btn_primary[data-v-4ba94436]:focus {
-  box-shadow: 0 0 0 0.25rem rgba(196, 55, 93, 0.5);
+  box-shadow: 0 0 0 0.25rem rgb(196, 55, 93, 0.5);
 }
 </style>

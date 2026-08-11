@@ -77,6 +77,7 @@ const isShownOthers = ref(false)
 
 const categories: Array<Category> = _categories.map((c) => ({ ...c }))
 const others: Array<Category> = _others.map((c) => ({ ...c }))
+const othersCategory = categories.find((category) => category.slug === "others")
 
 await setIsCurrentCategory()
 
@@ -95,6 +96,10 @@ watch(
 )
 
 async function setIsCurrentCategory() {
+  if (!othersCategory) {
+    throw Error("The others category is missing")
+  }
+
   let categorySlug = ""
 
   if (route.params.categoryName) {
@@ -120,7 +125,7 @@ async function setIsCurrentCategory() {
   for (const other of others) {
     if (categorySlug === other.slug) {
       other.current = true
-      categories.slice(-1)[0].current = true // `その他`
+      othersCategory.current = true
     } else {
       other.current = false
     }

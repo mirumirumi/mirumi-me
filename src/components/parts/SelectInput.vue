@@ -167,7 +167,7 @@ function tabindexToId(to: number, maxlength: number): string {
     border: solid 1.9px #c9c9c9;
     border-radius: 0.25rem;
     background-color: #ffffff;
-    box-shadow: 2px 2px 4px 0px rgba(0, 0, 0, 0.19);
+    box-shadow: 2px 2px 4px 0px rgb(0, 0, 0, 0.19);
     overflow-y: auto;
     z-index: 14;
 

@@ -58,13 +58,13 @@ function switchTheme(isDark: boolean): void {
 function toLight(): void {
   isDark.value = false
   theme.value = "light"
-  document.getElementsByTagName("html")[0].classList.remove("dark")
+  document.documentElement.classList.remove("dark")
 }
 
 function toDark(): void {
   isDark.value = true
   theme.value = "dark"
-  document.getElementsByTagName("html")[0].classList.add("dark")
+  document.documentElement.classList.add("dark")
 }
 </script>
 

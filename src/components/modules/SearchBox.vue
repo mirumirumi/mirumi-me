@@ -37,17 +37,17 @@ const move = async () => {
   search.value.blur()
 
   await delay(100)
+  const body = document.body
 
   if (_query.value?.includes("斜め") || _query.value?.includes("skew")) {
-    document.getElementsByTagName("body")[0].style.transform = "rotate(1.3deg) "
+    body.style.transform = "rotate(1.3deg) "
   }
 
   if (_query.value?.includes("逆") || _query.value?.includes("reverse")) {
-    document.getElementsByTagName("body")[0].style.transform
-    if (document.getElementsByTagName("body")[0].style.transform !== "none") {
-      document.getElementsByTagName("body")[0].style.transform += " scaleX(-1)"
+    if (body.style.transform !== "none") {
+      body.style.transform += " scaleX(-1)"
     } else {
-      document.getElementsByTagName("body")[0].style.transform = "scaleX(-1)"
+      body.style.transform = "scaleX(-1)"
     }
   }
 }

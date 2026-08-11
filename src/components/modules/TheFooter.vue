@@ -9,13 +9,13 @@
           <div class="group_title">Page</div>
           <ul>
             <li>
-              <NuxtLink to="/what-is-this-blog/">みるめも とは</NuxtLink>
-            </li>
-            <li>
-              <NuxtLink to="/entry-list/">全記事一覧</NuxtLink>
+              <NuxtLink to="/profile/">書いている人</NuxtLink>
             </li>
             <li>
               <NuxtLink to="/nice-to-meet-you-10/">はじめましての 10 記事</NuxtLink>
+            </li>
+            <li>
+              <NuxtLink to="/entry-list/">全記事一覧</NuxtLink>
             </li>
           </ul>
         </div>
@@ -70,7 +70,7 @@ watch(
   () => router.currentRoute.value.fullPath,
   () => {
     query.value = router.currentRoute.value.query.q as string
-  },
+  }
 )
 
 const onEnter = () => {
@@ -193,7 +193,6 @@ const onEnter = () => {
       }
 
       .theme_switch {
-
         @include mobile {
           transform: scale(1.23) translateY(0px);
         }

@@ -53,13 +53,17 @@
 <script setup lang="ts">
 import type { PageSummary } from "@/utils/defines"
 
+interface PostId {
+  id: number
+}
+
 const appConfig = useAppConfig()
 
 onMounted(async () => {
   await usePageTransition(null)
 })
 
-const postIds: number[] = []
+const postIds: Array<number> = []
 
 /**
  * Prepare nice-to-meet-you-10 entries
@@ -102,7 +106,7 @@ const { data: resNewEntries } = await useFetch("/wp/v2/posts", {
   },
   parseResponse: JSON.parse,
 })
-for (const p of resNewEntries.value as Array<Record<string, number>>) {
+for (const p of resNewEntries.value as Array<PostId>) {
   postIds.push(p.id)
 }
 
@@ -122,7 +126,7 @@ const { data: resLife } = await useFetch("/wp/v2/posts", {
   },
   parseResponse: JSON.parse,
 })
-for (const p of resLife.value as Array<Record<string, number>>) {
+for (const p of resLife.value as Array<PostId>) {
   postIds.push(p.id)
 }
 
@@ -142,7 +146,7 @@ const { data: resNotes } = await useFetch("/wp/v2/posts", {
   },
   parseResponse: JSON.parse,
 })
-for (const p of resNotes.value as Array<Record<string, number>>) {
+for (const p of resNotes.value as Array<PostId>) {
   postIds.push(p.id)
 }
 
@@ -162,7 +166,7 @@ const { data: resSoftwareDesign } = await useFetch("/wp/v2/posts", {
   },
   parseResponse: JSON.parse,
 })
-for (const p of resSoftwareDesign.value as Array<Record<string, number>>) {
+for (const p of resSoftwareDesign.value as Array<PostId>) {
   postIds.push(p.id)
 }
 
@@ -182,7 +186,7 @@ const { data: resUpAndComing } = await useFetch("/wp/v2/posts", {
   },
   parseResponse: JSON.parse,
 })
-for (const p of resUpAndComing.value as Array<Record<string, number>>) {
+for (const p of resUpAndComing.value as Array<PostId>) {
   postIds.push(p.id)
 }
 

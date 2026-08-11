@@ -18,7 +18,8 @@
     "at-rule-empty-line-before": [
       "never",
       {
-        "except": ["inside-block"]
+        "except": ["inside-block"],
+        "ignore": ["first-nested"]
       }
     ],
     "color-hex-length": "long",

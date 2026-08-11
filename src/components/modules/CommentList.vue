@@ -81,25 +81,25 @@ for (const [i, r] of res.entries()) {
     allComments.push(_to)
     used.push(i)
   }
-  for (const [j, c] of allComments.entries()) {
+  for (const c of allComments) {
     if (r.comment_parent === c.comment_ID) {
       const _to = r
       _to.children = []
-      allComments[j].children.push(_to)
+      c.children.push(_to)
       used.push(i)
     }
-    for (const [k, cc] of c.children.entries()) {
+    for (const cc of c.children) {
       if (r.comment_parent === cc.comment_ID) {
         const _to = r
         _to.children = []
-        allComments[j].children[k].children.push(_to)
+        cc.children.push(_to)
         used.push(i)
       }
-      for (const [l, ccc] of cc.children.entries()) {
+      for (const ccc of cc.children) {
         if (r.comment_parent === ccc.comment_ID) {
           const _to = r
           _to.children = []
-          allComments[j].children[k].children[l].children.push(_to)
+          ccc.children.push(_to)
           used.push(i)
         }
       }
@@ -135,13 +135,13 @@ const cleanRemainingComments: Record<string, any>[] = remainingComments.filter(
 )
 
 // Merge them!
-for (const [i, c] of allComments.entries()) {
-  for (const [j, cc] of c.children.entries()) {
-    for (const [k, ccc] of cc.children.entries()) {
-      for (const [l, cccc] of ccc.children.entries()) {
+for (const c of allComments) {
+  for (const cc of c.children) {
+    for (const ccc of cc.children) {
+      for (const cccc of ccc.children) {
         for (const r of cleanRemainingComments) {
           if (r.comment_parent === cccc.comment_ID) {
-            allComments[i].children[j].children[k].children[l].children.push(r)
+            cccc.children.push(r)
           }
         }
       }
