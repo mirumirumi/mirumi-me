@@ -1,0 +1,32 @@
+{
+    "compilerOptions": {
+        "baseUrl": "./src",
+        "outDir": "./dist",
+        "target": "ESNext",
+        "module": "ESNext",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "jsx": "preserve",
+        "importHelpers": true,
+        "moduleResolution": "Node",
+        "allowSyntheticDefaultImports": true,
+        "sourceMap": true,
+        "resolveJsonModule": true,
+        "paths": {
+          "@/*": [
+            "src/*"
+          ]
+        },
+        "lib": [
+          "ESNext",
+          "DOM",
+          "DOM.Iterable",
+          "ScriptHost",
+          "WebWorker"
+        ],
+    },
+    "exclude": [
+        "node_modules"
+    ]
+}

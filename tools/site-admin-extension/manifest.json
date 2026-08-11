@@ -1,0 +1,26 @@
+{
+    "name": "site-admin-extension",
+    "version": "1.0.0",
+    "manifest_version": 3,
+    "description": "for mirumi.me",
+    "icons": {
+        "32": "icons/icon_32.png",
+        "48": "icons/icon_48.png",
+        "128": "icons/icon_128.png"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "https://mirumi.me/*",
+                "https://d3unw9ju8hrt73.cloudfront.net/*"
+            ],
+            "exclude_matches": [
+                "https://mirumi.me/wp-admin/*",
+                "https://mirumi.in/wp-admin/*"
+            ],
+            "js": [
+                "src/content-script.ts"
+            ]
+        }
+    ]
+}
