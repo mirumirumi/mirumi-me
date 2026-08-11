@@ -17,12 +17,12 @@ def main() -> None:
     # Generate sitemap.xml
     print("Generating sitemap.xml\n")
     res_main: Final[Response] = httpx.get("https://mirumi.in/sitemap.xml")
-    save_file(".output/public/", "sitemap.xml", res_main.text)
+    save_file("app/.output/public/", "sitemap.xml", res_main.text)
 
     # Generate sitemap-misc.xml
     print("Generating sitemap-misc.xml\n")
     res_misc: Final[Response] = httpx.get("https://mirumi.in/sitemap-misc.xml")
-    save_file(".output/public/", "sitemap-misc.xml", res_misc.text)
+    save_file("app/.output/public/", "sitemap-misc.xml", res_misc.text)
 
     # Generate for each post
     xml = ElementTree.fromstring(res_main.text)
@@ -33,7 +33,7 @@ def main() -> None:
             fullpath = cast(str, node.text)
             print(f"Generating {url_to_filename(fullpath)}.xml\n")
             res_post: Final[Response] = httpx.get(fullpath)
-            save_file(".output/public/", url_to_filename(fullpath), res_post.text)
+            save_file("app/.output/public/", url_to_filename(fullpath), res_post.text)
 
     # Exec to do
     format_xmls()
@@ -49,13 +49,13 @@ def save_file(dir_path: str, filename: str, file_content: Any) -> None:
 
 
 def format_xmls() -> None:
-    sitemap_files = os.listdir(".output/public/")
+    sitemap_files = os.listdir("app/.output/public/")
     for filename in sitemap_files:
         if not filename.startswith("sitemap"):
             continue
 
         print(f"Formatting {filename}\n")
-        with open(".output/public/" + filename, mode="r+") as f:
+        with open("app/.output/public/" + filename, mode="r+") as f:
             to_write = f.read()
             f.seek(0)
 

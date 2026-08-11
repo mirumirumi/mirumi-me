@@ -19,8 +19,8 @@ jobs:
 
       - name: Create mock secrets
         run: |
-          cp scripts/ci/secret-mock.js src/secrets/secret.dev.js
-          cp scripts/ci/secret-mock.js src/secrets/secret.prd.js
+          cp scripts/ci/secret-mock.js app/src/secrets/secret.dev.js
+          cp scripts/ci/secret-mock.js app/src/secrets/secret.prd.js
 
       - name: Check types
         run: |
