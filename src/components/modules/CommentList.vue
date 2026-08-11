@@ -81,25 +81,25 @@ for (const [i, r] of res.entries()) {
     allComments.push(_to)
     used.push(i)
   }
-  for (const [j, c] of allComments.entries()) {
+  for (const c of allComments) {
     if (r.comment_parent === c.comment_ID) {
       const _to = r
       _to.children = []
-      allComments[j].children.push(_to)
+      c.children.push(_to)
       used.push(i)
     }
-    for (const [k, cc] of c.children.entries()) {
+    for (const cc of c.children) {
       if (r.comment_parent === cc.comment_ID) {
         const _to = r
         _to.children = []
-        allComments[j].children[k].children.push(_to)
+        cc.children.push(_to)
         used.push(i)
       }
-      for (const [l, ccc] of cc.children.entries()) {
+      for (const ccc of cc.children) {
         if (r.comment_parent === ccc.comment_ID) {
           const _to = r
           _to.children = []
-          allComments[j].children[k].children[l].children.push(_to)
+          ccc.children.push(_to)
           used.push(i)
         }
       }
@@ -110,7 +110,7 @@ for (const [i, r] of res.entries()) {
 // Compare the comment_ID of the `comments` with the comment_parent of the remaining comments
 // This will always be depth 4, so put all in the parent found here (this would also limit indentation to 4 times)
 const remainingIndecies: number[] = [...Array(res.length).keys()].filter(
-  (i) => used.indexOf(i) === -1
+  (i) => used.indexOf(i) === -1,
 )
 const remainingComments: Record<string, any>[] = []
 for (const index of remainingIndecies) {
@@ -131,17 +131,17 @@ for (const r of remainingComments) {
   }
 }
 const cleanRemainingComments: Record<string, any>[] = remainingComments.filter(
-  (x) => !_toDelete.includes(x.comment_ID)
+  (x) => !_toDelete.includes(x.comment_ID),
 )
 
 // Merge them!
-for (const [i, c] of allComments.entries()) {
-  for (const [j, cc] of c.children.entries()) {
-    for (const [k, ccc] of cc.children.entries()) {
-      for (const [l, cccc] of ccc.children.entries()) {
+for (const c of allComments) {
+  for (const cc of c.children) {
+    for (const ccc of cc.children) {
+      for (const cccc of ccc.children) {
         for (const r of cleanRemainingComments) {
           if (r.comment_parent === cccc.comment_ID) {
-            allComments[i].children[j].children[k].children[l].children.push(r)
+            cccc.children.push(r)
           }
         }
       }
@@ -166,6 +166,7 @@ if (res.length !== (JSON.stringify(allComments).match(/"comment_ID":/g) ?? []).l
 <style lang="scss" scoped>
 .comment_list {
   margin-top: 5em;
+
   .title {
     padding-bottom: 0.3em;
     color: #6c6c6c;
@@ -173,19 +174,24 @@ if (res.length !== (JSON.stringify(allComments).match(/"comment_ID":/g) ?? []).l
     font-weight: bold;
     border-bottom: solid 1.3px #dedbd8;
   }
+
   .no_contents {
     margin: 1.5em 1.3em 1em;
     font-size: 0.95em;
   }
+
   .comments_wrap {
     margin: 1.7em 0 3em;
+
     .load_more {
       margin: 2.9em auto 1em;
       text-align: center;
+
       button {
         width: 100%;
         padding: 0.5em 1.5em 0.59em;
         background-color: #f1ede9;
+
         &:hover {
           opacity: 0.7;
           filter: contrast(0.9);
@@ -194,15 +200,18 @@ if (res.length !== (JSON.stringify(allComments).match(/"comment_ID":/g) ?? []).l
     }
   }
 }
+
 .dark {
   .comment_list {
     .title {
       color: #c8c8c8;
     }
+
     .comments_wrap {
       .load_more {
         button {
           background-color: #3e3e3e;
+
           &:hover {
             filter: contrast(0.8);
           }

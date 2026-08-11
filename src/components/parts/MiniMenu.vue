@@ -13,16 +13,16 @@
 
 <script setup lang="ts">
 const p = defineProps<{
-  isShown: boolean,
-  items: Array<any>,
-  current?: string,
-  width?: string,
+  isShown: boolean
+  items: Array<any>
+  current?: string
+  width?: string
   // styles?: Record<string, string>,
 }>()
 
 const emit = defineEmits<{
-  (e: "clickItem", value: string): void,
-  (e: "close" ): void,
+  (e: "clickItem", value: string): void
+  (e: "close"): void
 }>()
 
 const _isShown = ref(p.isShown)
@@ -52,6 +52,7 @@ const closeSelections = () => {
   background-color: var(--color-background);
   box-shadow: 1px 5px 13px -7px rgb(0 0 0 / 23%);
   z-index: 14;
+
   ul {
     li {
       padding: 0 0.9em;

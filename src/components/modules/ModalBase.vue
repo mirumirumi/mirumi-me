@@ -17,25 +17,25 @@ defineProps<{
   className: string
 }>()
 
-const emit = defineEmits<{
-  (e: "closeModal"): void
-}>()
+const emit = defineEmits<(e: "closeModal") => void>()
 
 const isOpenModalBack = ref(true)
 
 onMounted(() => {
   if (isOverThanScreen()) {
-    ; (document.getElementsByTagName("body")[0] as HTMLBodyElement).classList.add("modal")
+    ;(document.getElementsByTagName("body")[0] as HTMLBodyElement).classList.add("modal")
   }
 })
 
 function isOverThanScreen(): boolean {
-  return document.documentElement.clientHeight < (document.getElementsByTagName("body")[0] as HTMLBodyElement).offsetHeight
+  return (
+    document.documentElement.clientHeight <
+    (document.getElementsByTagName("body")[0] as HTMLBodyElement).offsetHeight
+  )
 }
 
 const clickedToCloseModal = (e: any = null) => {
-  if (e.target.id === "modal_body")
-    return
+  if (e.target.id === "modal_body") return
 
   let isModalChild = false
   let parent = e.target.parentElement
@@ -47,8 +47,7 @@ const clickedToCloseModal = (e: any = null) => {
     parent = parent.parentElement
   }
 
-  if (isModalChild)
-    return
+  if (isModalChild) return
 
   closeModal()
 }
@@ -60,7 +59,7 @@ const closeModal = async () => {
 
   emit("closeModal")
 
-  ; (document.getElementsByTagName("body")[0] as HTMLBodyElement).classList.remove("modal")
+  ;(document.getElementsByTagName("body")[0] as HTMLBodyElement).classList.remove("modal")
 }
 
 function keydownEscape(e: KeyboardEvent): void {
@@ -83,6 +82,7 @@ onUnmounted(() => {
   inset: 0;
   display: flex;
   z-index: 2;
+
   .modal_body {
     margin: auto;
     position: relative;
@@ -93,6 +93,7 @@ onUnmounted(() => {
     background-color: var(--color-background);
     box-shadow: 1px 3px 5px rgba(#636363, 0.666);
     border-radius: 7px;
+
     svg {
       top: 10px;
       right: 19px;
@@ -106,15 +107,18 @@ onUnmounted(() => {
 body.modal {
   overflow-y: hidden;
   padding-right: 16px;
+
   @include tablet {
     overflow-y: auto;
     padding-right: 0;
   }
+
   @include mobile {
     overflow-y: auto;
     padding-right: 0;
   }
 }
+
 .modal_base {
   .modal_body {
     .title {
@@ -122,6 +126,7 @@ body.modal {
       font-weight: bold;
       text-align: center;
     }
+
     & > div {
       margin: 19px auto;
     }

@@ -95,14 +95,14 @@
       <Teleport v-for="[i, tocId] in tocIds.entries()" :to="`#${tocId}`" :key="tocId">
         <PartsHashLink
           :hash-link="`#${tocId.replace('-heading', '')}`"
-          :hover="hover[i]"
+          :hover="hover[i] ?? false"
           style="
             position: absolute;
             top: 0.6em;
             bottom: 0;
             right: 2.1em;
             font-size: 0.8em;
-          "
+"
         />
       </Teleport>
     </ClientOnly>
@@ -147,21 +147,26 @@ onMounted(async () => {
   // Insert toc hash links
   headings.value = Array.from(
     document.querySelectorAll<HTMLHeadingElement>(
-      "#content h2, #content h3, #content h4, #content h5, #content h6"
-    )
+      "#content h2, #content h3, #content h4, #content h5, #content h6",
+    ),
   )
   headings.value.forEach((el, i) => {
+    const headingContent = el.children.item(0)
+    if (!headingContent) {
+      return
+    }
+
     // Bind mouse hover evenets for HashLink component
     el.addEventListener("mouseenter", () => onMouseEnter(i))
     el.addEventListener("mouseleave", () => onMouseLeave(i))
     // Give ids
-    const spanId = `${el.children[0].id}-heading`
+    const spanId = `${headingContent.id}-heading`
     el.id = spanId
     tocIds.value.push(spanId)
   })
 
   // Load post scripts
-  // biome-ignore lint/complexity/useOptionalChain:
+  // biome-ignore lint/complexity/useOptionalChain: 既存踏襲
   ps.POST_SCRIPTS_MAP[slug] && ps.POST_SCRIPTS_MAP[slug](post.content)
 })
 

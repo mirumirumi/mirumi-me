@@ -6,8 +6,8 @@
 
 <script setup lang="ts">
 const p = defineProps<{
-  position: "above" | "below",
-  shift: string,
+  position: "above" | "below"
+  shift: string
 }>()
 
 const MAX_WIDTH = 200
@@ -20,7 +20,7 @@ const isBelow = ref(false)
 const isDecidedWidth = ref(false)
 
 onMounted(() => {
-  const renderedWidth = tooltip.value.offsetWidth + 1  // roundup
+  const renderedWidth = tooltip.value.offsetWidth + 1 // roundup
 
   if (MAX_WIDTH <= renderedWidth) {
     width.value = MAX_WIDTH.toString() + "px"
@@ -34,7 +34,8 @@ onMounted(() => {
 
   if (p.position === "above") {
     isAbove.value = true
-  } else {  // "below"
+  } else {
+    // "below"
     isBelow.value = true
   }
 })
@@ -56,11 +57,13 @@ const isAutoWidth = computed(() => {
   text-decoration: none;
   border-radius: 7px;
   background-color: #434343;
-  box-shadow: 1px 1px 1px 0 rgba(0, 0, 0, 0.17);
+  box-shadow: 1px 1px 1px 0 rgb(0, 0, 0, 0.17);
   white-space: nowrap;
   z-index: 1;
+
   &.above {
     bottom: v-bind(height);
+
     &::before {
       content: "";
       position: absolute;
@@ -71,6 +74,7 @@ const isAutoWidth = computed(() => {
       border: 8px solid transparent;
       border-top-color: #434343;
     }
+
     &::after {
       content: "";
       position: absolute;
@@ -82,8 +86,10 @@ const isAutoWidth = computed(() => {
       border-top-color: #434343;
     }
   }
+
   &.below {
     top: v-bind(height);
+
     &::before {
       content: "";
       position: absolute;
@@ -94,6 +100,7 @@ const isAutoWidth = computed(() => {
       border: 7px solid transparent;
       border-bottom-color: #434343;
     }
+
     &::after {
       content: "";
       position: absolute;
@@ -105,9 +112,11 @@ const isAutoWidth = computed(() => {
       border-bottom-color: #434343;
     }
   }
+
   &.auto_width {
     width: v-bind(width);
   }
+
   &.ws_normal {
     white-space: normal;
   }

@@ -20,7 +20,7 @@
             >
             もご検討ください。</p
           >
-          <div class="box-common box-alert" style="margin-bottom: 5em">
+          <div class="box-common box-alert" style="margin-bottom: 5em;">
             <p
               >全てへの返信はお約束できませんが、必ず目は通していますのでご安心ください。</p
             >
@@ -183,6 +183,7 @@ usePageInfo({
     .button {
       margin-top: 2.7em;
       text-align: center;
+
       button {
         padding-left: 1.7em;
         padding-right: 1.7em;

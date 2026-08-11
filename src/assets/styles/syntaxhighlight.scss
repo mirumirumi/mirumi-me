@@ -1,6 +1,6 @@
 @use "./mixins" as *;
 
-/* 
+/*
   color: 1st line is My default color theme
   color: 2nd line is New browny color theme inspired "Ayu" of Rust
 */
@@ -13,9 +13,11 @@ pre[class*="language-"] {
   line-height: 1.6 !important;
   border-radius: 11px;
   white-space: pre;
+
   @include mobile {
     padding: 1.3em 1.1em 1.5em;
   }
+
   code {
     // color: #f3f3f3 !important;
     color: #efece1 !important;
@@ -23,16 +25,19 @@ pre[class*="language-"] {
     line-height: 1.6;
     font-family: Consolas, Monaco, Menlo, monospace;
   }
+
   .token.keyword,
   .token.annotation {
     // color: #66d9ef;
     color: #fa854a;
   }
+
   .token.builtin {
     // color: #66d9ef;
     color: #f2b18f;
     font-style: italic;
   }
+
   .token.attr-name,
   .token.class-name,
   .token.decorator,
@@ -40,79 +45,99 @@ pre[class*="language-"] {
     // color: #b6e557;
     color: #f0bb58;
   }
+
   .token.tag {
     color: #f2b18f;
+
     .token.punctuation {
       // color: #f3f3f3;
       color: #efece1;
     }
   }
+
   .token.punctuation {
     color: #938e8c;
+
     &.decorator {
       // color: #b6e557;
       color: #f0bb58;
     }
   }
+
   .token.number,
   .token.boolean {
     // color: #ae81ff;
     color: #ebd773;
   }
+
   .token.operator {
     // color: #dc8ba8;
     color: #d8b755;
   }
+
   .token.parameter {
     color: #f2b18f;
     font-style: italic;
   }
+
   .token.attr-value,
   .token.string {
     // color: #f0e57f;
     color: #b8cc52;
   }
+
   .token.attr-value {
     .token.punctuation {
       // color: #f0e57f;
       color: #b8cc52;
     }
+
     .token.attr-equals {
       // color: #f3f3f3;
       color: #efece1;
     }
   }
+
   .token.comment {
     color: #7f888d;
   }
+
   .token.key.atrule {
     // color: #dc8ba8;
     color: #d8b755;
   }
+
   .token.key.property {
     color: #f2b18f;
   }
+
   .token.bold {
     font-weight: bold;
   }
+
   .token.italic {
     font-style: italic;
   }
+
   &::-webkit-scrollbar {
     height: 15px;
   }
+
   &::-webkit-scrollbar-track {
     border-radius: 0 0 10px 10px;
   }
+
   &::-webkit-scrollbar-thumb {
     border-radius: 0 0 10px 10px;
   }
 }
+
 pre[class*="language-bash"],
 pre[class*="language-shell"] {
   .token {
     // color: #f3f3f3 !important;
     color: #efece1 !important;
+
     &.comment {
       color: #7f888d !important;
     }
@@ -128,6 +153,7 @@ pre {
 .dark {
   pre[class*="language-"] {
     background: #363839 !important;
+
     code {
       background: #363839 !important;
     }

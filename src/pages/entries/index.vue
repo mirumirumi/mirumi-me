@@ -4,7 +4,7 @@
       :currentPage="page"
       :pageCount="pageCount"
       :isCsr="false"
-      style="margin-top: 0"
+      style="margin-top: 0;"
     />
     <ModulesPostIndexes :posts="posts" />
     <ModulesPaginationBase :currentPage="page" :pageCount="pageCount" :isCsr="false" />
@@ -45,7 +45,7 @@ const { data: postSummaries } = await useFetch(
   {
     baseURL: appConfig.baseURL,
     parseResponse: JSON.parse,
-  }
+  },
 )
 posts.value = postSummaries.value as PageSummary[]
 

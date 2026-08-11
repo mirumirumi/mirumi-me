@@ -41,8 +41,7 @@ onMounted(async () => {
   await nextTick()
 
   width.value = (((button.value as HTMLElement).offsetWidth ?? 0) + 1)?.toString() + "px" // roundup
-  height.value =
-    (((button.value as HTMLElement).offsetHeight ?? 0) + 1)?.toString() + "px" // roundup
+  height.value = (((button.value as HTMLElement).offsetHeight ?? 0) + 1)?.toString() + "px" // roundup
 })
 
 const isAutoWidth = computed(() => {
@@ -74,43 +73,52 @@ const isAutoHeight = computed(() => {
   cursor: pointer;
   user-select: none;
   transition: all 0.09s ease-out;
+
   &.auto_width {
     width: v-bind(width);
   }
+
   &.auto_height {
     height: v-bind(height);
   }
+
   &:disabled {
     pointer-events: none;
     opacity: 0.666;
     filter: contrast(0.5);
   }
 }
+
 .btn_primary {
   color: #ffffff;
   border-color: v-bind(_mainColor);
   background-color: v-bind(_mainColor);
+
   &:hover {
     opacity: 0.7;
     filter: saturate(0.85);
   }
 }
+
 .btn_outline_primary {
   color: v-bind(_mainColor);
   border-color: v-bind(_mainColor);
   background-color: var(--color-background);
+
   &:hover {
     color: v-bind(_mainColor);
     opacity: 0.7;
     filter: contrast(0.9);
   }
 }
+
 .btn_text_only {
   background-color: transparent;
   box-shadow: none;
 }
+
 .btn-check:focus + .btn_primary[data-v-4ba94436],
 .btn_primary[data-v-4ba94436]:focus {
-  box-shadow: 0 0 0 0.25rem rgba(196, 55, 93, 0.5);
+  box-shadow: 0 0 0 0.25rem rgb(196, 55, 93, 0.5);
 }
 </style>

@@ -58,13 +58,16 @@ defineProps<{
     font-weight: bold;
     text-align: center;
     user-select: none;
+
     @include mobile {
       padding: 0 0 0.9em;
     }
   }
+
   .indexes {
     display: grid;
     grid-template-columns: 50% 50%;
+
     a.index {
       display: inline-block;
       margin: auto 0.3em 0.7em;
@@ -72,6 +75,7 @@ defineProps<{
       text-decoration: none;
       border-radius: 8px;
       transition: 0.23s all ease;
+
       .thumbnail {
         img {
           width: 100%;
@@ -81,6 +85,7 @@ defineProps<{
           aspect-ratio: 412 / 216;
         }
       }
+
       .title {
         height: 80px;
         margin: 0.4em;
@@ -91,36 +96,44 @@ defineProps<{
       }
     }
   }
+
   .link {
     margin-bottom: 4.3em;
     font-size: 0.93em;
     font-weight: bold;
     text-align: center;
+
     a {
       color: var(--color-link);
       user-select: none;
       text-decoration: none;
+
       .text {
         text-decoration: underline;
       }
+
       .arrow {
         text-decoration: none;
       }
+
       &:hover {
         filter: saturate(0.7);
       }
     }
   }
 }
+
 .dark {
   .block_title {
     color: #8e8c8b;
   }
+
   .indexes {
     a.index {
       .thumbnail img {
         border-color: #52504e;
       }
+
       .title {
         color: var(--color-text);
       }

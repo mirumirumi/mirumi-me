@@ -9,13 +9,13 @@
           <div class="group_title">Page</div>
           <ul>
             <li>
-              <NuxtLink to="/what-is-this-blog/">みるめも とは</NuxtLink>
-            </li>
-            <li>
-              <NuxtLink to="/entry-list/">全記事一覧</NuxtLink>
+              <NuxtLink to="/profile/">書いている人</NuxtLink>
             </li>
             <li>
               <NuxtLink to="/nice-to-meet-you-10/">はじめましての 10 記事</NuxtLink>
+            </li>
+            <li>
+              <NuxtLink to="/entry-list/">全記事一覧</NuxtLink>
             </li>
           </ul>
         </div>
@@ -70,7 +70,7 @@ watch(
   () => router.currentRoute.value.fullPath,
   () => {
     query.value = router.currentRoute.value.query.q as string
-  }
+  },
 )
 
 const onEnter = () => {
@@ -88,11 +88,13 @@ const onEnter = () => {
     color: var(--color);
     padding: 2.9em 1em 23px;
     background-color: var(--color-footer);
+
     .search_wrap {
       max-width: 31em;
       margin: auto auto 2.7em;
       padding-left: 0.9em;
     }
+
     .link_groups {
       display: flex;
       justify-content: center;
@@ -101,84 +103,102 @@ const onEnter = () => {
       padding-left: 4.3em; // `mirumi.tech` is too long
       .links {
         font-size: 0.87em;
+
         .group_title {
           margin-bottom: 0.37em;
           font-weight: bold;
           font-size: 1.05em;
           line-height: 1.8;
+
           @include mobile {
             width: 5em;
           }
         }
+
         ul {
           li {
             display: block;
             line-height: 1.7;
+
             a {
               color: var(--color);
               font-size: 0.95em;
               text-decoration: none;
             }
           }
+
           @include mobile {
             width: 12em;
           }
         }
+
         .icons {
           display: flex;
           align-items: center;
           margin-top: 10px;
+
           a {
             display: inline-block;
             margin-right: 1.3em;
+
             > * {
               position: static;
               width: 1.3em;
             }
           }
+
           @include mobile {
             width: 12em;
             margin-top: 0;
             transform: translateY(3px);
           }
         }
+
         @include mobile {
           display: flex;
           align-items: baseline;
           margin: auto;
         }
       }
+
       @include mobile {
         flex-direction: column;
         gap: 1em;
         padding-left: 0;
       }
     }
+
     .bottom {
       display: flex;
       justify-content: center;
       gap: 2.3em;
       margin-top: 3.7em;
       padding-right: 2.3em;
+
       .space {
         width: 55px;
+
         @include mobile {
           display: none;
         }
       }
+
       .copyright {
         font-size: 0.83em;
         text-align: center;
+
         @include mobile {
           transform: translateY(2.5px);
         }
       }
+
       .theme_switch {
         @include mobile {
           transform: scale(1.23) translateY(0px);
         }
       }
     }
+
     @include mobile {
       padding-top: 2.3em;
     }

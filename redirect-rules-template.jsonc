@@ -1,14 +1,14 @@
 [
-    {
-        "Condition": {
-            "KeyPrefixEquals": "post-A/"
-        },
-        "Redirect": {
-            "HostName": "mirumi.me",
-            "Protocol": "https",
-            "ReplaceKeyPrefixWith": "post-B/"
-        }
+  {
+    "Condition": {
+      "KeyPrefixEquals": "post-A/"
+    },
+    "Redirect": {
+      "HostName": "mirumi.me",
+      "Protocol": "https",
+      "ReplaceKeyPrefixWith": "post-B/"
     }
+  }
 ]
 // https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/how-to-page-redirect.html
 

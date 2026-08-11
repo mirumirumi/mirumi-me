@@ -82,15 +82,19 @@ const interruptChooseCategory = () => {
     max-width: var(--width-max-screen);
     margin: auto;
     padding: 23px 29px 30px;
+
     .site_logo {
       display: block;
       width: 100%;
       text-align: center;
+
       a {
         display: inline-block;
+
         img {
           width: 48px;
           height: 48px;
+
           @include mobile {
             width: 43px;
             height: 43px;
@@ -98,24 +102,29 @@ const interruptChooseCategory = () => {
         }
       }
     }
+
     nav {
       display: block;
       height: 57px;
       margin-top: 0.7em;
       text-align: center;
+
       .menu {
         display: flex;
         justify-content: center;
         align-items: center;
         gap: 3em;
         height: 100%;
+
         li {
           position: relative;
           height: 100%;
+
           * {
             font-weight: bold;
             text-decoration: none;
           }
+
           a,
           .category_menu_wrap {
             display: flex;
@@ -124,15 +133,18 @@ const interruptChooseCategory = () => {
             color: var(--color-gray);
             font-size: 0.8em;
             transition: 0.29s all ease;
+
             &:hover {
               color: v-bind(hoverStyle);
             }
           }
+
           .category_menu_wrap {
             position: relative;
             margin-left: 1.3em;
             margin-right: -0.9em;
             cursor: pointer;
+
             svg {
               position: relative;
               top: 0.1em;
@@ -140,38 +152,47 @@ const interruptChooseCategory = () => {
               width: 1.9em;
               transform: scale(0.4);
               transition: 0.17s all ease-in-out;
+
               &.rotate {
                 transform: scale(0.4) rotate(180deg);
               }
+
               @include mobile {
                 width: 1.2em;
                 transform: scale(0.55);
               }
             }
+
             @include mobile {
               margin-left: 0.3em;
               margin-right: -0.4em;
               -webkit-tap-highlight-color: transparent;
             }
           }
+
           &:has(.category_menu_wrap) {
+
             @include mobile {
               margin-right: -0.5em;
+
               ~ * {
                 transform: translateX(7%);
               }
             }
           }
         }
+
         @include mobile {
           gap: 1.7em;
           width: 100%;
         }
       }
+
       @include mobile {
         margin-top: 0.3em;
       }
     }
+
     @include mobile {
       padding: 1.1em 0.7em 0;
     }

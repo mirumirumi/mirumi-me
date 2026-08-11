@@ -1,18 +1,20 @@
 {
   "files": {
-    "ignore": [
-      "nuxt.config.ts"
+    "includes": [
+      "**",
+      "!**/*.json",
+      "!**/.nuxt",
+      "!!**/.output",
+      "!!**/public/assets/components",
+      "!!**/public/assets/prism.js",
+      "!!**/dist",
+      "!**/tools",
+      "!**/worker-configuration.d.ts",
+      "!**/.wrangler"
     ]
-  },
-  "formatter": {
-    "indentStyle": "space",
-    "lineWidth": 100
   },
   "linter": {
     "rules": {
-      "suspicious": {
-        "noExplicitAny": "warn"
-      },
       "style": {
         "noNonNullAssertion": "off",
         "useTemplate": "off",
@@ -22,13 +24,48 @@
       "complexity": {
         "noForEach": "off"
       },
+      "correctness": {
+        "noUnusedImports": "off",
+        "noUnusedVariables": "off",
+        "noUnusedFunctionParameters": "off"
+      },
+      "suspicious": {
+        "noExplicitAny": "warn"
+      },
       "a11y": {
         "noSvgWithoutTitle": "off"
       }
     }
   },
-  "organizeImports": {
-    "enabled": true
+  "formatter": {
+    "indentStyle": "space",
+    "lineWidth": 100
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": [
+              [
+                ":URL:",
+                ":BUN:",
+                ":NODE:",
+                ":PACKAGE_WITH_PROTOCOL:",
+                {
+                  "source": [":PACKAGE:", "!shared", "!shared/**"]
+                }
+              ],
+              ":BLANK_LINE:",
+              ["shared", "shared/**"],
+              ":BLANK_LINE:",
+              [":ALIAS:", ":PATH:"]
+            ]
+          }
+        }
+      }
+    }
   },
   "javascript": {
     "formatter": {

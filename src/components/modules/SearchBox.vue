@@ -18,9 +18,7 @@ const p = defineProps<{
   query?: string
 }>()
 
-const emit = defineEmits<{
-  (e: "onEnter"): void
-}>()
+const emit = defineEmits<(e: "onEnter") => void>()
 
 const router = useRouter()
 const _query = ref(p.query)
@@ -30,7 +28,7 @@ watch(
   () => p.query,
   () => {
     _query.value = p.query ?? ""
-  }
+  },
 )
 
 const move = async () => {
@@ -39,17 +37,17 @@ const move = async () => {
   search.value.blur()
 
   await delay(100)
+  const body = document.body
 
   if (_query.value?.includes("斜め") || _query.value?.includes("skew")) {
-    document.getElementsByTagName("body")[0].style.transform = "rotate(1.3deg) "
+    body.style.transform = "rotate(1.3deg) "
   }
 
   if (_query.value?.includes("逆") || _query.value?.includes("reverse")) {
-    document.getElementsByTagName("body")[0].style.transform
-    if (document.getElementsByTagName("body")[0].style.transform !== "none") {
-      document.getElementsByTagName("body")[0].style.transform += " scaleX(-1)"
+    if (body.style.transform !== "none") {
+      body.style.transform += " scaleX(-1)"
     } else {
-      document.getElementsByTagName("body")[0].style.transform = "scaleX(-1)"
+      body.style.transform = "scaleX(-1)"
     }
   }
 }
@@ -60,6 +58,7 @@ const move = async () => {
   position: relative;
   width: 100%;
   height: 100%;
+
   input {
     padding-left: 1.3em;
     padding-right: 3.3em;
@@ -68,11 +67,13 @@ const move = async () => {
     border: 1.9px solid var(--color-input-border);
     border-radius: 31px;
     background-color: transparent;
+
     &::placeholder {
       font-size: 0.85em;
       transform: translateY(-0.5px);
     }
   }
+
   svg {
     right: 1.7em;
     cursor: pointer;

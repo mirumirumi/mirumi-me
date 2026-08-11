@@ -30,4 +30,10 @@
     - WordPress 側でアップロードされた画像はプラグインで僕の AWS アカウントにある S3 に同期されており、CloudFront から配信されています
     - その CloudFront に紐づいているドメインがこれ
 
+## その他
+
+- 現在の linter/formatter は以下のようになっており、Vue の template 部分はリポジトリ設定や CI には何もないことに留意する
+    - Vue の script、js/ts：Biome
+    - Vue の style、css/scss：stylelint
+
 

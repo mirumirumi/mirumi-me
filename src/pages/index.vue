@@ -53,13 +53,17 @@
 <script setup lang="ts">
 import type { PageSummary } from "@/utils/defines"
 
+interface PostId {
+  id: number
+}
+
 const appConfig = useAppConfig()
 
 onMounted(async () => {
   await usePageTransition(null)
 })
 
-const postIds: number[] = []
+const postIds: Array<number> = []
 
 /**
  * Prepare nice-to-meet-you-10 entries
@@ -83,8 +87,7 @@ let posts: PageSummary[] = [
   {
     slug: "out-of-body",
     title: "この記事で人生変わるかも？体外離脱 (幽体離脱) 総まとめ",
-    thumbnailUrl:
-      "https://mirumi.media/taigai-ridatsu-lucid-dreaming-milmemo-412x216-1.webp",
+    thumbnailUrl: "https://mirumi.media/taigai-ridatsu-lucid-dreaming-milmemo-412x216-1.webp",
   },
 ]
 
@@ -103,7 +106,7 @@ const { data: resNewEntries } = await useFetch("/wp/v2/posts", {
   },
   parseResponse: JSON.parse,
 })
-for (const p of resNewEntries.value as Array<Record<string, number>>) {
+for (const p of resNewEntries.value as Array<PostId>) {
   postIds.push(p.id)
 }
 
@@ -123,7 +126,7 @@ const { data: resLife } = await useFetch("/wp/v2/posts", {
   },
   parseResponse: JSON.parse,
 })
-for (const p of resLife.value as Array<Record<string, number>>) {
+for (const p of resLife.value as Array<PostId>) {
   postIds.push(p.id)
 }
 
@@ -143,7 +146,7 @@ const { data: resNotes } = await useFetch("/wp/v2/posts", {
   },
   parseResponse: JSON.parse,
 })
-for (const p of resNotes.value as Array<Record<string, number>>) {
+for (const p of resNotes.value as Array<PostId>) {
   postIds.push(p.id)
 }
 
@@ -163,7 +166,7 @@ const { data: resSoftwareDesign } = await useFetch("/wp/v2/posts", {
   },
   parseResponse: JSON.parse,
 })
-for (const p of resSoftwareDesign.value as Array<Record<string, number>>) {
+for (const p of resSoftwareDesign.value as Array<PostId>) {
   postIds.push(p.id)
 }
 
@@ -183,7 +186,7 @@ const { data: resUpAndComing } = await useFetch("/wp/v2/posts", {
   },
   parseResponse: JSON.parse,
 })
-for (const p of resUpAndComing.value as Array<Record<string, number>>) {
+for (const p of resUpAndComing.value as Array<PostId>) {
   postIds.push(p.id)
 }
 
@@ -195,7 +198,7 @@ const { data: postSummaries } = await useFetch(
   {
     baseURL: appConfig.baseURL,
     parseResponse: JSON.parse,
-  }
+  },
 )
 posts = posts.concat(postSummaries.value as Array<PageSummary>)
 
@@ -214,16 +217,20 @@ usePageInfo({
   .row {
     display: flex;
     justify-content: space-between;
+
     > * {
       width: 45%;
+
       @include mobile {
         width: 100%;
       }
     }
+
     @include mobile {
       flex-direction: column;
     }
   }
+
   h3 {
     padding: 1em;
     color: #a39d98;
@@ -232,24 +239,29 @@ usePageInfo({
     font-weight: bold;
     text-align: center;
     user-select: none;
+
     @include mobile {
       padding: 0 0 0.9em;
     }
   }
+
   .more {
     margin-bottom: 4.3em;
     font-size: 0.93em;
     font-weight: bold;
     text-align: center;
+
     a {
       color: var(--color-link);
       user-select: none;
+
       &:hover {
         filter: saturate(0.7);
       }
     }
   }
 }
+
 .dark {
   h3 {
     color: #8e8c8b;

@@ -65,17 +65,14 @@ const formatContent = (content: string) => {
       .replaceAll(/\r?\n([^<])/gim, "<br />$1")
       // https://regex101.com/r/bjsDHH/1
       .replaceAll(
-        /((<p>)|<br \/>)?(https?:\/\/[\w\/:;%#\$&\?\(\)~\.=\+\-]+)(\r?\n)?((<\/p>)|<br \/>)/gim,
-        '$1<a href="$3" rel="nofollow ugc">$3</a>$5'
+        /((<p>)|<br \/>)?(https?:\/\/[\w/:;%#$&?()~.=+-]+)(\r?\n)?((<\/p>)|<br \/>)/gim,
+        '$1<a href="$3" rel="nofollow ugc">$3</a>$5',
       )
   )
 }
 
 const formatTimestamp = (timestamp: string) => {
-  return timestamp.replace(
-    /(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2}):\d{2}/gim,
-    "$1/$2/$3 $4"
-  )
+  return timestamp.replace(/(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2}):\d{2}/gim, "$1/$2/$3 $4")
 }
 </script>
 
@@ -83,12 +80,15 @@ const formatTimestamp = (timestamp: string) => {
 .comment_base {
   .comment {
     margin: 3em 0 0.7em;
+
     .meta_data {
       position: relative;
       display: flex;
       align-items: center;
+
       .icon {
         margin-right: 1.5em;
+
         img {
           display: block;
           width: 48.33px;
@@ -96,30 +96,38 @@ const formatTimestamp = (timestamp: string) => {
           padding: 1px;
           border: solid 1.9px #e6e4e3;
           border-radius: 50%;
+
           &.default {
             transform: scale(0.93);
+
             @include mobile {
               transform: scale(0.87);
             }
           }
+
           @include mobile {
             transform: scale(0.9);
           }
         }
+
         @include mobile {
           margin-right: 0.7em;
         }
       }
+
       .info {
         margin-bottom: 3px;
         font-size: 0.9em;
+
         .name {
         }
+
         .timestamp {
           color: #999999;
           font-size: 0.85em;
         }
       }
+
       .link {
         position: absolute;
         right: 3em;
@@ -127,22 +135,28 @@ const formatTimestamp = (timestamp: string) => {
         bottom: 0;
       }
     }
+
     .content {
       margin: 0.7em 0 0;
       padding-left: 0.23em;
       padding-right: 1em;
     }
+
     &.depth-2 {
       padding-left: calc(1.07em * 1);
     }
+
     &.depth-3 {
       padding-left: calc(1.07em * 2);
     }
+
     &.depth-4 {
       padding-left: calc(1.07em * 3);
     }
+
     .reply_button {
       text-align: right;
+
       button {
         display: inline-block;
         margin-right: 1em;
@@ -161,6 +175,7 @@ const formatTimestamp = (timestamp: string) => {
         cursor: pointer;
         user-select: none;
         transition: all 0.13s ease-out;
+
         &:hover {
           opacity: 0.7;
           filter: contrast(0.9);
@@ -168,12 +183,14 @@ const formatTimestamp = (timestamp: string) => {
       }
     }
   }
+
   .reply {
     .comment_form {
       margin-top: 1em;
     }
   }
 }
+
 .dark {
   .comment_base {
     .reply_button {

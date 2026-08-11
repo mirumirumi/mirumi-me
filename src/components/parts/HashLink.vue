@@ -24,6 +24,7 @@ const copyCommentUrl = () => {
 .hash_link {
   position: relative;
   cursor: pointer;
+
   svg {
     width: 1.3em;
     transform: rotate(-23deg);

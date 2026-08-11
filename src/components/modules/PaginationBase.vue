@@ -133,6 +133,7 @@ const toTop = () => {
   justify-content: center;
   align-items: center;
   margin: 2.7em 0 2.5em;
+
   > * {
     display: flex;
     justify-content: center;
@@ -143,6 +144,7 @@ const toTop = () => {
     font-size: 0.95em;
     font-weight: bold;
     line-height: 30px;
+
     @include mobile {
       width: 36px;
       height: 35.7px;
@@ -151,19 +153,24 @@ const toTop = () => {
       line-height: 35.1px;
     }
   }
+
   a {
     color: #727272;
     text-decoration: none;
   }
+
   .arrow {
     position: relative;
     top: 1px;
+
     svg {
       width: 0.5em;
     }
   }
+
   .current {
     user-select: none;
+
     &::after {
       content: "";
       position: absolute;
@@ -172,38 +179,46 @@ const toTop = () => {
       height: 3.5px;
       border-radius: 50%;
       background-color: #727272;
+
       @include mobile {
         bottom: -1px;
       }
     }
   }
+
   .ellipsis {
     svg {
       width: 0.7em;
     }
+
     @include mobile {
       width: 20px;
       height: 20px;
       line-height: 20px;
     }
   }
+
   @include mobile {
     margin-bottom: 2.1em;
   }
 }
+
 .dark {
   .pagination_base {
     > * {
       color: #a9a9a9;
     }
+
     a {
       color: #a9a9a9;
     }
+
     .current {
       &::after {
         background-color: #a9a9a9;
       }
     }
+
     .ellipsis {
       &:hover {
         background-color: transparent;

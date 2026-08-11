@@ -1,5 +1,5 @@
-import Toast from "vue-toastification"
 import type { PluginOptions } from "vue-toastification"
+import Toast from "vue-toastification"
 import "vue-toastification/dist/index.css"
 import "@/assets/styles/toast.scss"
 
@@ -14,7 +14,7 @@ const toastOptions: PluginOptions = {
   newestOnTop: true,
   pauseOnFocusLoss: false,
   pauseOnHover: true,
-  // @ts-ignore
+  // @ts-expect-error
   // `POSITION` をインポートして使ってもビルドは落ちる
   position: "bottom-center",
   rtl: false,

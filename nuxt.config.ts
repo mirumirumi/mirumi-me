@@ -12,7 +12,11 @@ export default defineNuxtConfig({
       meta: [
         { name: "viewport", content: "width=device-width, initial-scale=1" },
         { name: "x-ua-compatible" },
-        { name: "signature", content: "880f27e6d0c4daf6c6143beb568a73075f02b75d53e690e6bb79297435d7cf5a8404a4c84ba35416556b92628987d76b9067a4a4ef5d30f63b2b7d0f89b0a26b" },
+        {
+          name: "signature",
+          content:
+            "880f27e6d0c4daf6c6143beb568a73075f02b75d53e690e6bb79297435d7cf5a8404a4c84ba35416556b92628987d76b9067a4a4ef5d30f63b2b7d0f89b0a26b",
+        },
         { name: "robots", content: "max-image-preview:large" },
         { name: "thumbnail", content: "https://mirumi.me/assets/main-visual.png" },
         { property: "og:type", content: "article" },
@@ -27,24 +31,45 @@ export default defineNuxtConfig({
         { name: "twitter:domain", content: "mirumi.me" },
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:image", content: "https://mirumi.me/assets/main-visual.png" },
-        { name: "msapplication-TileImage", content: "https://mirumi.me/assets/cropped-favicon-270x270.png" },
+        {
+          name: "msapplication-TileImage",
+          content: "https://mirumi.me/assets/cropped-favicon-270x270.png",
+        },
       ],
       link: [
         { rel: "canonical", href: "https://mirumi.me" },
         { rel: "icon", href: "https://mirumi.me/assets/cropped-favicon-32x32.png", sizes: "32x32" },
-        { rel: "icon", href: "https://mirumi.me/assets/cropped-favicon-180x180.png", sizes: "180x180" },
-        { rel: "icon", href: "https://mirumi.me/assets/cropped-favicon-192x192.png", sizes: "192x192" },
+        {
+          rel: "icon",
+          href: "https://mirumi.me/assets/cropped-favicon-180x180.png",
+          sizes: "180x180",
+        },
+        {
+          rel: "icon",
+          href: "https://mirumi.me/assets/cropped-favicon-192x192.png",
+          sizes: "192x192",
+        },
         { rel: "apple-touch-icon", href: "https://mirumi.me/assets/cropped-favicon-180x180.png" },
-        { rel: "preconnect dns-prefetch", href: "//www.google-analytics.com" },
-        { rel: "preconnect dns-prefetch", href: "//pagead2.googlesyndication.com" },
-        { rel: "preconnect dns-prefetch", href: "//googleads.g.doubleclick.net" },
-        { rel: "preconnect dns-prefetch", href: "//tpc.googlesyndication.com" },
-        { rel: "preconnect dns-prefetch", href: "//ad.doubleclick.net" },
-        { rel: "preconnect dns-prefetch", href: "//www.gstatic.com" },
-        { rel: "preconnect dns-prefetch", href: "//cse.google.com" },
-        { rel: "alternate", type: "application/rss+xml", title: "RSS feed", href: "https://mirumi.me/feed.xml" },
+        { rel: "preconnect", href: "//www.google-analytics.com" },
+        { rel: "preconnect", href: "//pagead2.googlesyndication.com" },
+        { rel: "preconnect", href: "//googleads.g.doubleclick.net" },
+        { rel: "preconnect", href: "//tpc.googlesyndication.com" },
+        { rel: "preconnect", href: "//ad.doubleclick.net" },
+        { rel: "preconnect", href: "//www.gstatic.com" },
+        { rel: "preconnect", href: "//cse.google.com" },
+        {
+          rel: "alternate",
+          type: "application/rss+xml",
+          title: "RSS feed",
+          href: "https://mirumi.me/feed.xml",
+        },
         // No comment feed for each article
-        { rel: "alternate", type: "application/rss+xml", title: "RSS feed (Comments)", href: "https://mirumi.me/feed-comments.xml" },
+        {
+          rel: "alternate",
+          type: "application/rss+xml",
+          title: "RSS feed (Comments)",
+          href: "https://mirumi.me/feed-comments.xml",
+        },
       ],
       style: [],
       script: [],
@@ -57,13 +82,19 @@ export default defineNuxtConfig({
     "~/assets/styles/content-dark.scss",
     "~/assets/styles/syntaxhighlight.scss",
   ],
+  dir: {
+    public: "src/public",
+  },
   modules: [
     "@vueuse/nuxt",
-    ["@nuxtjs/google-adsense", {
-      id: "ca-pub-2873410957106428",
-      analyticsUacct: "UA-79701523-1",
-      analyticsDomainName: "mirumi.me",
-    }],
+    [
+      "@nuxtjs/google-adsense",
+      {
+        id: "ca-pub-2873410957106428",
+        analyticsUacct: "UA-79701523-1",
+        analyticsDomainName: "mirumi.me",
+      },
+    ],
   ],
   pages: true,
   runtimeConfig: {
@@ -72,6 +103,7 @@ export default defineNuxtConfig({
       applicationPassword: secret.APPLICATION_PASSWORD,
     },
   },
+  serverDir: "src/server",
   srcDir: "src/",
   ssr: true,
   telemetry: false,
@@ -95,13 +127,6 @@ export default defineNuxtConfig({
       interval: 1_000,
       retry: 5,
       retryDelay: 1_000,
-      ignore: [
-        // `/regexp-for-p` 記事内にあるコードブロック内にある a タグをクロール先として誤検知してしまう問題への対策
-        /regexp-for-p\/\$3/,
-      ],
-
-      // CAUTION!: The following comment are used by CI to re-generate specified post
-      // ### crawlLinks: false, routes: [###],
-    }
+    },
   },
 })

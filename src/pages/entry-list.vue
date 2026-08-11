@@ -57,9 +57,9 @@ const { data } = await useFetch("/mirumi/entry_list", {
 const entries = data.value as Array<EntryListItem>
 
 const entriesByCategories: Array<EntriesByCategory> = []
-let categoryIndex = -1
-for (const [i, e] of entries.entries()) {
-  if (i === 0) {
+for (const e of entries) {
+  const entriesByCategory = entriesByCategories.at(-1)
+  if (!entriesByCategory || entriesByCategory.categorySlug !== e.categorySlug) {
     entriesByCategories.push({
       categoryName: e.categoryName,
       categorySlug: e.categorySlug,
@@ -70,25 +70,9 @@ for (const [i, e] of entries.entries()) {
         },
       ],
     })
-    categoryIndex++
     continue
-  } else {
-    if (entries[i].categorySlug !== entries[i - 1].categorySlug) {
-      entriesByCategories.push({
-        categoryName: e.categoryName,
-        categorySlug: e.categorySlug,
-        entries: [
-          {
-            slug: e.slug,
-            title: e.title,
-          },
-        ],
-      })
-      categoryIndex++
-      continue
-    }
   }
-  entriesByCategories[categoryIndex].entries.push({
+  entriesByCategory.entries.push({
     slug: e.slug,
     title: e.title,
   })
@@ -126,14 +110,17 @@ usePageInfo({
 <style lang="scss" scoped>
 .entry_list_view {
   margin-bottom: 3em !important;
+
   > ul {
     > li.category {
       font-size: 0.88em;
+
       &:first-child {
         a {
           margin-top: 0;
         }
       }
+
       > a {
         display: block;
         margin: 2.1em 0 0.7em;
@@ -141,13 +128,16 @@ usePageInfo({
         border-bottom: solid 1px #e5e5e5;
         text-decoration: none;
       }
+
       > ul {
         padding-left: 0.5em;
+
         > li.entry {
           margin: 0 0 0.1em 1.1em;
           padding: 0 0 0 0.1em;
           font-size: 0.8125em;
           list-style: disc;
+
           > a {
             text-decoration: none;
           }
@@ -156,6 +146,7 @@ usePageInfo({
     }
   }
 }
+
 .dark {
   .entry_list_view {
     > ul {
