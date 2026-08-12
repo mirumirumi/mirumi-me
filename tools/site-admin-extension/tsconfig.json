@@ -1,32 +1,28 @@
 {
-    "compilerOptions": {
-        "baseUrl": "./src",
-        "outDir": "./dist",
-        "target": "ESNext",
-        "module": "ESNext",
-        "strict": true,
-        "esModuleInterop": true,
-        "skipLibCheck": true,
-        "jsx": "preserve",
-        "importHelpers": true,
-        "moduleResolution": "Node",
-        "allowSyntheticDefaultImports": true,
-        "sourceMap": true,
-        "resolveJsonModule": true,
-        "paths": {
-          "@/*": [
-            "src/*"
-          ]
-        },
-        "lib": [
-          "ESNext",
-          "DOM",
-          "DOM.Iterable",
-          "ScriptHost",
-          "WebWorker"
-        ],
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "importHelpers": true,
+    "sourceMap": true,
+    "paths": {
+      "@/*": ["./src/*"],
     },
-    "exclude": [
-        "node_modules"
-    ]
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable",
+      "WebWorker",
+    ],
+    "types": [
+      "chrome",
+    ],
+  },
+  "include": [
+    "src/**/*.ts",
+    "vite.config.ts",
+  ],
+  "exclude": [
+    "dist",
+    "node_modules",
+  ],
 }

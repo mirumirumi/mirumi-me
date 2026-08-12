@@ -37,7 +37,7 @@ jobs:
 
       - name: Generate site
         run: |
-          bun run generate
+          bun run --cwd app generate
 
       - name: Generate XMLs
         run: |

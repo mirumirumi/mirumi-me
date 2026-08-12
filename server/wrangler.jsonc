@@ -1,0 +1,143 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "mirumi-me",
+  "main": "src/main.ts",
+  "compatibility_date": "2026-08-12",
+  // mirumi.me の DNS は AWS 側にあるため、本番 API もカスタムドメインは使わない
+  "workers_dev": true,
+  "send_metrics": false,
+  "env": {
+    "dev": {
+      "name": "mirumi-me-dev",
+      "preview_urls": false,
+      "upload_source_maps": true,
+      "vars": {
+        "APP_ENV": "dev",
+        "AWS_REGION": "ap-northeast-1",
+        "SITE_BUCKET_NAME": "mirumime-dev-mirumi-me",
+        "CLOUDFRONT_DISTRIBUTION_ID": "E16GU2ZPNLT91U"
+      },
+      "secrets": {
+        "required": [
+          "NOTION_TOKEN",
+          "NOTION_WEBHOOK_SECRET",
+          "TURNSTILE_SECRET",
+          "AWS_ACCESS_KEY_ID",
+          "AWS_SECRET_ACCESS_KEY",
+          "XAI_API_KEY"
+        ]
+      },
+      "triggers": {
+        // バックアップ頻度が決まったら書く🔴
+        "crons": []
+      },
+      "workflows": [
+        {
+          "binding": "PUBLISH_WORKFLOW",
+          "name": "mirumi-me-publish-dev",
+          "class_name": "PublishWorkflow"
+        }
+      ],
+      "containers": [
+        {
+          "name": "mirumi-me-build-dev",
+          "image": "./Dockerfile",
+          "image_build_context": "..",
+          "class_name": "BuildContainer",
+          "max_instances": 1,
+          "instance_type": "standard-3",
+          "constraints": {
+            "regions": ["APAC"]
+          },
+          "rollout_step_percentage": 100,
+          "ssh": {
+            "enabled": false
+          }
+        }
+      ],
+      "analytics_engine_datasets": [
+        {
+          "binding": "MIRUMI_ME_PV",
+          "dataset": "mirumi_me_pv_dev"
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "X_POST_CACHE"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "BACKUP",
+          "bucket_name": "mirumi-me-backup-dev"
+        }
+      ]
+    },
+    "prd": {
+      "name": "mirumi-me-prd",
+      "preview_urls": false,
+      "upload_source_maps": false,
+      "vars": {
+        "APP_ENV": "prd",
+        "AWS_REGION": "ap-northeast-1",
+        "SITE_BUCKET_NAME": "mirumime-prd-mirumi-me",
+        "CLOUDFRONT_DISTRIBUTION_ID": "E1UPWIMHFP5TEC"
+      },
+      "secrets": {
+        "required": [
+          "NOTION_TOKEN",
+          "NOTION_WEBHOOK_SECRET",
+          "TURNSTILE_SECRET",
+          "AWS_ACCESS_KEY_ID",
+          "AWS_SECRET_ACCESS_KEY",
+          "XAI_API_KEY"
+        ]
+      },
+      "triggers": {
+        // バックアップ頻度が決まったら書く🔴
+        "crons": []
+      },
+      "workflows": [
+        {
+          "binding": "PUBLISH_WORKFLOW",
+          "name": "mirumi-me-publish-prd",
+          "class_name": "PublishWorkflow"
+        }
+      ],
+      "containers": [
+        {
+          "name": "mirumi-me-build-prd",
+          "image": "./Dockerfile",
+          "image_build_context": "..",
+          "class_name": "BuildContainer",
+          "max_instances": 1,
+          "instance_type": "standard-3",
+          "constraints": {
+            "regions": ["APAC"]
+          },
+          "rollout_step_percentage": 100,
+          "ssh": {
+            "enabled": false
+          }
+        }
+      ],
+      "analytics_engine_datasets": [
+        {
+          "binding": "MIRUMI_ME_PV",
+          "dataset": "mirumi_me_pv_prd"
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "X_POST_CACHE"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "BACKUP",
+          "bucket_name": "mirumi-me-backup-prd"
+        }
+      ]
+    }
+  }
+}

@@ -1,36 +1,23 @@
 {
   "name": "mirumi-me",
-  "version": "4.2.18",
   "private": true,
+  "workspaces": [
+    "app",
+    "server",
+    "shared",
+    "tools/site-admin-extension"
+  ],
   "scripts": {
-    "dev": "nuxt dev --host",
-    "lint-and-format": "biome check --write --diagnostic-level=error && stylelint \"src/**/*.{css,scss,vue}\" --fix",
-    "lint-and-format:ci": "biome ci --diagnostic-level=error && stylelint \"src/**/*.{css,scss,vue}\"",
-    "tsc": "nuxt prepare && vue-tsc -b --noEmit",
-    "test": "bun run --cwd app test && bun run --cwd server test",
-    "generate": "nuxt generate"
-  },
-  "dependencies": {
-    "@nuxtjs/google-adsense": "^3.0.3",
-    "@vueuse/core": "^14.4.0",
-    "@vueuse/nuxt": "^14.4.0",
-    "uuid": "^14.0.1",
-    "vue": "^3.5.41",
-    "vue-gtag": "^3.7.1",
-    "vue-toastification": "^2.0.0-rc.5"
+    "dev": "bun run --cwd app dev",
+    "lint-and-format": "biome check --write --diagnostic-level=error && bun run --cwd app stylelint",
+    "lint-and-format:ci": "biome ci --diagnostic-level=error && bun run --cwd app stylelint:ci",
+    "tsc": "bun run --cwd app tsc && bun run --cwd server type:check && bun run --cwd tools/site-admin-extension tsc",
+    "test": "bun run --cwd app test && bun run --cwd server test"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.12",
-    "@types/node": "^24.13.3",
-    "nuxt": "^4.5.2",
-    "postcss": "^8.5.26",
-    "postcss-html": "^2.0.0",
-    "postcss-scss": "^4.0.9",
-    "sass": "^1.102.0",
-    "stylelint": "^17.14.1",
-    "stylelint-config-standard-scss": "^17.0.0",
     "typescript": "^6.0.3",
-    "vue-tsc": "^3.3.9"
+    "vitest": "^4.1.10"
   },
   "patchedDependencies": {
     "@nuxtjs/google-adsense@3.0.3": "patches/@nuxtjs%2Fgoogle-adsense@3.0.3.patch"

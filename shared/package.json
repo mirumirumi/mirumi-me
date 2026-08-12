@@ -1,0 +1,10 @@
+{
+  "name": "shared",
+  "private": true,
+  "exports": {
+    "./*": {
+      "types": "./src/*.ts",
+      "import": "./src/*.ts"
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "type:check": "wrangler types --check",
+    "type:gen": "wrangler types --env-interface CloudflareBindings",
+    "test": "vitest run --config ../vitest.config.ts",
+    "deploy:dev": "wrangler deploy --minify --env dev",
+    "deploy:prd": "wrangler deploy --minify --env prd"
+  },
+  "dependencies": {
+    "dayjs": "^1.11.21",
+    "hono": "^4.13.1",
+    "shared": "workspace:*",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "wrangler": "^4.121.0"
+  }
+}
