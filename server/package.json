@@ -4,13 +4,15 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "type:check": "wrangler types --check",
+    "tsc": "tsc --noEmit",
+    "type:check": "wrangler types --check --env-interface CloudflareBindings",
     "type:gen": "wrangler types --env-interface CloudflareBindings",
-    "test": "vitest run --config ../vitest.config.ts",
+    "test": "vitest run --config ../vitest.config.ts --configLoader runner",
     "deploy:dev": "wrangler deploy --minify --env dev",
     "deploy:prd": "wrangler deploy --minify --env prd"
   },
   "dependencies": {
+    "@cloudflare/containers": "^0.3.7",
     "dayjs": "^1.11.21",
     "hono": "^4.13.1",
     "shared": "workspace:*",

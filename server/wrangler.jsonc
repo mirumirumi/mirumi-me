@@ -41,7 +41,7 @@
       "containers": [
         {
           "name": "mirumi-me-build-dev",
-          "image": "./Dockerfile",
+          "image": "./src/containers/Dockerfile",
           "image_build_context": "..",
           "class_name": "BuildContainer",
           "max_instances": 1,
@@ -53,6 +53,22 @@
           "ssh": {
             "enabled": false
           }
+        }
+      ],
+      // Containers の使用に必要
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "BUILD_CONTAINER",
+            "class_name": "BuildContainer"
+          }
+        ]
+      },
+      // Containers の使用に必要
+      "migrations": [
+        {
+          "tag": "v1",
+          "new_sqlite_classes": ["BuildContainer"]
         }
       ],
       "analytics_engine_datasets": [
@@ -107,7 +123,7 @@
       "containers": [
         {
           "name": "mirumi-me-build-prd",
-          "image": "./Dockerfile",
+          "image": "./src/containers/Dockerfile",
           "image_build_context": "..",
           "class_name": "BuildContainer",
           "max_instances": 1,
@@ -119,6 +135,22 @@
           "ssh": {
             "enabled": false
           }
+        }
+      ],
+      // Containers の使用に必要
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "BUILD_CONTAINER",
+            "class_name": "BuildContainer"
+          }
+        ]
+      },
+      // Containers の使用に必要
+      "migrations": [
+        {
+          "tag": "v1",
+          "new_sqlite_classes": ["BuildContainer"]
         }
       ],
       "analytics_engine_datasets": [

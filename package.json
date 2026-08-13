@@ -11,7 +11,7 @@
     "dev": "bun run --cwd app dev",
     "lint-and-format": "biome check --write --diagnostic-level=error && bun run --cwd app stylelint",
     "lint-and-format:ci": "biome ci --diagnostic-level=error && bun run --cwd app stylelint:ci",
-    "tsc": "bun run --cwd app tsc && bun run --cwd server type:check && bun run --cwd tools/site-admin-extension tsc",
+    "tsc": "bun run --cwd app tsc && bun run --cwd server tsc && bun run --cwd tools/site-admin-extension tsc",
     "test": "bun run --cwd app test && bun run --cwd server test"
   },
   "devDependencies": {
