@@ -99,8 +99,7 @@ export default defineNuxtConfig({
   pages: true,
   runtimeConfig: {
     public: {
-      userName: secret.USER_NAME,
-      applicationPassword: secret.APPLICATION_PASSWORD,
+      turnstileSiteKey: "0x4AAAAAAEO8PjpC2BzSTS2T",
     },
   },
   serverDir: "src/server",

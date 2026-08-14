@@ -33,8 +33,8 @@
       },
       "workflows": [
         {
-          "binding": "PUBLISH_WORKFLOW",
           "name": "mirumi-me-publish-dev",
+          "binding": "PUBLISH_WORKFLOW",
           "class_name": "PublishWorkflow"
         }
       ],
@@ -73,19 +73,20 @@
       ],
       "analytics_engine_datasets": [
         {
-          "binding": "MIRUMI_ME_PV",
-          "dataset": "mirumi_me_pv_dev"
+          "dataset": "mirumi_me_pv_dev",
+          "binding": "MIRUMI_ME_PV"
         }
       ],
       "kv_namespaces": [
         {
+          "id": "ab630ddb5e9144c986d766ca9f7e454e",
           "binding": "X_POST_CACHE"
         }
       ],
       "r2_buckets": [
         {
-          "binding": "BACKUP",
-          "bucket_name": "mirumi-me-backup-dev"
+          "bucket_name": "mirumi-me-backup-dev",
+          "binding": "BACKUP"
         }
       ]
     },
@@ -115,8 +116,8 @@
       },
       "workflows": [
         {
-          "binding": "PUBLISH_WORKFLOW",
           "name": "mirumi-me-publish-prd",
+          "binding": "PUBLISH_WORKFLOW",
           "class_name": "PublishWorkflow"
         }
       ],
@@ -155,8 +156,8 @@
       ],
       "analytics_engine_datasets": [
         {
-          "binding": "MIRUMI_ME_PV",
-          "dataset": "mirumi_me_pv_prd"
+          "dataset": "mirumi_me_pv_prd",
+          "binding": "MIRUMI_ME_PV"
         }
       ],
       "kv_namespaces": [
@@ -166,8 +167,8 @@
       ],
       "r2_buckets": [
         {
-          "binding": "BACKUP",
-          "bucket_name": "mirumi-me-backup-prd"
+          "bucket_name": "mirumi-me-backup-prd",
+          "binding": "BACKUP"
         }
       ]
     }
