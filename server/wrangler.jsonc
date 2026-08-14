@@ -13,6 +13,8 @@
       "upload_source_maps": true,
       "vars": {
         "APP_ENV": "dev",
+        "ACCESS_AUD": "84cc688b6267419444da69a5a070b1043a8e1de0cf4c072d5affcd4ec779b239",
+        "ACCESS_TEAM_DOMAIN": "https://little-mud-182a.cloudflareaccess.com",
         "AWS_REGION": "ap-northeast-1",
         "SITE_BUCKET_NAME": "mirumime-dev-mirumi-me",
         "CLOUDFRONT_DISTRIBUTION_ID": "E16GU2ZPNLT91U"
@@ -96,6 +98,8 @@
       "upload_source_maps": false,
       "vars": {
         "APP_ENV": "prd",
+        "ACCESS_AUD": "84cc688b6267419444da69a5a070b1043a8e1de0cf4c072d5affcd4ec779b239",
+        "ACCESS_TEAM_DOMAIN": "https://little-mud-182a.cloudflareaccess.com",
         "AWS_REGION": "ap-northeast-1",
         "SITE_BUCKET_NAME": "mirumime-prd-mirumi-me",
         "CLOUDFRONT_DISTRIBUTION_ID": "E1UPWIMHFP5TEC"
