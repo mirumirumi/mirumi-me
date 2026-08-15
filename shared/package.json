@@ -6,5 +6,8 @@
       "types": "./src/*.ts",
       "import": "./src/*.ts"
     }
+  },
+  "dependencies": {
+    "@notionhq/client": "^5.25.2"
   }
 }

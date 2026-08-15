@@ -3,6 +3,7 @@
   "name": "mirumi-me",
   "main": "src/main.ts",
   "compatibility_date": "2026-08-12",
+  "compatibility_flags": ["nodejs_compat"],
   // mirumi.me の DNS は AWS 側にあるため、本番 API もカスタムドメインは使わない
   "workers_dev": true,
   "send_metrics": false,
@@ -28,6 +29,12 @@
           "AWS_SECRET_ACCESS_KEY",
           "XAI_API_KEY"
         ]
+      },
+      "observability": {
+        "logs": {
+          "enabled": true,
+          "invocation_logs": true
+        }
       },
       "triggers": {
         // バックアップ頻度が決まったら書く🔴
@@ -113,6 +120,12 @@
           "AWS_SECRET_ACCESS_KEY",
           "XAI_API_KEY"
         ]
+      },
+      "observability": {
+        "logs": {
+          "enabled": true,
+          "invocation_logs": true
+        }
       },
       "triggers": {
         // バックアップ頻度が決まったら書く🔴
