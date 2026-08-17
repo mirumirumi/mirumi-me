@@ -55,6 +55,17 @@
         "@notionhq/client": "^5.25.2",
       },
     },
+    "tools/migrate-to-notion": {
+      "name": "migrate-to-notion",
+      "dependencies": {
+        "@notionhq/client": "^5.25.2",
+        "node-html-parser": "^7.1.0",
+        "shared": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/node": "^24.13.3",
+      },
+    },
     "tools/site-admin-extension": {
       "name": "site-admin-extension",
       "version": "1.0.0",
@@ -1228,6 +1239,8 @@
     "merge2": ["merge2@1.4.1", "", {}, "sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg=="],
 
     "micromatch": ["micromatch@4.0.8", "", { "dependencies": { "braces": "^3.0.3", "picomatch": "^2.3.1" } }, "sha512-PXwfBhYu0hBCPw8Dn0E+WDYb7af3dSLVWKi3HGv84IdF4TyFoC0ysxFd0Goxw7nSv4T/PzEJQxsYsEiFCKo2BA=="],
+
+    "migrate-to-notion": ["migrate-to-notion@workspace:tools/migrate-to-notion"],
 
     "mime": ["mime@4.1.0", "", { "bin": { "mime": "bin/cli.js" } }, "sha512-X5ju04+cAzsojXKes0B/S4tcYtFAJ6tTMuSPBEn9CPGlrWr8Fiw7qYeLT0XyH80HSoAoqWCaz+MWKh22P7G1cw=="],
 

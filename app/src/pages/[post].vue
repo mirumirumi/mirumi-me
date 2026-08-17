@@ -182,8 +182,6 @@ useHead({ script: [{ src: "https://platform.x.com/widgets.js", async: true }] })
 
 usePageInfo({
   title: post.title,
-  description: post.meta_description,
-  keywords: post.meta_keywords,
   url: appConfig.siteFullPath + "/" + slug,
   createdAt: post.date,
   updatedAt: post.modified,

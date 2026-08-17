@@ -95,7 +95,6 @@
     max-width: 100%;
     height: auto;
     margin: auto;
-    border: solid 2.7px var(--color-media-border);
     border-radius: 7px;
 
     &.win11_ss {
@@ -1670,11 +1669,6 @@
 
   .color-gray {
     color: #999999;
-  }
-
-  .sss {
-    box-shadow: none !important;
-    border: none !important;
   }
 
   .alignnone {

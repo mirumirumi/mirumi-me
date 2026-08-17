@@ -1,6 +1,10 @@
 {
   "name": "shared",
   "private": true,
+  "scripts": {
+    "tsc": "tsc --noEmit",
+    "test": "vitest run --config ../vitest.config.ts --configLoader runner shared"
+  },
   "exports": {
     "./*": {
       "types": "./src/*.ts",

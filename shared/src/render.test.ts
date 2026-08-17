@@ -65,6 +65,57 @@ describe("renderArticleContent", () => {
     expect(result.warnings).toEqual([])
   })
 
+  test("インライン数式を文字サイズ・上付き・下付きに戻す", () => {
+    const result = renderArticleContent(
+      article([
+        {
+          id: "equation",
+          type: "paragraph",
+          richText: [
+            text("{\\Large\\text{大}}", { type: "equation" }),
+            text("^{2}", { type: "equation" }),
+            text("_{i=1}", { type: "equation" }),
+          ],
+          children: [],
+        },
+      ]),
+    )
+
+    expect(result.html).toEqual(
+      '<p><span style="font-size:1.5em">大</span><sup>2</sup><sub>i=1</sub></p>',
+    )
+    expect(result.warnings).toEqual([])
+  })
+
+  test("画像の alt をオプショントークンかファイル名から決める", () => {
+    const result = renderArticleContent(
+      article([
+        {
+          id: "plain",
+          type: "image",
+          url: "https://mirumi.media/my-cats-1999x1124.png",
+          caption: [],
+          children: [],
+        },
+        {
+          id: "authored",
+          type: "image",
+          url: "https://mirumi.media/246310.png",
+          caption: [text('[image alt="タグ編集の例"] 説明文')],
+          children: [],
+        },
+      ]),
+    )
+
+    // トークンがなければファイル名から復元する
+    expect(result.html).toContain('alt="my-cats"')
+    // トークンの alt が優先され、トークン部分はキャプションから取り除かれる
+    expect(result.html).toContain('alt="タグ編集の例"')
+    expect(result.html).toContain('<p class="wp-caption-text">説明文</p>')
+    expect(result.html).not.toContain("[image")
+    expect(result.warnings).toEqual([])
+  })
+
   test("見出し ID と開いた状態のもくじを最初の見出し直前に生成する", () => {
     const result = renderArticleContent(
       article([
@@ -133,6 +184,12 @@ describe("renderArticleContent", () => {
           children: [],
         },
         {
+          id: "amazon",
+          type: "paragraph",
+          richText: [text('[amazon asin="B000000000"]')],
+          children: [],
+        },
+        {
           id: "unsupported",
           type: "unsupported",
           originalType: "button",
@@ -149,10 +206,13 @@ describe("renderArticleContent", () => {
       ]),
     )
 
-    expect(result.html.match(/🔴/g)).toHaveLength(3)
-    expect(result.warnings).toHaveLength(3)
+    expect(result.html.match(/🔴/g)).toHaveLength(4)
+    expect(result.warnings).toHaveLength(4)
     expect(result.warnings).toContain(
       "button ショートコードの HTML 変換は未確定です（block: button）",
+    )
+    expect(result.warnings).toContain(
+      "amazon ショートコードの HTML 変換は未確定です（block: amazon）",
     )
   })
 

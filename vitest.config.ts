@@ -5,7 +5,12 @@ export default defineConfig({
   root: new URL(".", import.meta.url).pathname,
   test: {
     globals: true,
-    include: ["app/**/*.test.ts", "server/**/*.test.ts", "shared/**/*.test.ts"],
+    include: [
+      "app/**/*.test.ts",
+      "server/**/*.test.ts",
+      "shared/**/*.test.ts",
+      "tools/**/*.test.ts",
+    ],
     mockReset: true,
     passWithNoTests: true,
   },

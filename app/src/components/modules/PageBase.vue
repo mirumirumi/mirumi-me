@@ -58,8 +58,6 @@ const page = data.value as Record<string, any>
 
 usePageInfo({
   title: page.title,
-  description: page.meta_description,
-  keywords: page.meta_keywords,
   url: appConfig.siteFullPath + "/" + slug,
   createdAt: page.date,
   updatedAt: page.modified,

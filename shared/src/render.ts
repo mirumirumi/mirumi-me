@@ -59,6 +59,9 @@ const renderEquation = (expression: string, context: RenderContext): string => {
   if (expression.startsWith("^{") && expression.endsWith("}")) {
     return `<sup>${escapeHtml(expression.slice(2, -1))}</sup>`
   }
+  if (expression.startsWith("_{") && expression.endsWith("}")) {
+    return `<sub>${escapeHtml(expression.slice(2, -1))}</sub>`
+  }
 
   context.warnings.push(`未対応のインライン数式です: ${expression}`)
 
@@ -256,11 +259,46 @@ const renderMedia = (
   return `<div class="waku-common"><p>🔴 ブックマークの OGP 表示は未実装です</p><p><a href="${escapedUrl}">${caption || escapedUrl}</a></p></div>`
 }
 
+// image ブロックのキャプションは、先頭に `[image …]` のオプショントークンを置ける。
+// トークンより後ろが実際のキャプションで、区切りの半角スペース 1 個は取り除く
+const splitImageCaption = (
+  richText: Array<RichText>,
+): { options: Record<string, string>; caption: Array<RichText> } => {
+  const first = richText.at(0)
+  const token = first?.type === "text" ? first.content.match(/^\[image\b([^\]]*)]( ?)/) : null
+  if (!first || !token) {
+    return { options: {}, caption: richText }
+  }
+
+  const options: Record<string, string> = {}
+  for (const match of (token[1] ?? "").matchAll(/([a-zA-Z][\w-]*)\s*=\s*"((?:[^"\\]|\\.)*)"/g)) {
+    if (match[1] && match[2] !== undefined) {
+      options[match[1]] = match[2].replaceAll('\\"', '"')
+    }
+  }
+  const rest = first.content.slice(token[0].length)
+
+  return {
+    options,
+    caption: rest ? [{ ...first, content: rest }, ...richText.slice(1)] : richText.slice(1),
+  }
+}
+
+// alt は移行時にファイル名と違うものだけを持ち込んでいるので、残りはファイル名から復元する
+const imageAltFromUrl = (url: string): string => {
+  try {
+    const name = decodeURIComponent(new URL(url).pathname.split("/").filter(Boolean).at(-1) ?? "")
+    return name.replace(/\.[a-z0-9]+$/i, "").replace(/-\d+x\d+$/, "")
+  } catch {
+    return ""
+  }
+}
+
 const renderBlock = (block: ContentBlock, context: RenderContext): string => {
   switch (block.type) {
     case "paragraph": {
       const plainText = block.richText.map((item) => item.content).join("")
-      const shortcode = plainText.trim().match(/^\[(button|app|video|image|quoteImage)\b/)
+      const shortcode = plainText.trim().match(/^\[(amazon|button|app|video|image|quoteImage)\b/)
       if (shortcode) {
         // 🔴 各ショートコードの属性仕様が確定したものから専用 HTML へ置き換える
         return addWarning(
@@ -291,9 +329,15 @@ const renderBlock = (block: ContentBlock, context: RenderContext): string => {
         return addWarning(context, `不正な画像 URL です（block: ${block.id}）`)
       }
 
-      const caption = renderRichText(block.caption, context)
+      const { options, caption } = splitImageCaption(block.caption)
+      if (0 < Object.keys(options).filter((name) => name !== "alt").length) {
+        // 🔴 枠線の既定値を決めたあと、width / align / border を実際の HTML へ反映する
+        context.warnings.push(`画像オプションの HTML 変換は未確定です（block: ${block.id}）`)
+      }
+      const captionHtml = renderRichText(caption, context)
+      const alt = options.alt ?? imageAltFromUrl(url)
 
-      return `<div class="wp-caption"><img src="${escapeHtml(url)}" alt="${escapeHtml(block.caption.map((item) => item.content).join(""))}" loading="lazy">${caption ? `<p class="wp-caption-text">${caption}</p>` : ""}</div>`
+      return `<div class="wp-caption"><img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" loading="lazy">${captionHtml ? `<p class="wp-caption-text">${captionHtml}</p>` : ""}</div>`
     }
     case "audio":
     case "video":

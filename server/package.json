@@ -7,7 +7,7 @@
     "tsc": "tsc --noEmit",
     "type:check": "wrangler types --check --env-interface CloudflareBindings",
     "type:gen": "wrangler types --env-interface CloudflareBindings",
-    "test": "vitest run --config ../vitest.config.ts --configLoader runner",
+    "test": "vitest run --config ../vitest.config.ts --configLoader runner server",
     "deploy:dev": "wrangler deploy --minify --env dev",
     "deploy:prd": "wrangler deploy --minify --env prd"
   },

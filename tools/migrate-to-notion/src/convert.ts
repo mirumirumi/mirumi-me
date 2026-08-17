@@ -1,0 +1,1220 @@
+import type { BlockObjectRequest, CreatePageParameters } from "@notionhq/client"
+import { HTMLElement, Node, NodeType, parse } from "node-html-parser"
+
+import { CATEGORY_PAGE_IDS, PAGES_DATA_SOURCE_ID, POSTS_DATA_SOURCE_ID } from "./config"
+import type {
+  MigrationWarning,
+  MigrationWarningCode,
+  NotionPageInput,
+  WordPressContentRecord,
+} from "./types"
+
+type PageProperties = NonNullable<CreatePageParameters["properties"]>
+type CodeBlockRequest = Extract<BlockObjectRequest, { code: unknown }>
+type CodeLanguage = CodeBlockRequest["code"]["language"]
+type RichTextItemRequest = Extract<
+  BlockObjectRequest,
+  { paragraph: unknown }
+>["paragraph"]["rich_text"][number]
+type RichTextAnnotations = NonNullable<RichTextItemRequest["annotations"]>
+
+interface ConversionContext {
+  customCss: Array<string>
+  warnings: Array<MigrationWarning>
+}
+
+interface InlineState {
+  annotations: RichTextAnnotations
+  link: string | null
+}
+
+const DEFAULT_INLINE_STATE: InlineState = {
+  annotations: {},
+  link: null,
+}
+
+const CODE_LANGUAGES = new Set<CodeLanguage>([
+  "bash",
+  "c",
+  "c#",
+  "c++",
+  "css",
+  "diff",
+  "docker",
+  "html",
+  "java",
+  "javascript",
+  "json",
+  "markdown",
+  "php",
+  "plain text",
+  "powershell",
+  "python",
+  "ruby",
+  "rust",
+  "scss",
+  "shell",
+  "sql",
+  "typescript",
+  "vb.net",
+  "visual basic",
+  "xml",
+  "yaml",
+])
+
+const INLINE_TAGS = new Set([
+  "a",
+  "b",
+  "br",
+  "code",
+  "del",
+  "em",
+  "i",
+  "img",
+  "s",
+  "span",
+  "strong",
+  "sub",
+  "sup",
+  "u",
+])
+
+const normalizeSource = (value: string): string => {
+  return value.replaceAll(/\s+/g, " ").trim().slice(0, 300)
+}
+
+const warn = (
+  context: ConversionContext,
+  code: MigrationWarningCode,
+  message: string,
+  source: string,
+) => {
+  context.warnings.push({ code, message, source: normalizeSource(source) })
+}
+
+const safeUrl = (value: string, context: ConversionContext, source: string): string | null => {
+  try {
+    const url = new URL(value.startsWith("//") ? `https:${value}` : value, "https://mirumi.me")
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      throw TypeError("HTTP URL ではありません")
+    }
+    if (
+      ["milmemo.net", "mirumi.in", "mirumi.me", "www.milmemo.net", "www.mirumi.in"].includes(
+        url.hostname,
+      ) &&
+      url.pathname.startsWith("/wp-content/uploads/")
+    ) {
+      url.protocol = "https:"
+      url.hostname = "mirumi.media"
+      url.port = ""
+      url.pathname = url.pathname.slice("/wp-content/uploads".length)
+    }
+
+    return url.href
+  } catch {
+    warn(context, "invalid_url", `URL を解釈できませんでした: ${value}`, source)
+    return null
+  }
+}
+
+const sameAnnotations = (left: RichTextAnnotations, right: RichTextAnnotations): boolean => {
+  return JSON.stringify(left) === JSON.stringify(right)
+}
+
+const splitText = (value: string): Array<string> => {
+  const characters = Array.from(value)
+  const chunks: Array<string> = []
+
+  for (let index = 0; index < characters.length; index += 1_900) {
+    chunks.push(characters.slice(index, index + 1_900).join(""))
+  }
+
+  return chunks
+}
+
+const appendText = (richText: Array<RichTextItemRequest>, value: string, state: InlineState) => {
+  if (!value) {
+    return
+  }
+
+  const previous = richText.at(-1)
+  if (
+    previous &&
+    "text" in previous &&
+    (previous.text.link?.url ?? null) === state.link &&
+    sameAnnotations(previous.annotations ?? {}, state.annotations)
+  ) {
+    previous.text.content += value
+    return
+  }
+
+  richText.push({
+    type: "text",
+    text: {
+      content: value,
+      link: state.link ? { url: state.link } : null,
+    },
+    annotations: state.annotations,
+  })
+}
+
+const appendRichTextItems = (
+  richText: Array<RichTextItemRequest>,
+  items: Array<RichTextItemRequest>,
+) => {
+  for (const item of items) {
+    if ("text" in item) {
+      appendText(richText, item.text.content, {
+        annotations: item.annotations ?? {},
+        link: item.text.link?.url ?? null,
+      })
+      continue
+    }
+
+    richText.push(item)
+  }
+}
+
+const normalizeInlineWhitespace = (value: string): string => {
+  return value.replaceAll("\r", "").replaceAll(/[\t\n\f ]+/g, " ")
+}
+
+const trimRichText = (richText: Array<RichTextItemRequest>): Array<RichTextItemRequest> => {
+  const first = richText.at(0)
+  if (first && "text" in first) {
+    first.text.content = first.text.content.trimStart()
+  }
+
+  const last = richText.at(-1)
+  if (last && "text" in last) {
+    last.text.content = last.text.content.trimEnd()
+  }
+
+  return richText.filter((item) => !("text" in item) || item.text.content !== "")
+}
+
+const splitRichTextItems = (richText: Array<RichTextItemRequest>): Array<RichTextItemRequest> => {
+  return richText.flatMap((item) => {
+    if (!("text" in item) || item.text.content.length < 1_901) {
+      return [item]
+    }
+
+    return splitText(item.text.content).map((content) => ({
+      ...item,
+      text: { ...item.text, content },
+    }))
+  })
+}
+
+const elementColor = (element: HTMLElement): RichTextAnnotations["color"] | null => {
+  const style = element.getAttribute("style") ?? ""
+  if (element.classList.contains("color-red")) {
+    return "red"
+  }
+  if (element.classList.contains("color-blue")) {
+    return "blue"
+  }
+  if (element.classList.contains("color-gray") || /color:\s*#(?:808080|999999)/i.test(style)) {
+    return "gray"
+  }
+
+  return null
+}
+
+const fontSizeExpression = (element: HTMLElement): string | null => {
+  const style = element.getAttribute("style") ?? ""
+  const size = style.match(/font-size:\s*(0\.8|1\.35|1\.5|2(?:\.0)?)em/i)?.[1]
+  const prefix =
+    size === "0.8"
+      ? "\\scriptsize"
+      : size === "1.35"
+        ? "\\large"
+        : size === "1.5"
+          ? "\\Large"
+          : size === "2" || size === "2.0"
+            ? "\\LARGE"
+            : null
+
+  return prefix ? `{${prefix}\\text{${element.text.replaceAll("}", "\\}")}}}` : null
+}
+
+const imageUrl = (element: HTMLElement, context: ConversionContext): string | null => {
+  const value =
+    element.getAttribute("src") ??
+    element.getAttribute("data-src") ??
+    element.getAttribute("data-lazy-src")
+
+  return value ? safeUrl(value, context, element.outerHTML) : null
+}
+
+// max-width や min-width を巻き込まないよう直前の文字まで見る
+const WIDTH_STYLE = /(?:^|[;\s])width:\s*([^;]+)/i
+
+const isTrackingImage = (element: HTMLElement): boolean => {
+  const style = element.getAttribute("style") ?? ""
+  const width = Number.parseFloat(
+    element.getAttribute("width") ?? style.match(/width:\s*([\d.]+)px/i)?.[1] ?? "",
+  )
+  const height = Number.parseFloat(
+    element.getAttribute("height") ?? style.match(/height:\s*([\d.]+)px/i)?.[1] ?? "",
+  )
+
+  return (Number.isFinite(width) && width < 2) || (Number.isFinite(height) && height < 2)
+}
+
+const imageAttributes = (element: HTMLElement): Array<string> => {
+  // width 属性は WordPress が原寸として自動で吐くだけなので、意図的なサイズ指定である
+  // インラインスタイルの width だけを採用する
+  const width = element.getAttribute("style")?.match(WIDTH_STYLE)?.[1]?.trim()
+  const align = element.classList.contains("alignnone")
+    ? "none"
+    : element.classList.contains("aligncenter")
+      ? "center"
+      : null
+
+  return [
+    width && width !== "100%" ? shortcodeValue("width", width) : null,
+    align ? shortcodeValue("align", align) : null,
+  ].filter((value): value is string => value !== null)
+}
+
+// alignnone / aligncenter は WordPress がほぼ全画像に付ける既定のクラスなので、
+// それだけを根拠にオプションを足すとキャプションが埋まってしまう。
+// 明示的な見た目の調整が入っている画像だけを対象にする。
+// なお枠線なし指定の .sss は移行を機に廃止したので判定にも使わない
+const hasCustomAppearance = (element: HTMLElement): boolean => {
+  const style = element.getAttribute("style") ?? ""
+  const width = Number.parseInt(element.getAttribute("width") ?? "", 10)
+
+  return (
+    /(?:transform|box-shadow):/i.test(style) ||
+    WIDTH_STYLE.test(style) ||
+    (element.classList.contains("alignnone") && Number.isFinite(width) && width < 300)
+  )
+}
+
+const fileStem = (url: string): string => {
+  const name = decodeURIComponent(new URL(url).pathname.split("/").filter(Boolean).at(-1) ?? "")
+
+  return name.replace(/\.[a-z0-9]+$/i, "").replace(/-\d+x\d+$/, "")
+}
+
+// alt は長年ファイル名をそのまま入れる運用だったので、ファイル名から復元できるものは持っていかない。
+// 逆に「ファイル名が連番やハッシュで使い物にならないので説明を書いた」ものだけが残る
+const authoredAlt = (element: HTMLElement, url: string): string | null => {
+  const alt = normalizeInlineWhitespace(element.getAttribute("alt") ?? "").trim()
+  if (!alt) {
+    return null
+  }
+  const compare = (value: string) => value.toLowerCase().replaceAll(/[-_\s]/g, "")
+  const stem = compare(fileStem(url))
+
+  return stem === compare(alt) || stem.startsWith(compare(alt)) ? null : alt
+}
+
+// ブロックとして置ける画像は Notion の image ブロックにし、指定があるものだけ
+// キャプション先頭のトークンとしてオプションを持たせる
+const imageOptions = (element: HTMLElement, url: string): string | null => {
+  const alt = authoredAlt(element, url)
+  const attributes = [
+    ...(hasCustomAppearance(element) ? imageAttributes(element) : []),
+    ...(alt ? [shortcodeValue("alt", alt)] : []),
+  ]
+
+  return 0 < attributes.length ? `[image ${attributes.join(" ")}]` : null
+}
+
+// 段落の途中に置かれた画像は image ブロックにできないため、ショートコードのまま本文に残す
+const imageShortcode = (element: HTMLElement, url: string): string => {
+  const name = decodeURIComponent(
+    new URL(url).pathname.split("/").filter(Boolean).at(-1) ?? "image",
+  )
+  const alt = authoredAlt(element, url)
+
+  return `[image ${[
+    shortcodeValue("name", name),
+    ...imageAttributes(element),
+    ...(alt ? [shortcodeValue("alt", alt)] : []),
+  ].join(" ")}]`
+}
+
+// 前後の空白の除去と分割は呼び出し元がまとめて行う。再帰の各段でやると
+// <strong>太字 </strong> のような要素内側の空白や <br> まで落ちてしまう
+const collectRichText = (
+  nodes: Array<Node>,
+  context: ConversionContext,
+  state: InlineState,
+): Array<RichTextItemRequest> => {
+  const richText: Array<RichTextItemRequest> = []
+
+  for (const node of nodes) {
+    if (node.nodeType === NodeType.TEXT_NODE) {
+      appendText(richText, normalizeInlineWhitespace(node.text), state)
+      continue
+    }
+    if (!(node instanceof HTMLElement)) {
+      continue
+    }
+
+    const tag = node.rawTagName.toLowerCase()
+    if (!INLINE_TAGS.has(tag) && !node.text.trim() && !node.querySelector("img")) {
+      continue
+    }
+    if (tag === "br") {
+      appendText(richText, "\n", state)
+      continue
+    }
+    if (tag === "img") {
+      if (isTrackingImage(node)) {
+        continue
+      }
+      const url = imageUrl(node, context)
+      if (url) {
+        appendText(richText, imageShortcode(node, url), state)
+      }
+      continue
+    }
+    const annotations: RichTextAnnotations = { ...state.annotations }
+    if (tag === "strong" || tag === "b") {
+      annotations.bold = true
+    }
+    if (tag === "em" || tag === "i") {
+      annotations.italic = true
+    }
+    if (tag === "del" || tag === "s") {
+      annotations.strikethrough = true
+    }
+    if (tag === "u") {
+      annotations.underline = true
+    }
+    if (tag === "code") {
+      annotations.code = true
+    }
+    const color = elementColor(node)
+    if (color) {
+      annotations.color = color
+    }
+    if (tag === "sup" || tag === "sub") {
+      const expression = `${tag === "sup" ? "^" : "_"}{${node.text.replaceAll("}", "\\}")}}`
+      richText.push({ type: "equation", equation: { expression }, annotations })
+      continue
+    }
+
+    const expression = tag === "span" ? fontSizeExpression(node) : null
+    if (expression) {
+      richText.push({ type: "equation", equation: { expression }, annotations })
+      continue
+    }
+
+    let link = state.link
+    if (tag === "a") {
+      const href = node.getAttribute("href")
+      link = href ? safeUrl(href, context, node.outerHTML) : null
+    } else if (!INLINE_TAGS.has(tag)) {
+      warn(
+        context,
+        "unsupported_inline",
+        `未対応のインライン要素 <${tag}> を平文化しました`,
+        node.outerHTML,
+      )
+    }
+
+    richText.push(...collectRichText(node.childNodes, context, { annotations, link }))
+  }
+
+  return richText
+}
+
+const richTextFromNodes = (
+  nodes: Array<Node>,
+  context: ConversionContext,
+): Array<RichTextItemRequest> => {
+  return splitRichTextItems(trimRichText(collectRichText(nodes, context, DEFAULT_INLINE_STATE)))
+}
+
+const plainRichText = (value: string): Array<RichTextItemRequest> => {
+  return splitText(value).map((content) => ({ type: "text", text: { content } }))
+}
+
+const paragraph = (richText: Array<RichTextItemRequest>): BlockObjectRequest => {
+  return { object: "block", type: "paragraph", paragraph: { rich_text: richText } }
+}
+
+const shortcodeAttributes = (value: string): Readonly<Record<string, string>> => {
+  const attributes: Record<string, string> = {}
+  for (const match of value.matchAll(/([a-zA-Z][\w-]*)\s*=\s*(["'])(.*?)\2/g)) {
+    if (match[1] && match[3] !== undefined) {
+      attributes[match[1]] = match[3]
+    }
+  }
+
+  return attributes
+}
+
+const shortcodeValue = (name: string, value: string): string => {
+  return `${name}="${value.replaceAll('"', '\\"')}"`
+}
+
+const mediaFromShortcode = (
+  value: string,
+  context: ConversionContext,
+): BlockObjectRequest | null => {
+  const match = value.match(/^\[(audio|video)\b([^\]]*)]/i)
+  if (!match?.[1]) {
+    return null
+  }
+
+  const type = match[1].toLowerCase() as "audio" | "video"
+  const attributes = shortcodeAttributes(match[2] ?? "")
+  const urlValue =
+    type === "audio"
+      ? (attributes.src ?? attributes.mp3 ?? attributes.m4a ?? attributes.ogg ?? attributes.wav)
+      : (attributes.src ?? attributes.mp4 ?? attributes.m4v ?? attributes.webm ?? attributes.ogv)
+  const url = urlValue ? safeUrl(urlValue, context, value) : null
+  if (!url) {
+    warn(context, "unsupported_shortcode", `${type} shortcode の URL を取得できませんでした`, value)
+    return paragraph(plainRichText(value))
+  }
+
+  return type === "audio"
+    ? { object: "block", type: "audio", audio: { type: "external", external: { url } } }
+    : { object: "block", type: "video", video: { type: "external", external: { url } } }
+}
+
+const specialTextBlock = (value: string, context: ConversionContext): BlockObjectRequest | null => {
+  const text = value.trim()
+  const media = mediaFromShortcode(text, context)
+  if (media) {
+    return media
+  }
+
+  const related = text.match(/^\[\/([a-z0-9][a-z0-9_-]+)]$/i)
+  if (related?.[1]) {
+    return {
+      object: "block",
+      type: "bookmark",
+      bookmark: { url: `https://mirumi.me/${related[1]}/` },
+    }
+  }
+
+  const bookmark = text.match(/^\[(https?:\/\/[^\]]+)]$/i)
+  if (bookmark?.[1]) {
+    const url = safeUrl(bookmark[1], context, value)
+    return url ? { object: "block", type: "bookmark", bookmark: { url } } : null
+  }
+
+  if (/^\[amazon\b[^\]]*]$/i.test(text)) {
+    return paragraph(plainRichText(text))
+  }
+
+  const url = /^https?:\/\/\S+$/.test(text) ? safeUrl(text, context, value) : null
+  if (url) {
+    const hostname = new URL(url).hostname
+    if (
+      hostname === "x.com" ||
+      hostname.endsWith(".x.com") ||
+      hostname === "twitter.com" ||
+      hostname.endsWith(".twitter.com")
+    ) {
+      return { object: "block", type: "embed", embed: { url } }
+    }
+    if (hostname === "youtu.be" || hostname.endsWith("youtube.com")) {
+      return { object: "block", type: "video", video: { type: "external", external: { url } } }
+    }
+  }
+
+  if (/^\[[a-zA-Z][^\]]*]$/.test(text)) {
+    warn(context, "unsupported_shortcode", "未対応の shortcode を通常段落として保持しました", text)
+  }
+
+  return null
+}
+
+const imageBlock = (
+  element: HTMLElement,
+  context: ConversionContext,
+  caption: Array<RichTextItemRequest> = [],
+): BlockObjectRequest | null => {
+  if (isTrackingImage(element)) {
+    return null
+  }
+  const url = imageUrl(element, context)
+  if (!url) {
+    return null
+  }
+  const options = imageOptions(element, url)
+  const optionToken = options ? plainRichText(0 < caption.length ? `${options} ` : options) : []
+
+  return {
+    object: "block",
+    type: "image",
+    image: { type: "external", external: { url }, caption: [...optionToken, ...caption] },
+  }
+}
+
+const captionedImageBlocks = (
+  image: HTMLElement,
+  context: ConversionContext,
+  caption: Array<RichTextItemRequest>,
+): Array<BlockObjectRequest> => {
+  const block = imageBlock(image, context, caption)
+
+  return block ? [block] : []
+}
+
+const directChildrenByTag = (element: HTMLElement, tag: string): Array<HTMLElement> => {
+  return element.childNodes.filter(
+    (node): node is HTMLElement =>
+      node instanceof HTMLElement && node.rawTagName.toLowerCase() === tag,
+  )
+}
+
+const listBlocks = (
+  element: HTMLElement,
+  context: ConversionContext,
+): Array<BlockObjectRequest> => {
+  const tag = element.rawTagName.toLowerCase()
+  const type = tag === "ol" ? "numbered_list_item" : "bulleted_list_item"
+
+  return directChildrenByTag(element, "li").map((item) => {
+    let childElements = item.childNodes.filter(
+      (node): node is HTMLElement => node instanceof HTMLElement && !isInlineNode(node),
+    )
+    let inlineNodes = item.childNodes.filter((node) => !childElements.includes(node as HTMLElement))
+    let richText = richTextFromNodes(inlineNodes, context)
+
+    const firstChild = childElements.at(0)
+    if (
+      richText.length === 0 &&
+      firstChild?.rawTagName.toLowerCase() === "p" &&
+      firstChild.childNodes.every(isInlineNode)
+    ) {
+      inlineNodes = firstChild.childNodes
+      richText = richTextFromNodes(inlineNodes, context)
+      childElements = childElements.slice(1)
+    }
+
+    if (0 < childElements.length) {
+      const children = childElements.flatMap(
+        (child) =>
+          (["ol", "ul"].includes(child.rawTagName.toLowerCase())
+            ? listBlocks(child, context)
+            : convertElement(child, context)) as Array<BlockObjectRequest>,
+      )
+      return (type === "numbered_list_item"
+        ? {
+            object: "block" as const,
+            type: "numbered_list_item" as const,
+            numbered_list_item: { rich_text: richText, children },
+          }
+        : {
+            object: "block" as const,
+            type: "bulleted_list_item" as const,
+            bulleted_list_item: { rich_text: richText, children },
+          }) as unknown as BlockObjectRequest
+    }
+
+    return type === "numbered_list_item"
+      ? {
+          object: "block" as const,
+          type: "numbered_list_item" as const,
+          numbered_list_item: { rich_text: splitRichTextItems(richText) },
+        }
+      : {
+          object: "block" as const,
+          type: "bulleted_list_item" as const,
+          bulleted_list_item: { rich_text: splitRichTextItems(richText) },
+        }
+  })
+}
+
+const codeLanguage = (element: HTMLElement, context: ConversionContext): CodeLanguage => {
+  const code = element.querySelector("code")
+  const classes = [...element.classList.value, ...(code?.classList.value ?? [])]
+  const raw =
+    classes.find((className) => className.startsWith("language-"))?.slice(9) ?? classes.at(0)
+  const aliases: Readonly<Record<string, CodeLanguage>> = {
+    bash: "bash",
+    css: "css",
+    html: "html",
+    js: "javascript",
+    json: "json",
+    jsonc: "json",
+    _lang_: "plain text",
+    no: "plain text",
+    plain: "plain text",
+    plaintext: "plain text",
+    php: "php",
+    py: "python",
+    python: "python",
+    sh: "shell",
+    shell: "shell",
+    sql: "sql",
+    ts: "typescript",
+    vb: "visual basic",
+    xml: "xml",
+    yaml: "yaml",
+  }
+  const language = raw ? (aliases[raw.toLowerCase()] ?? raw.toLowerCase()) : "plain text"
+  if (!CODE_LANGUAGES.has(language as CodeLanguage)) {
+    warn(
+      context,
+      "unsupported_block",
+      `コード言語 ${language} を plain text にしました`,
+      element.outerHTML,
+    )
+    return "plain text"
+  }
+
+  return language as CodeLanguage
+}
+
+const richTextFromTableNodes = (
+  nodes: Array<Node>,
+  context: ConversionContext,
+): Array<RichTextItemRequest> => {
+  const richText: Array<RichTextItemRequest> = []
+
+  for (const node of nodes) {
+    if (isInlineNode(node)) {
+      appendRichTextItems(richText, collectRichText([node], context, DEFAULT_INLINE_STATE))
+      continue
+    }
+    if (!(node instanceof HTMLElement)) {
+      continue
+    }
+
+    const tag = node.rawTagName.toLowerCase()
+    if (tag === "ul" || tag === "ol") {
+      for (const [index, item] of directChildrenByTag(node, "li").entries()) {
+        appendText(richText, tag === "ol" ? `${index + 1}. ` : "・", DEFAULT_INLINE_STATE)
+        appendRichTextItems(richText, richTextFromTableNodes(item.childNodes, context))
+        appendText(richText, "\n", DEFAULT_INLINE_STATE)
+      }
+      continue
+    }
+
+    appendRichTextItems(richText, richTextFromTableNodes(node.childNodes, context))
+    appendText(richText, "\n", DEFAULT_INLINE_STATE)
+  }
+
+  return splitRichTextItems(trimRichText(richText))
+}
+
+const tableBlock = (
+  element: HTMLElement,
+  context: ConversionContext,
+): BlockObjectRequest | null => {
+  const rows = element.querySelectorAll("tr")
+  const cells = rows.map((row) =>
+    row.childNodes
+      .filter(
+        (node): node is HTMLElement =>
+          node instanceof HTMLElement && ["td", "th"].includes(node.rawTagName.toLowerCase()),
+      )
+      .map((cell) => richTextFromTableNodes(cell.childNodes, context)),
+  )
+  const width = Math.max(0, ...cells.map((row) => row.length))
+  if (width === 0) {
+    warn(context, "unsupported_block", "空のテーブルを除外しました", element.outerHTML)
+    return null
+  }
+
+  if (cells.some((row) => row.length !== width)) {
+    warn(context, "table_normalized", "列数の異なる行を空セルで補完しました", element.outerHTML)
+  }
+  const children = cells.map((row) => ({
+    object: "block" as const,
+    type: "table_row" as const,
+    table_row: {
+      cells: [...row, ...Array.from({ length: width - row.length }, () => [])],
+    },
+  }))
+  const firstRow = rows.at(0)
+  const hasColumnHeader = Boolean(firstRow?.querySelector("th"))
+  const hasRowHeader = rows.every((row) => {
+    const firstCell = row.childNodes.find(
+      (node): node is HTMLElement =>
+        node instanceof HTMLElement && ["td", "th"].includes(node.rawTagName.toLowerCase()),
+    )
+    return firstCell?.rawTagName.toLowerCase() === "th"
+  })
+
+  return {
+    object: "block",
+    type: "table",
+    table: {
+      table_width: width,
+      has_column_header: hasColumnHeader,
+      has_row_header: hasRowHeader,
+      children,
+    },
+  }
+}
+
+const buttonShortcode = (element: HTMLElement): string | null => {
+  const button = element.querySelector(".btn-wrap")
+  const link = button?.querySelector("a")
+  const href = link?.getAttribute("href")
+  if (!button || !link || !href) {
+    return null
+  }
+
+  const colorClass = button.classList.value.find(
+    (className) => className.startsWith("btn-wrap-") && className !== "btn-wrap-m",
+  )
+  const color = colorClass?.slice("btn-wrap-".length) ?? "default"
+
+  return `[button ${shortcodeValue("text", normalizeInlineWhitespace(link.text).trim())} ${shortcodeValue("url", href)} ${shortcodeValue("color", color)}]`
+}
+
+const appShortcode = (element: HTMLElement): string => {
+  const ios = element.querySelector(".appreach__aslink")?.getAttribute("href")
+  const android = element.querySelector(".appreach__gplink")?.getAttribute("href")
+  const attributes = [
+    ios ? shortcodeValue("ios", ios) : null,
+    android ? shortcodeValue("android", android) : null,
+    shortcodeValue("icon", ios ? "ios" : "android"),
+  ].filter(Boolean)
+
+  return `[app ${attributes.join(" ")}]`
+}
+
+const delayedVideoShortcode = (element: HTMLElement): string | null => {
+  const source = element.getAttribute("data-video")
+  if (!source) {
+    return null
+  }
+
+  const thumbnail = element.querySelector("img")?.getAttribute("src")
+  const sourceUrl = new URL(source, "https://www.youtube.com")
+  const start = sourceUrl.searchParams.get("start")
+  const attributes = [
+    "delay",
+    shortcodeValue("src", sourceUrl.href),
+    thumbnail ? shortcodeValue("thumbnail", thumbnail) : null,
+    start ? shortcodeValue("ts", `${start}s`) : null,
+  ].filter(Boolean)
+
+  return `[video ${attributes.join(" ")}]`
+}
+
+const calloutBlock = (element: HTMLElement, context: ConversionContext): BlockObjectRequest => {
+  const firstParagraph = directChildrenByTag(element, "p").at(0)
+  const richText = firstParagraph ? richTextFromNodes(firstParagraph.childNodes, context) : []
+  const remainingNodes = firstParagraph
+    ? element.childNodes.filter((node) => node !== firstParagraph)
+    : element.childNodes
+  const children = convertNodes(remainingNodes, context)
+  const icon = element.classList.contains("box-info")
+    ? "💡"
+    : element.classList.contains("box-rewrite")
+      ? "♻️"
+      : element.classList.contains("box-alert")
+        ? "🚨"
+        : null
+
+  return {
+    object: "block",
+    type: "callout",
+    callout: {
+      rich_text: richText,
+      ...(icon ? { icon: { type: "emoji", emoji: icon } } : {}),
+      ...(0 < children.length ? { children } : {}),
+    },
+  } as BlockObjectRequest
+}
+
+const quoteImageShortcode = (
+  element: HTMLElement,
+  context: ConversionContext,
+): BlockObjectRequest | null => {
+  const image = element.querySelector("img")
+  if (!image) {
+    return null
+  }
+  const url = imageUrl(image, context)
+  if (!url) {
+    return null
+  }
+
+  const name = decodeURIComponent(
+    new URL(url).pathname.split("/").filter(Boolean).at(-1) ?? "image",
+  )
+  const copyright = normalizeInlineWhitespace(
+    element.text.replaceAll(/\[\/?caption[^\]]*]/gi, ""),
+  ).trim()
+  const value = `[quoteImage ${shortcodeValue("name", name)} ${shortcodeValue("copyright", copyright)}]`
+
+  return paragraph(plainRichText(value))
+}
+
+const headingBlock = (element: HTMLElement, context: ConversionContext): BlockObjectRequest => {
+  const level = Number(element.rawTagName.slice(1))
+  const type = `heading_${Math.min(4, Math.max(1, level))}` as
+    | "heading_1"
+    | "heading_2"
+    | "heading_3"
+    | "heading_4"
+  const richText = richTextFromNodes(element.childNodes, context)
+
+  if (type === "heading_1") {
+    return { object: "block", type, heading_1: { rich_text: richText } }
+  }
+  if (type === "heading_2") {
+    return { object: "block", type, heading_2: { rich_text: richText } }
+  }
+  if (type === "heading_3") {
+    return { object: "block", type, heading_3: { rich_text: richText } }
+  }
+
+  return { object: "block", type, heading_4: { rich_text: richText } }
+}
+
+const convertElement = (
+  element: HTMLElement,
+  context: ConversionContext,
+): Array<BlockObjectRequest> => {
+  const tag = element.rawTagName.toLowerCase()
+
+  if (tag === "style") {
+    if (element.rawText.trim()) {
+      context.customCss.push(element.rawText.trim())
+    }
+    return []
+  }
+  if (/^h[1-6]$/.test(tag)) {
+    return [headingBlock(element, context)]
+  }
+  if (tag === "hr" || element.classList.contains("dot-line-brown")) {
+    return [{ object: "block", type: "divider", divider: {} }]
+  }
+  if (tag === "ul" || tag === "ol") {
+    return listBlocks(element, context)
+  }
+  if (tag === "table") {
+    const block = tableBlock(element, context)
+    return block ? [block] : []
+  }
+  if (tag === "pre") {
+    const code =
+      element.querySelector("code")?.text ??
+      parse(element.rawText).querySelector("code")?.text ??
+      element.text
+    return [
+      {
+        object: "block",
+        type: "code",
+        code: { rich_text: plainRichText(code), language: codeLanguage(element, context) },
+      },
+    ]
+  }
+  if (tag === "img") {
+    const block = imageBlock(element, context)
+    return block ? [block] : []
+  }
+  if (tag === "figure" && element.hasAttribute("data-wordpress-caption")) {
+    const image = element.querySelector("img")
+    if (!image) {
+      return []
+    }
+    // キャプションのリンクや装飾を落とさないよう、画像を除いた中身をそのまま変換する
+    const captionNodes = element.childNodes.filter((node) => {
+      return !(node instanceof HTMLElement) || (node !== image && !node.querySelector("img"))
+    })
+    return captionedImageBlocks(image, context, richTextFromNodes(captionNodes, context))
+  }
+  if (tag === "blockquote") {
+    if (element.classList.contains("img")) {
+      const block = quoteImageShortcode(element, context)
+      return block ? [block] : []
+    }
+    const firstParagraph = directChildrenByTag(element, "p").at(0)
+    const richText = firstParagraph ? richTextFromNodes(firstParagraph.childNodes, context) : []
+    const remainingNodes = firstParagraph
+      ? element.childNodes.filter((node) => node !== firstParagraph)
+      : element.childNodes
+    const children = convertNodes(remainingNodes, context)
+    return [
+      {
+        object: "block",
+        type: "quote",
+        quote: { rich_text: richText, ...(0 < children.length ? { children } : {}) },
+      } as BlockObjectRequest,
+    ]
+  }
+  if (tag === "iframe") {
+    const source = element.getAttribute("src")
+    const url = source ? safeUrl(source, context, element.outerHTML) : null
+    return url
+      ? [{ object: "block", type: "video", video: { type: "external", external: { url } } }]
+      : []
+  }
+  if (tag === "p") {
+    for (const style of element.querySelectorAll("style")) {
+      if (style.rawText.trim()) {
+        context.customCss.push(style.rawText.trim())
+      }
+      style.remove()
+    }
+    if (element.childNodes.some((node) => !isInlineNode(node))) {
+      return convertNodes(element.childNodes, context)
+    }
+    const special = specialTextBlock(element.text, context)
+    if (special) {
+      return [special]
+    }
+    const button = buttonShortcode(element)
+    if (button) {
+      return [paragraph(plainRichText(button))]
+    }
+    const images = element.querySelectorAll("img")
+    const textWithoutImages = element.text.trim()
+    if (images.length === 1 && !textWithoutImages) {
+      const block = imageBlock(images[0]!, context)
+      return block ? [block] : []
+    }
+    const richText = richTextFromNodes(element.childNodes, context)
+    return 0 < richText.length ? [paragraph(richText)] : []
+  }
+  if (tag === "a") {
+    const image = element.querySelector("img")
+    if (image && !element.text.trim()) {
+      const block = imageBlock(image, context)
+      return block ? [block] : []
+    }
+    return [paragraph(richTextFromNodes([element], context))]
+  }
+  if (tag === "div") {
+    if (element.classList.contains("wp-caption")) {
+      const image = element.querySelector("img")
+      if (!image) {
+        return []
+      }
+      const caption = element.querySelector(".wp-caption-text")
+      return captionedImageBlocks(
+        image,
+        context,
+        caption ? richTextFromNodes(caption.childNodes, context) : [],
+      )
+    }
+    if (element.classList.contains("blogcard-type")) {
+      const special = specialTextBlock(element.text, context)
+      return special ? [special] : []
+    }
+    if (element.classList.contains("appreach")) {
+      return [paragraph(plainRichText(appShortcode(element)))]
+    }
+    if (element.classList.contains("youtube")) {
+      const shortcode = delayedVideoShortcode(element)
+      return shortcode ? [paragraph(plainRichText(shortcode))] : []
+    }
+    if (element.classList.contains("box-common") || element.classList.contains("waku-common")) {
+      return [calloutBlock(element, context)]
+    }
+    if (element.classList.contains("micro-bottom")) {
+      return [paragraph(richTextFromNodes(element.childNodes, context))]
+    }
+    if (element.classList.contains("speech-wrap")) {
+      const balloon = element.querySelector(".speech-balloon")
+      return balloon
+        ? convertNodes(balloon.childNodes, context)
+        : convertNodes(element.childNodes, context)
+    }
+    if (!element.text.trim() && !element.querySelector("img")) {
+      return []
+    }
+    if (element.childNodes.every(isInlineNode)) {
+      const richText = richTextFromNodes(element.childNodes, context)
+      return 0 < richText.length ? [paragraph(richText)] : []
+    }
+
+    const children = convertNodes(element.childNodes, context)
+    if (element.classList.length !== 0) {
+      warn(
+        context,
+        "unsupported_block",
+        "未対応の div を子ブロックへ平文化しました",
+        element.outerHTML,
+      )
+    }
+    return children
+  }
+
+  if (INLINE_TAGS.has(tag)) {
+    if (element.childNodes.some((node) => !isInlineNode(node))) {
+      return convertNodes(element.childNodes, context)
+    }
+    return [paragraph(richTextFromNodes([element], context))]
+  }
+
+  warn(
+    context,
+    "unsupported_block",
+    `未対応のブロック要素 <${tag}> を平文化しました`,
+    element.outerHTML,
+  )
+  return convertNodes(element.childNodes, context)
+}
+
+const convertLooseText = (value: string, context: ConversionContext): Array<BlockObjectRequest> => {
+  return value
+    .replaceAll("\r", "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => specialTextBlock(line, context) ?? paragraph(plainRichText(line)))
+}
+
+const isInlineNode = (node: Node): boolean => {
+  return (
+    node.nodeType === NodeType.TEXT_NODE ||
+    (node instanceof HTMLElement &&
+      INLINE_TAGS.has(node.rawTagName.toLowerCase()) &&
+      !node
+        .querySelectorAll("*")
+        .some((element) => !INLINE_TAGS.has(element.rawTagName.toLowerCase())))
+  )
+}
+
+const convertNodes = (
+  nodes: Array<Node>,
+  context: ConversionContext,
+): Array<BlockObjectRequest> => {
+  const blocks: Array<BlockObjectRequest> = []
+  let inlineNodes: Array<Node> = []
+
+  const flushInlineNodes = () => {
+    if (inlineNodes.length === 0) {
+      return
+    }
+    const containsElement = inlineNodes.some((node) => node instanceof HTMLElement)
+    if (!containsElement) {
+      blocks.push(...convertLooseText(inlineNodes.map((node) => node.text).join(""), context))
+    } else {
+      const richText = richTextFromNodes(inlineNodes, context)
+      if (0 < richText.length) {
+        blocks.push(paragraph(richText))
+      }
+    }
+    inlineNodes = []
+  }
+
+  for (const node of nodes) {
+    if (isInlineNode(node)) {
+      if (node.nodeType !== NodeType.TEXT_NODE || node.text.trim()) {
+        inlineNodes.push(node)
+      }
+      continue
+    }
+
+    flushInlineNodes()
+    if (node instanceof HTMLElement) {
+      const start = blocks.length
+      blocks.push(...convertElement(node, context))
+      if (node.classList.contains("micro-bottom") && 0 < start) {
+        const previous = blocks[start - 1]
+        const caption = blocks[start]
+        if (previous && "image" in previous && caption && "paragraph" in caption) {
+          previous.image.caption = caption.paragraph.rich_text
+          blocks.splice(start, 1)
+        }
+      }
+    }
+  }
+  flushInlineNodes()
+
+  return blocks
+}
+
+const prepareHtml = (content: string): string => {
+  return content.replaceAll(
+    /\[caption\b[^\]]*]([\s\S]*?)\[\/caption]/gi,
+    '<figure data-wordpress-caption="true">$1</figure>',
+  )
+}
+
+// WordPress の日時はタイムゾーンを持たない JST なので +09:00 を補う。
+// Nuxt 側は時刻まで表示しないため、この決め打ちで問題ないことは確認済み
+const toDate = (value: string): { start: string } => {
+  return { start: `${value.replace(" ", "T")}+09:00` }
+}
+
+const filename = (url: string): string => {
+  return decodeURIComponent(new URL(url).pathname.split("/").filter(Boolean).at(-1) ?? "thumbnail")
+}
+
+const makeProperties = (
+  record: WordPressContentRecord,
+  customCss: string,
+  context: ConversionContext,
+): PageProperties => {
+  const properties: PageProperties = {
+    title: { type: "title", title: plainRichText(record.title) },
+    slug: { type: "rich_text", rich_text: plainRichText(record.slug) },
+    "internal-state": { type: "select", select: { name: "公開中" } },
+    公開日: { type: "date", date: toDate(record.postDate) },
+    更新日: {
+      type: "date",
+      date: record.postModified === record.postDate ? null : toDate(record.postModified),
+    },
+    もくじ非表示: { type: "checkbox", checkbox: record.tocHidden },
+    もくじ閉じる: { type: "checkbox", checkbox: record.tocClosed },
+    "カスタム CSS": { type: "rich_text", rich_text: plainRichText(customCss) },
+  }
+
+  if (1 < record.categories.length) {
+    warn(
+      context,
+      "multiple_categories",
+      `複数カテゴリのうち先頭だけを使用します: ${record.categories.map((category) => category.slug).join(", ")}`,
+      record.slug,
+    )
+  }
+  const category = record.categories.at(0)
+  const categoryPageId = category ? CATEGORY_PAGE_IDS[category.slug] : null
+  if (category && !categoryPageId) {
+    warn(context, "unknown_category", `カテゴリ ${category.slug} の移行先がありません`, record.slug)
+  }
+  properties.category = {
+    type: "relation",
+    relation: categoryPageId ? [{ id: categoryPageId }] : [],
+  }
+
+  // Notion では thumbnail をセットしているかどうかが本文への表示可否そのものになるため、
+  // WordPress で本文に出していなかった記事は空のままにして Workers の自動生成に任せる
+  const thumbnailUrl =
+    record.showThumbnailOnFrontend && record.thumbnailUrl
+      ? safeUrl(record.thumbnailUrl, context, record.thumbnailUrl)
+      : null
+  properties.thumbnail = {
+    type: "files",
+    files: thumbnailUrl
+      ? [{ name: filename(thumbnailUrl), type: "external", external: { url: thumbnailUrl } }]
+      : [],
+  }
+
+  return properties
+}
+
+export const convertWordPressContent = (record: WordPressContentRecord): NotionPageInput => {
+  const context: ConversionContext = { customCss: [], warnings: [] }
+  const root = parse(prepareHtml(record.content), {
+    comment: true,
+    blockTextElements: { script: true, noscript: true, style: true, pre: true },
+  })
+  const children = convertNodes(root.childNodes, context)
+  const customCss = context.customCss.join("\n\n")
+
+  return {
+    sourceId: record.id,
+    slug: record.slug,
+    parent: {
+      type: "data_source_id",
+      data_source_id: record.postType === "page" ? PAGES_DATA_SOURCE_ID : POSTS_DATA_SOURCE_ID,
+    },
+    properties: makeProperties(record, customCss, context),
+    children,
+    warnings: context.warnings,
+  }
+}
