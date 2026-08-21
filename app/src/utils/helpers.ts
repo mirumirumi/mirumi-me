@@ -22,12 +22,16 @@ export const zeroPadding = (input: number, precision: number): string => {
   return (Array(precision).join("0") + input).slice(-precision)
 }
 
+// ビルドは CI（UTC）で走るため、実行環境のタイムゾーンに依存させると日付が前日にずれる
 export const friendlyDatetime = (isoformat: string): string => {
-  const date = new Date(isoformat)
-  const year = date.getFullYear()
-  const month = zeroPadding(date.getMonth() + 1, 2)
-  const day = zeroPadding(date.getDate(), 2)
-  return `${year}/${month}/${day}`
+  return new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  })
+    .format(new Date(isoformat))
+    .replaceAll("-", "/")
 }
 
 export function isIOS(): boolean {

@@ -1,5 +1,6 @@
 import {
   APIErrorCode,
+  APIResponseError,
   type BlockObjectResponse,
   Client,
   collectPaginatedAPI,
@@ -22,6 +23,17 @@ export const createNotionClient = (auth: string): Client => {
 
 export const isNotionObjectNotFound = (err: unknown): boolean => {
   return isNotionClientError(err) && err.code === APIErrorCode.ObjectNotFound
+}
+
+export { isNotionClientError }
+
+export const isNotionValidationError = (err: unknown): boolean => {
+  return isNotionClientError(err) && err.code === APIErrorCode.ValidationError
+}
+
+// ネットワーク断やクライアント側タイムアウトは API からの応答がないため、これに当たらない
+export const isNotionAPIResponseError = (err: unknown): boolean => {
+  return APIResponseError.isAPIResponseError(err)
 }
 
 const normalizeRichText = (richText: Array<RichTextItemResponse>): Array<RichText> => {

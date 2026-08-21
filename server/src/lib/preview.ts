@@ -11,13 +11,16 @@ const escapeHtml = (value: string): string => {
     .replaceAll("'", "&#39;")
 }
 
+// Workers は UTC で動くため、実行環境のタイムゾーンに依存させると日付が前日にずれる
 const formatDate = (isoDate: string): string => {
-  const date = new Date(isoDate)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, "0")
-  const day = String(date.getDate()).padStart(2, "0")
-
-  return `${year}/${month}/${day}`
+  return new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  })
+    .format(new Date(isoDate))
+    .replaceAll("-", "/")
 }
 
 const icon = (path: string, left: string, top: string, width = "1.1em"): string => {
@@ -70,19 +73,57 @@ const renderUpdatedAt = (article: ArticleContent): string => {
   return `<span class="updated_at"><span class="parentheses first">（</span>${updatedIcon}<time datetime="${escapeHtml(article.updatedAt)}" itemprop="dateModified">${formatDate(article.updatedAt)}</time><span class="parentheses">）</span></span>`
 }
 
+// プレビューでだけ、変換時の警告をまとめて最上部に出す。
+// 本文を壊さずに「未実装のショートコードが何件あるか」などを一望できるようにするため
+const renderPreviewWarnings = (warnings: Array<string>): string => {
+  if (warnings.length === 0) {
+    return ""
+  }
+
+  const counts = new Map<string, number>()
+  for (const warning of warnings) {
+    // 同じ種類の警告はブロック ID を落としてまとめる
+    const key = warning.replace(/（block: [^）]*）$/, "")
+    counts.set(key, (counts.get(key) ?? 0) + 1)
+  }
+  const items = [...counts]
+    .sort((left, right) => right[1] - left[1])
+    .map(([message, count]) => {
+      const badge = 1 < count ? `<span class="preview-warnings-count">${count}</span>` : ""
+      return `<li>${escapeHtml(message)}${badge}</li>`
+    })
+    .join("")
+
+  return `<details class="preview-warnings" open><summary>🔴 変換時の警告 ${warnings.length} 件</summary><ul>${items}</ul></details>`
+}
+
 export const renderPreviewArticle = (
   article: ArticleContent,
   renderedContent: RenderedContent,
 ): string => {
-  return `<div class="post_view article_layout"><main role="main" itemscope itemtype="https://schema.org/Blog"><header itemscope itemprop="blogPost" itemtype="https://schema.org/BlogPosting"><h1 class="title page_transition_target run" itemprop="headline">${escapeHtml(article.title)}</h1>${renderThumbnail(article)}<div class="meta page_transition_target run" role="contentinfo"><div class="meta_block"><div class="author">${atIcon}<a href="https://x.com/__mirumi__" target="_blank" rel="nofollow">みるみ</a></div>${renderCategory(article)}<div class="dates">${calendarIcon}<span class="created_at"><time datetime="${escapeHtml(article.publishedAt)}" itemprop="datePublished">${formatDate(article.publishedAt)}</time></span>${renderUpdatedAt(article)}</div></div></div></header><article class="page_transition_target run"><div id="content" itemprop="mainEntityOfPage">${renderedContent.html}</div></article></main></div>`
+  return `${renderPreviewWarnings(renderedContent.warnings)}<div class="post_view article_layout"><main role="main" itemscope itemtype="https://schema.org/Blog"><header itemscope itemprop="blogPost" itemtype="https://schema.org/BlogPosting"><h1 class="title page_transition_target run" itemprop="headline">${escapeHtml(article.title)}</h1>${renderThumbnail(article)}<div class="meta page_transition_target run" role="contentinfo"><div class="meta_block"><div class="author">${atIcon}<a href="https://x.com/__mirumi__" target="_blank" rel="nofollow">みるみ</a></div>${renderCategory(article)}<div class="dates">${calendarIcon}<span class="created_at"><time datetime="${escapeHtml(article.publishedAt)}" itemprop="datePublished">${formatDate(article.publishedAt)}</time></span>${renderUpdatedAt(article)}</div></div></div></header><article class="page_transition_target run"><div id="content" itemprop="mainEntityOfPage">${renderedContent.html}</div></article></main></div>`
 }
 
+// 文字色などの見た目は mirumi.me の CSS をそのまま読み込んで再現するので、ここでは足さない
 const previewStyle = `
 body { background-color: var(--color-background); padding-top: 3em; }
-#content .color-blue { color: #2383e2; }
-#content .color-gray { color: #999999; }
-@media (prefers-color-scheme: dark) {
-  #content .color-gray { color: #808080; }
+.preview-warnings {
+  max-width: 42em; margin: 0 auto 2em; padding: 0.9em 1.2em;
+  border: solid 1px var(--color-input-border); border-radius: 9px;
+  background-color: var(--color-background); font-size: 0.88em; line-height: 1.7;
+}
+.preview-warnings summary { cursor: pointer; font-weight: bold; }
+.preview-warnings ul { margin: 0.7em 0 0; padding-left: 1.4em; }
+.preview-warnings li { margin: 0.2em 0; word-break: break-all; }
+.preview-warnings-count {
+  display: inline-block; margin-left: 0.6em; padding: 0 0.5em;
+  border-radius: 999px; background-color: var(--color-input-border); font-size: 0.85em;
+}
+.preview-theme-toggle {
+  position: fixed; top: 0.7em; right: 0.7em; z-index: 9999;
+  padding: 0.4em 0.9em; border: solid 1px var(--color-input-border); border-radius: 999px;
+  color: var(--color-text); background-color: var(--color-background);
+  font-size: 0.85em; line-height: 1.5; cursor: pointer;
 }
 `
 
@@ -92,15 +133,33 @@ const previewThemeScript = `
   const forcedTheme = new URLSearchParams(window.location.search).get("theme")
   const darkMode = window.matchMedia("(prefers-color-scheme: dark)")
   const applyTheme = () => {
-    const isDark = forcedTheme === "dark" || (forcedTheme !== "light" && darkMode.matches)
-    document.documentElement.classList.toggle("dark", isDark)
-    document.documentElement.style.colorScheme = isDark ? "dark" : "light"
+    const dark = forcedTheme === "dark" || (forcedTheme !== "light" && darkMode.matches)
+    document.documentElement.classList.toggle("dark", dark)
+    document.documentElement.style.colorScheme = dark ? "dark" : "light"
   }
 
+  let override = forcedTheme === "dark" || forcedTheme === "light" ? forcedTheme : null
+  const isDark = () => (override ? override === "dark" : darkMode.matches)
+
   applyTheme()
-  if (forcedTheme !== "dark" && forcedTheme !== "light") {
-    darkMode.addEventListener("change", applyTheme)
-  }
+  darkMode.addEventListener("change", () => {
+    if (!override) applyTheme()
+  })
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const button = document.createElement("button")
+    button.type = "button"
+    button.className = "preview-theme-toggle"
+    const label = () => { button.textContent = isDark() ? "\u2600\ufe0e ライト" : "\u263e\ufe0e ダーク" }
+    label()
+    button.addEventListener("click", () => {
+      override = isDark() ? "light" : "dark"
+      document.documentElement.classList.toggle("dark", isDark())
+      document.documentElement.style.colorScheme = isDark() ? "dark" : "light"
+      label()
+    })
+    document.body.appendChild(button)
+  })
 })()
 </script>
 `

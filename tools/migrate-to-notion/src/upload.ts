@@ -1,13 +1,22 @@
-import { readFile, writeFile } from "node:fs/promises"
+import { readFile, rename, writeFile } from "node:fs/promises"
 import { fileURLToPath } from "node:url"
+import { parseArgs } from "node:util"
 import type { AppendBlockChildrenResponse, BlockObjectRequest, Client } from "@notionhq/client"
 import { collectPaginatedAPI } from "@notionhq/client"
 
-import { createNotionClient, isNotionObjectNotFound } from "shared/notion"
+import {
+  createNotionClient,
+  isNotionAPIResponseError,
+  isNotionClientError,
+  isNotionObjectNotFound,
+  isNotionValidationError,
+} from "shared/notion"
 
 import { planBlockBatches } from "./batch"
+import { PAGES_DATA_SOURCE_ID, POSTS_DATA_SOURCE_ID } from "./config"
 import { convertWordPressContent } from "./convert"
 import { readContents } from "./read"
+import { selectConversions, type UploadOptions } from "./select"
 import type { NotionPageInput, UploadState } from "./types"
 
 // Notion API のレートリミットは平均 3 リクエスト/秒
@@ -16,30 +25,100 @@ const REQUEST_INTERVAL = 400
 const sourcePath = fileURLToPath(
   new URL("../blog-content-block-survey/contents.ndjson", import.meta.url),
 )
-const statePath = fileURLToPath(new URL("../upload-state.json", import.meta.url))
+
+const { values } = parseArgs({
+  options: {
+    slug: { type: "string", multiple: true, default: [] },
+    limit: { type: "string" },
+    "posts-data-source": { type: "string", default: POSTS_DATA_SOURCE_ID },
+    "pages-data-source": { type: "string", default: PAGES_DATA_SOURCE_ID },
+    state: { type: "string", default: "upload-state.json" },
+  },
+})
+const options: UploadOptions = {
+  slugs: values.slug ?? [],
+  limit: values.limit === undefined ? null : Number.parseInt(values.limit, 10),
+  postsDataSourceId: values["posts-data-source"] ?? POSTS_DATA_SOURCE_ID,
+  pagesDataSourceId: values["pages-data-source"] ?? PAGES_DATA_SOURCE_ID,
+  statePath: values.state ?? "upload-state.json",
+}
+if (options.limit !== null && !Number.isInteger(options.limit)) {
+  throw Error("--limit には整数を指定してください")
+}
+// 動作確認と本番で状態ファイルを分けられるようにする（混ざると本番分が投入済み扱いになる）
+const statePath = fileURLToPath(new URL(`../${options.statePath}`, import.meta.url))
+
+// SDK は POST / PATCH を 429 と 529 でしか再試行しないので、一時的な失敗はこちらで拾う。
+// 内容が悪い系（validation_error など）は何度投げても通らないため対象にしない
+const RETRIABLE = new Set([
+  "rate_limited",
+  "service_overload",
+  "internal_server_error",
+  "service_unavailable",
+  "bad_gateway",
+  "gateway_timeout",
+  "conflict_error",
+])
+const MAX_ATTEMPTS = 4
+
+const isRetriable = (err: unknown): boolean => {
+  if (!isNotionClientError(err)) {
+    return false
+  }
+  // ネットワーク断とクライアント側タイムアウトは APIResponseError にならない
+  if (!isNotionAPIResponseError(err)) {
+    return true
+  }
+
+  return RETRIABLE.has(err.code)
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 let nextRequestAt = 0
 
 const request = async <T>(send: () => Promise<T>): Promise<T> => {
-  const wait = nextRequestAt - Date.now()
-  if (0 < wait) {
-    await new Promise((resolve) => setTimeout(resolve, wait))
-  }
-  nextRequestAt = Date.now() + REQUEST_INTERVAL
+  for (let attempt = 1; ; attempt++) {
+    const wait = nextRequestAt - Date.now()
+    if (0 < wait) {
+      await sleep(wait)
+    }
+    nextRequestAt = Date.now() + REQUEST_INTERVAL
 
-  return send()
+    try {
+      return await send()
+    } catch (err) {
+      if (MAX_ATTEMPTS <= attempt || !isRetriable(err)) {
+        throw err
+      }
+      const backoff = REQUEST_INTERVAL * 2 ** attempt
+      process.stdout.write(`  再試行 ${attempt}/${MAX_ATTEMPTS - 1}（${backoff}ms 後）\n`)
+      await sleep(backoff)
+    }
+  }
 }
 
 const readState = async (): Promise<UploadState> => {
+  let raw: string
   try {
-    return JSON.parse(await readFile(statePath, "utf8")) as UploadState
-  } catch {
-    return {}
+    raw = await readFile(statePath, "utf8")
+  } catch (err) {
+    // 初回はファイルがなくて当然。それ以外の読み取り失敗を握りつぶすと
+    // 状態を失ったまま全件を作り直してしまうので、そのまま落とす
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+      return {}
+    }
+    throw err
   }
+
+  return JSON.parse(raw) as UploadState
 }
 
+// 書き込み中に落ちても壊れたファイルが残らないよう、一時ファイルへ書いてから置き換える
 const writeState = async (state: UploadState) => {
-  await writeFile(statePath, `${JSON.stringify(state, null, 2)}\n`)
+  const temporaryPath = `${statePath}.tmp`
+  await writeFile(temporaryPath, `${JSON.stringify(state, null, 2)}\n`)
+  await rename(temporaryPath, statePath)
 }
 
 // append のレスポンスにはそのリクエストで作った最上位のブロックしか含まれないため、
@@ -98,11 +177,13 @@ const uploadPage = async (
   await appendBlocks(client, page.id, input.children)
 }
 
+// 既にゴミ箱に入っている／消えているページを掃除しようとして全体を止めたくないので、
+// 「対象が見つからない」「もう捨てられている」系は成功扱いにする
 const trashPage = async (client: Client, pageId: string) => {
   try {
     await request(() => client.pages.update({ page_id: pageId, in_trash: true }))
   } catch (err) {
-    if (!isNotionObjectNotFound(err)) {
+    if (!isNotionObjectNotFound(err) && !isNotionValidationError(err)) {
       throw err
     }
   }
@@ -115,7 +196,18 @@ if (!token) {
 
 const client = createNotionClient(token)
 const state = await readState()
-const conversions = (await readContents(sourcePath)).map(convertWordPressContent)
+const conversions = selectConversions(
+  (await readContents(sourcePath)).map(convertWordPressContent),
+  options,
+)
+process.stdout.write(
+  [
+    `対象: ${conversions.length} 件`,
+    `投入先: posts=${options.postsDataSourceId} / pages=${options.pagesDataSourceId}`,
+    `状態: ${statePath}`,
+    "",
+  ].join("\n"),
+)
 let uploaded = 0
 let skipped = 0
 
@@ -137,8 +229,8 @@ for (const input of conversions) {
       await writeState(state)
     })
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    throw Error(`${input.slug} (${input.sourceId}) の投入に失敗しました: ${message}`)
+    // Notion のエラーはどのブロックが原因かを body に持っているので、原因ごと引き継ぐ
+    throw Error(`${input.slug} (${input.sourceId}) の投入に失敗しました`, { cause: err })
   }
 
   const created = state[key]

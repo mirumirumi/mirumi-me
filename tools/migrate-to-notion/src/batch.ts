@@ -1,6 +1,7 @@
 import type { BlockObjectRequest } from "@notionhq/client"
 
-// Notion API はひとつの children 配列につき 100 件までしか受け付けない
+// Notion API はひとつの children 配列につき 100 件までしか受け付けない。
+// あふれた table_row を作成済みの table へ後から足せることは実 API で確認済み（2026-08-18）
 const MAX_CHILDREN = 100
 // 1 リクエストに含められる children のネストは 2 段まで。
 // つまり children の children までは同じリクエストで送れて、その先は別リクエストになる

@@ -23,6 +23,29 @@ const renderedContent: RenderedContent = {
 }
 
 describe("renderPreviewArticle", () => {
+  test("変換時の警告を種類ごとにまとめて最上部に出す", () => {
+    const html = renderPreviewArticle(article, {
+      html: "<p>本文</p>",
+      warnings: [
+        "amazon ショートコードの HTML 変換は未確定です（block: a）",
+        "amazon ショートコードの HTML 変換は未確定です（block: b）",
+        "リンクを出力できませんでした。相対パスや http/https 以外の URL は使えません: /profile",
+      ],
+    })
+
+    expect(html.indexOf("preview-warnings")).toBeLessThan(html.indexOf("post_view"))
+    expect(html).toContain("🔴 変換時の警告 3 件")
+    // ブロック ID を落として同種をまとめ、件数をバッジで出す
+    expect(html).toContain(
+      '<li>amazon ショートコードの HTML 変換は未確定です<span class="preview-warnings-count">2</span></li>',
+    )
+    expect(html).toContain("使えません: /profile</li>")
+  })
+
+  test("警告がなければ何も出さない", () => {
+    expect(renderPreviewArticle(article, renderedContent)).not.toContain("preview-warnings")
+  })
+
   test("本体と同じクラスでタイトル・サムネイル・メタ・本文だけを生成する", () => {
     const html = renderPreviewArticle(article, renderedContent)
 

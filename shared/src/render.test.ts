@@ -116,6 +116,163 @@ describe("renderArticleContent", () => {
     expect(result.warnings).toEqual([])
   })
 
+  test("段落の途中にあるインライン画像の shortcode を img に解決する", () => {
+    const result = renderArticleContent(
+      article([
+        {
+          id: "inline",
+          type: "paragraph",
+          richText: [text('前[image name="vscode.png" align="none"]後')],
+          children: [],
+        },
+        {
+          id: "listed",
+          type: "bulleted_list_item",
+          richText: [text('[image name="246310.png" alt="タグ編集の例"] 説明')],
+          children: [],
+        },
+      ]),
+    )
+
+    expect(result.html).toContain(
+      '前<img src="https://mirumi.media/vscode.png" alt="vscode" loading="lazy">後',
+    )
+    // 段落以外のブロックでも解決し、alt があればそれを使う
+    expect(result.html).toContain(
+      '<li><img src="https://mirumi.media/246310.png" alt="タグ編集の例" loading="lazy"> 説明</li>',
+    )
+    expect(result.html).not.toContain("[image")
+    expect(result.warnings).toEqual([])
+  })
+
+  test("出力できないリンクは本文を残したうえで警告にする", () => {
+    const result = renderArticleContent(
+      article([
+        {
+          id: "relative",
+          type: "paragraph",
+          richText: [text("相対", { href: "/profile" }), text("メール", { href: "mailto:a@b.co" })],
+          children: [],
+        },
+      ]),
+    )
+
+    // リンクは張れないがテキストは消さない
+    expect(result.html).toContain("<p>相対メール</p>")
+    expect(result.html).not.toContain("<a ")
+    expect(result.warnings).toEqual([
+      "リンクを出力できませんでした。相対パスや http/https 以外の URL は使えません: /profile",
+      "リンクを出力できませんでした。相対パスや http/https 以外の URL は使えません: mailto:a@b.co",
+    ])
+  })
+
+  test("ボタンを中央寄せの段落として既存のクラスで生成する", () => {
+    const result = renderArticleContent(
+      article([
+        {
+          id: "button",
+          type: "paragraph",
+          richText: [text('[button text="購入する" url="https://example.com/buy" color="orange"]')],
+          children: [],
+        },
+        {
+          id: "unknown-color",
+          type: "paragraph",
+          richText: [text('[button text="go" url="https://example.com/" color="magenta"]')],
+          children: [],
+        },
+      ]),
+    )
+
+    expect(result.html).toContain(
+      '<p style="text-align:center"><span class="btn-wrap btn-wrap-orange btn-wrap-m"><a href="https://example.com/buy">購入する</a></span></p>',
+    )
+    // 知らない色は無視して既定の見た目にするが、気づけるよう警告は残す
+    expect(result.html).toContain('<span class="btn-wrap btn-wrap-m">')
+    expect(result.warnings).toEqual(["未対応のボタン色です: magenta"])
+  })
+
+  test("遅延読み込み動画と引用画像のショートコードを HTML にする", () => {
+    const result = renderArticleContent(
+      article([
+        {
+          id: "video",
+          type: "paragraph",
+          richText: [
+            text(
+              '[video delay src="https://www.youtube.com/embed/abc?start=" thumbnail="https://mirumi.media/t.jpg" ts="23s"]',
+            ),
+          ],
+          children: [],
+        },
+        {
+          id: "quote",
+          type: "paragraph",
+          richText: [text('[quoteImage name="beji-ta.jpg" copyright="©集英社"]')],
+          children: [],
+        },
+      ]),
+    )
+
+    // クリックで iframe に差し替えるため data-video を持たせ、ts は start に反映する
+    expect(result.html).toContain(
+      '<div class="youtube" data-video="https://www.youtube.com/embed/abc?start=23">',
+    )
+    expect(result.html).toContain('<img src="https://mirumi.media/t.jpg"')
+    expect(result.html).toContain(
+      '<blockquote class="img"><div class="wp-caption"><img src="https://mirumi.media/beji-ta.jpg" alt="©集英社" loading="lazy"><p class="wp-caption-text">©集英社</p></div></blockquote>',
+    )
+    expect(result.warnings).toEqual([])
+  })
+
+  test("画像のオプションから幅と配置を反映する", () => {
+    const result = renderArticleContent(
+      article([
+        {
+          id: "sized",
+          type: "image",
+          url: "https://mirumi.media/a.png",
+          caption: [text('[image width="91%" align="none"] 説明')],
+          children: [],
+        },
+      ]),
+    )
+
+    expect(result.html).toContain(
+      '<img src="https://mirumi.media/a.png" alt="a" class="alignnone" style="width:91%" loading="lazy">',
+    )
+    expect(result.html).toContain('<p class="wp-caption-text">説明</p>')
+    expect(result.warnings).toEqual([])
+  })
+
+  test("引用の先頭段落を p で包み、本文のないコールアウトに空の段落を出さない", () => {
+    const result = renderArticleContent(
+      article([
+        {
+          id: "quote",
+          type: "quote",
+          richText: [text("一段落目")],
+          children: [
+            { id: "quote-2", type: "paragraph", richText: [text("二段落目")], children: [] },
+          ],
+        },
+        {
+          id: "callout",
+          type: "callout",
+          icon: null,
+          richText: [],
+          children: [
+            { id: "item", type: "numbered_list_item", richText: [text("項目")], children: [] },
+          ],
+        },
+      ]),
+    )
+
+    expect(result.html).toContain("<blockquote><p>一段落目</p><p>二段落目</p></blockquote>")
+    expect(result.html).toContain('<div class="waku-common"><ol><li>項目</li></ol></div>')
+    expect(result.html).not.toContain("<p></p>")
+  })
+
   test("見出し ID と開いた状態のもくじを最初の見出し直前に生成する", () => {
     const result = renderArticleContent(
       article([
@@ -139,10 +296,10 @@ describe("renderArticleContent", () => {
 
     expect(result.html.indexOf("導入")).toBeLessThan(result.html.indexOf('class="toc"'))
     expect(result.html.indexOf('class="toc"')).toBeLessThan(result.html.indexOf("<h1"))
-    expect(result.html).toContain('<h1 id="h-aaaaaaaa-heading">')
-    expect(result.html).toContain('<h2 id="h-bbbbbbbb-heading">')
-    expect(result.html).toContain('id="h-aaaaaaaa-heading"')
-    expect(result.html).toContain('href="#h-bbbbbbbb"')
+    // Block ID の末尾を base64url にした 7 文字。Notion の ID は先頭が作成時刻で衝突するため
+    expect(result.html).toContain('<h1 id="h-qqqqqqg-heading">')
+    expect(result.html).toContain('<h2 id="h-7u7u7uw-heading">')
+    expect(result.html).toContain('href="#h-7u7u7uw"')
     expect(result.html).toContain('class="toc-checkbox" type="checkbox" checked')
   })
 
@@ -178,12 +335,6 @@ describe("renderArticleContent", () => {
     const result = renderArticleContent(
       article([
         {
-          id: "button",
-          type: "paragraph",
-          richText: [text('[button text="go" color="brown"]')],
-          children: [],
-        },
-        {
           id: "amazon",
           type: "paragraph",
           richText: [text('[amazon asin="B000000000"]')],
@@ -206,11 +357,8 @@ describe("renderArticleContent", () => {
       ]),
     )
 
-    expect(result.html.match(/🔴/g)).toHaveLength(4)
-    expect(result.warnings).toHaveLength(4)
-    expect(result.warnings).toContain(
-      "button ショートコードの HTML 変換は未確定です（block: button）",
-    )
+    expect(result.html.match(/🔴/g)).toHaveLength(3)
+    expect(result.warnings).toHaveLength(3)
     expect(result.warnings).toContain(
       "amazon ショートコードの HTML 変換は未確定です（block: amazon）",
     )

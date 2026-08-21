@@ -1,3 +1,10 @@
+// - 2026-08-18、実際に 2 記事だけ投入して以下を実証済み✅（主に AI が読む用）
+//     - 169 行のテーブルは 100 行で作ってから残り 69 行を `blocks.children.append` で足せる（`table_width` 確定後の行追加は通る）
+//     - embed の URL は `x.com` でも `twitter.com` でも通るので、どちらかに正規化する必要はない
+//     - 100 件ごとのバッチ分割と、children を 2 段ネストさせた投入も通る
+//     - 確認に使った記事は big-car-navi-compatible-model（169 行テーブル）と android-app（473 ブロック / 5 リクエスト / x.com 埋め込み 3 件）
+
+import { createHash } from "node:crypto"
 import type { BlockObjectRequest, CreatePageParameters } from "@notionhq/client"
 import { HTMLElement, Node, NodeType, parse } from "node-html-parser"
 
@@ -19,6 +26,8 @@ type RichTextItemRequest = Extract<
 type RichTextAnnotations = NonNullable<RichTextItemRequest["annotations"]>
 
 interface ConversionContext {
+  // 相対リンクや記事内アンカーを絶対 URL にするための基準
+  articleUrl: string
   customCss: Array<string>
   warnings: Array<MigrationWarning>
 }
@@ -94,7 +103,7 @@ const warn = (
 
 const safeUrl = (value: string, context: ConversionContext, source: string): string | null => {
   try {
-    const url = new URL(value.startsWith("//") ? `https:${value}` : value, "https://mirumi.me")
+    const url = new URL(value.startsWith("//") ? `https:${value}` : value, context.articleUrl)
     if (url.protocol !== "http:" && url.protocol !== "https:") {
       throw TypeError("HTTP URL ではありません")
     }
@@ -221,21 +230,64 @@ const elementColor = (element: HTMLElement): RichTextAnnotations["color"] | null
   return null
 }
 
-const fontSizeExpression = (element: HTMLElement): string | null => {
+const fontSizePrefix = (element: HTMLElement): string | null => {
   const style = element.getAttribute("style") ?? ""
   const size = style.match(/font-size:\s*(0\.8|1\.35|1\.5|2(?:\.0)?)em/i)?.[1]
-  const prefix =
-    size === "0.8"
-      ? "\\scriptsize"
-      : size === "1.35"
-        ? "\\large"
-        : size === "1.5"
-          ? "\\Large"
-          : size === "2" || size === "2.0"
-            ? "\\LARGE"
-            : null
 
-  return prefix ? `{${prefix}\\text{${element.text.replaceAll("}", "\\}")}}}` : null
+  return size === "0.8"
+    ? "\\scriptsize"
+    : size === "1.35"
+      ? "\\large"
+      : size === "1.5"
+        ? "\\Large"
+        : size === "2" || size === "2.0"
+          ? "\\LARGE"
+          : null
+}
+
+const equationText = (value: string): string => {
+  return value.replaceAll("}", "\\}")
+}
+
+// Notion の数式は式の文字列と annotations しか持てないので、装飾やリンクの切れ目ごとに
+// 数式を分ける。リンクだけは数式に載せられないため、その部分は文字サイズを諦めて
+// 普通のテキストとして残す（リンクが消えるほうが損失が大きいという判断）
+const fontSizeRichText = (
+  items: Array<RichTextItemRequest>,
+  prefix: string,
+  context: ConversionContext,
+  source: string,
+): Array<RichTextItemRequest> => {
+  const richText: Array<RichTextItemRequest> = []
+
+  for (const item of items) {
+    if (!("text" in item)) {
+      richText.push(item)
+      continue
+    }
+    if (item.text.link) {
+      warn(context, "font_size_dropped", "リンクを残すため文字サイズ指定を落としました", source)
+      richText.push(item)
+      continue
+    }
+
+    // <br> 由来の改行は数式に入れられないので、行ごとの数式に分けて間に改行を残す
+    for (const [index, line] of item.text.content.split("\n").entries()) {
+      if (0 < index) {
+        richText.push({ type: "text", text: { content: "\n", link: null } })
+      }
+      if (!line) {
+        continue
+      }
+      richText.push({
+        type: "equation",
+        equation: { expression: `{${prefix}\\text{${equationText(line)}}}` },
+        annotations: item.annotations,
+      })
+    }
+  }
+
+  return richText
 }
 
 const imageUrl = (element: HTMLElement, context: ConversionContext): string | null => {
@@ -395,14 +447,26 @@ const collectRichText = (
       annotations.color = color
     }
     if (tag === "sup" || tag === "sub") {
-      const expression = `${tag === "sup" ? "^" : "_"}{${node.text.replaceAll("}", "\\}")}}`
+      // Wikipedia の引用注記など中身が空のものがあり、空の数式は意味を持たない
+      const inner = normalizeInlineWhitespace(node.text).trim()
+      if (!inner) {
+        continue
+      }
+      const expression = `${tag === "sup" ? "^" : "_"}{${equationText(inner)}}`
       richText.push({ type: "equation", equation: { expression }, annotations })
       continue
     }
 
-    const expression = tag === "span" ? fontSizeExpression(node) : null
-    if (expression) {
-      richText.push({ type: "equation", equation: { expression }, annotations })
+    const prefix = tag === "span" ? fontSizePrefix(node) : null
+    if (prefix) {
+      richText.push(
+        ...fontSizeRichText(
+          collectRichText(node.childNodes, context, { annotations, link: state.link }),
+          prefix,
+          context,
+          node.outerHTML,
+        ),
+      )
       continue
     }
 
@@ -488,8 +552,13 @@ const specialTextBlock = (value: string, context: ConversionContext): BlockObjec
     return media
   }
 
-  const related = text.match(/^\[\/([a-z0-9][a-z0-9_-]+)]$/i)
+  // 末尾スラッシュ、サブディレクトリ、目次アンカー付きの書き方が混ざっているので幅を持たせる。
+  // アンカーは移行で見出し ID が変わって必ず切れるため、記事そのものへのカードに寄せる
+  const related = text.match(/^\[\/([a-z0-9][a-z0-9/_-]*[a-z0-9])\/?(#[^\]]*)?]$/i)
   if (related?.[1]) {
+    if (related[2]) {
+      warn(context, "anchor_dropped", `ブログカードのアンカーを落としました: ${related[2]}`, text)
+    }
     return {
       object: "block",
       type: "bookmark",
@@ -768,13 +837,30 @@ const buttonShortcode = (element: HTMLElement): string | null => {
   return `[button ${shortcodeValue("text", normalizeInlineWhitespace(link.text).trim())} ${shortcodeValue("url", href)} ${shortcodeValue("color", color)}]`
 }
 
+// アプリ名・アイコン・開発者・価格はアプリーチのプラグインが生成していたもので、
+// ショートコードにしてしまうと元 HTML からしか取れなくなる。移行時にすべて焼き込む
+const appIconFile = (icon: string): string => {
+  const url = icon.startsWith("//") ? `https:${icon}` : icon
+
+  return `app-icon-${createHash("sha256").update(url).digest("hex").slice(0, 12)}.webp`
+}
+
 const appShortcode = (element: HTMLElement): string => {
+  const text = (selector: string) =>
+    normalizeInlineWhitespace(element.querySelector(selector)?.text ?? "").trim()
+  const icon = element.querySelector(".appreach__icon")?.getAttribute("src")
   const ios = element.querySelector(".appreach__aslink")?.getAttribute("href")
   const android = element.querySelector(".appreach__gplink")?.getAttribute("href")
+  const name = text(".appreach__name")
+  const developer = text(".appreach__developper")
+  const price = text(".appreach__price")
   const attributes = [
+    name ? shortcodeValue("name", name) : null,
+    icon ? shortcodeValue("icon", appIconFile(icon)) : null,
+    developer ? shortcodeValue("developer", developer) : null,
+    price ? shortcodeValue("price", price) : null,
     ios ? shortcodeValue("ios", ios) : null,
     android ? shortcodeValue("android", android) : null,
-    shortcodeValue("icon", ios ? "ios" : "android"),
   ].filter(Boolean)
 
   return `[app ${attributes.join(" ")}]`
@@ -897,10 +983,11 @@ const convertElement = (
     return block ? [block] : []
   }
   if (tag === "pre") {
-    const code =
-      element.querySelector("code")?.text ??
-      parse(element.rawText).querySelector("code")?.text ??
-      element.text
+    // blockTextElements で pre の中身は生テキストになるため、必要なら解析し直して取り出す。
+    // 末尾に空の <code></code> が付いている本文もあるので、空なら解析後の全文を使う
+    const parsed = parse(element.rawText)
+    const fromCode = element.querySelector("code")?.text ?? parsed.querySelector("code")?.text
+    const code = fromCode?.trim() ? fromCode : parsed.text
     return [
       {
         object: "block",
@@ -999,8 +1086,9 @@ const convertElement = (
       )
     }
     if (element.classList.contains("blogcard-type")) {
+      // カードが 2 枚入っている div もあるので、まとめて 1 つとして解釈せず子ごとに変換する
       const special = specialTextBlock(element.text, context)
-      return special ? [special] : []
+      return special ? [special] : convertNodes(element.childNodes, context)
     }
     if (element.classList.contains("appreach")) {
       return [paragraph(plainRichText(appShortcode(element)))]
@@ -1022,6 +1110,17 @@ const convertElement = (
         : convertNodes(element.childNodes, context)
     }
     if (!element.text.trim() && !element.querySelector("img")) {
+      // 罫線を引くためだけの空 div は区切り線として残す（dot-line-brown と同じ扱い）
+      if (
+        /border(?:-top|-bottom)?(?:-style|-width|-color)?:/i.test(
+          element.getAttribute("style") ?? "",
+        )
+      ) {
+        return [{ object: "block", type: "divider", divider: {} }]
+      }
+      if (0 < element.classList.length) {
+        warn(context, "empty_element", "中身のない要素を取り除きました", element.outerHTML)
+      }
       return []
     }
     if (element.childNodes.every(isInlineNode)) {
@@ -1116,7 +1215,10 @@ const convertNodes = (
         const previous = blocks[start - 1]
         const caption = blocks[start]
         if (previous && "image" in previous && caption && "paragraph" in caption) {
-          previous.image.caption = caption.paragraph.rich_text
+          // キャプション先頭のオプショントークンを消さないよう、置き換えではなく後ろに足す
+          const token = previous.image.caption ?? []
+          const separator: Array<RichTextItemRequest> = 0 < token.length ? plainRichText(" ") : []
+          previous.image.caption = [...token, ...separator, ...caption.paragraph.rich_text]
           blocks.splice(start, 1)
         }
       }
@@ -1198,7 +1300,11 @@ const makeProperties = (
 }
 
 export const convertWordPressContent = (record: WordPressContentRecord): NotionPageInput => {
-  const context: ConversionContext = { customCss: [], warnings: [] }
+  const context: ConversionContext = {
+    articleUrl: `https://mirumi.me/${record.slug}/`,
+    customCss: [],
+    warnings: [],
+  }
   const root = parse(prepareHtml(record.content), {
     comment: true,
     blockTextElements: { script: true, noscript: true, style: true, pre: true },

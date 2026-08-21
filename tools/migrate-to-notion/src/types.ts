@@ -22,6 +22,9 @@ export interface WordPressContentRecord {
 }
 
 export type MigrationWarningCode =
+  | "anchor_dropped"
+  | "empty_element"
+  | "font_size_dropped"
   | "invalid_url"
   | "multiple_categories"
   | "unknown_category"

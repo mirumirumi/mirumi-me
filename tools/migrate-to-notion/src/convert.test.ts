@@ -199,6 +199,36 @@ describe("convertWordPressContent", () => {
     expect(converted.warnings).toEqual([])
   })
 
+  test("文字サイズ指定の中の装飾・改行・リンクを保持する", () => {
+    const converted = convertWordPressContent(
+      makeRecord(
+        '<p><span style="font-size: 1.35em;"><strong>太字</strong>と<br>改行と<a href="/linked">リンク</a></span></p>',
+      ),
+    )
+    const block = converted.children[0]
+    const richText = block && "paragraph" in block ? block.paragraph.rich_text : []
+
+    expect(richText).toEqual([
+      // 装飾は数式の annotations として保持する
+      {
+        type: "equation",
+        equation: { expression: "{\\large\\text{太字}}" },
+        annotations: { bold: true },
+      },
+      { type: "equation", equation: { expression: "{\\large\\text{と}}" }, annotations: {} },
+      // <br> は数式に入れられないので改行だけ素のテキストにして数式を分ける
+      { type: "text", text: { content: "\n", link: null } },
+      { type: "equation", equation: { expression: "{\\large\\text{改行と}}" }, annotations: {} },
+      // リンクは数式に載せられないため、文字サイズだけ捨ててリンクを残す
+      {
+        type: "text",
+        text: { content: "リンク", link: { url: "https://mirumi.me/linked" } },
+        annotations: {},
+      },
+    ])
+    expect(converted.warnings.map((warning) => warning.code)).toEqual(["font_size_dropped"])
+  })
+
   test("深いリストを保持し、列数の違うテーブルを補完する", () => {
     const converted = convertWordPressContent(
       makeRecord(`
@@ -274,7 +304,7 @@ describe("convertWordPressContent", () => {
       makeRecord(`
         <div class="box-common box-info"><p>補足</p><ul><li>項目</li></ul></div>
         <p><span class="btn-wrap btn-wrap-green"><a href="https://example.com/buy">購入</a></span></p>
-        <div class="appreach"><a class="appreach__aslink" href="https://apps.apple.com/app/id1">App Store</a><a class="appreach__gplink" href="https://play.google.com/store/apps/details?id=1">Google Play</a></div>
+        <div class="appreach"><img class="appreach__icon" src="https://lh3.ggpht.com/icon=s128"><p class="appreach__name">サンプルアプリ</p><span class="appreach__developper">みるみ</span><span class="appreach__price">無料</span><a class="appreach__aslink" href="https://apps.apple.com/app/id1">App Store</a><a class="appreach__gplink" href="https://play.google.com/store/apps/details?id=1">Google Play</a></div>
         <div class="youtube" data-video="/embed/abc?start=23"><img src="https://mirumi.media/video.jpg"></div>
         <blockquote class="img"><img src="https://mirumi.media/comic.jpg">作者名</blockquote>
       `),
@@ -310,7 +340,7 @@ describe("convertWordPressContent", () => {
             type: "text",
             text: {
               content:
-                '[app ios="https://apps.apple.com/app/id1" android="https://play.google.com/store/apps/details?id=1" icon="ios"]',
+                '[app name="サンプルアプリ" icon="app-icon-7991379dd524.webp" developer="みるみ" price="無料" ios="https://apps.apple.com/app/id1" android="https://play.google.com/store/apps/details?id=1"]',
             },
           },
         ],
@@ -430,6 +460,86 @@ describe("convertWordPressContent", () => {
     expect(JSON.stringify(converted.children[0])).toContain(
       '[image name=\\"inline.png\\" align=\\"center\\"]',
     )
+  })
+
+  test("ブログカードが 2 枚入った div でも両方をブックマークにする", () => {
+    const converted = convertWordPressContent(
+      makeRecord(
+        '<div class="blogcard-type"><p>[/first-post]</p><p>[https://example.com/second]</p></div>',
+      ),
+    )
+
+    expect(converted.children.map(blockType)).toEqual(["bookmark", "bookmark"])
+    expect(JSON.stringify(converted.children)).toContain("https://mirumi.me/first-post/")
+    expect(JSON.stringify(converted.children)).toContain("https://example.com/second")
+  })
+
+  test("関連記事カードの末尾スラッシュ・サブディレクトリ・アンカーを解決する", () => {
+    const converted = convertWordPressContent(
+      makeRecord(
+        "<p>[/lambda-layers-import/]</p><p>[/category/car-navigation-system]</p><p>[/pc-freesoft#toc7]</p>",
+      ),
+    )
+
+    expect(converted.children.map(blockType)).toEqual(["bookmark", "bookmark", "bookmark"])
+    expect(JSON.stringify(converted.children)).toContain("https://mirumi.me/lambda-layers-import/")
+    expect(JSON.stringify(converted.children)).toContain(
+      "https://mirumi.me/category/car-navigation-system/",
+    )
+    // 移行で見出し ID が変わりアンカーは必ず切れるので、記事そのものへ寄せて警告する
+    expect(JSON.stringify(converted.children)).toContain("https://mirumi.me/pc-freesoft/")
+    expect(converted.warnings.map((warning) => warning.code)).toEqual(["anchor_dropped"])
+  })
+
+  test("micro-bottom のキャプションはオプショントークンを消さずに後ろへ足す", () => {
+    const converted = convertWordPressContent(
+      makeRecord(
+        '<p><img src="https://mirumi.media/a.jpg" alt="説明的な alt"></p>' +
+          '<div class="micro-bottom">画像の補足</div>',
+      ),
+    )
+    const block = converted.children[0]
+
+    expect(converted.children.map(blockType)).toEqual(["image"])
+    expect(
+      (block && "image" in block ? (block.image.caption ?? []) : [])
+        .map((item) => ("text" in item ? item.text.content : ""))
+        .join(""),
+    ).toEqual('[image alt="説明的な alt"] 画像の補足')
+  })
+
+  test("中身が空の sup からは数式をつくらず、罫線だけの div は区切り線にする", () => {
+    const converted = convertWordPressContent(
+      makeRecord(
+        '<p>本文<sup class="reference"></sup></p>' +
+          '<div class="border" style="border-top-width: 5px; border-top-style: dotted;"> </div>' +
+          '<div class="border"> </div>',
+      ),
+    )
+
+    expect(converted.children.map(blockType)).toEqual(["paragraph", "divider"])
+    expect(JSON.stringify(converted.children)).not.toContain("^{}")
+    // 見た目を持たない空要素は落とすが、黙って消さずに警告として残す
+    expect(converted.warnings.map((warning) => warning.code)).toEqual(["empty_element"])
+  })
+
+  test("記事内アンカーはサイトトップではなくその記事を指す", () => {
+    const converted = convertWordPressContent(
+      makeRecord('<p><a href="#jump">ここ</a></p>', { slug: "firewatch" }),
+    )
+
+    expect(JSON.stringify(converted.children)).toContain("https://mirumi.me/firewatch/#jump")
+  })
+
+  test("末尾に空の code がある pre でも本文を落とさない", () => {
+    const converted = convertWordPressContent(
+      makeRecord('<pre class="_lang_">F14::SendInput\n+F14::SendInput\n<code></code></pre>'),
+    )
+    const block = converted.children[0]
+
+    expect(block && "code" in block ? block.code.rich_text : []).toEqual([
+      { type: "text", text: { content: "F14::SendInput\n+F14::SendInput\n" } },
+    ])
   })
 
   test("不明カテゴリと不正なリンクを警告しつつ本文を保持する", () => {

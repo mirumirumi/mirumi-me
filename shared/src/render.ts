@@ -48,19 +48,22 @@ const renderEquation = (expression: string, context: RenderContext): string => {
     { prefix: "{\\LARGE\\text{", size: "2em" },
   ]
 
+  // 数式に入れるときに閉じ波括弧をエスケープしているので戻す
+  const unescapeBrace = (value: string) => value.replaceAll("\\}", "}")
+
   for (const { prefix, size } of fontSizes) {
     if (expression.startsWith(prefix) && expression.endsWith("}}")) {
-      const content = expression.slice(prefix.length, -2)
+      const content = unescapeBrace(expression.slice(prefix.length, -2))
 
       return `<span style="font-size:${size}">${escapeHtml(content)}</span>`
     }
   }
 
   if (expression.startsWith("^{") && expression.endsWith("}")) {
-    return `<sup>${escapeHtml(expression.slice(2, -1))}</sup>`
+    return `<sup>${escapeHtml(unescapeBrace(expression.slice(2, -1)))}</sup>`
   }
   if (expression.startsWith("_{") && expression.endsWith("}")) {
-    return `<sub>${escapeHtml(expression.slice(2, -1))}</sub>`
+    return `<sub>${escapeHtml(unescapeBrace(expression.slice(2, -1)))}</sub>`
   }
 
   context.warnings.push(`未対応のインライン数式です: ${expression}`)
@@ -98,13 +101,39 @@ const renderRichTextItem = (item: RichText, context: RenderContext): string => {
   const href = item.href ? safeUrl(item.href) : null
   if (href) {
     html = `<a href="${escapeHtml(href)}">${html}</a>`
+  } else if (item.href) {
+    // 黙ってリンクだけ消えると気づけないので、本文は残したうえで警告に出す
+    context.warnings.push(
+      `リンクを出力できませんでした。相対パスや http/https 以外の URL は使えません: ${item.href}`,
+    )
   }
 
   return html
 }
 
+// 段落の途中に置かれた画像は Notion の image ブロックにできないため、移行時に
+// `[image name="…"]` のショートコードとして本文に埋め込まれている。
+// 画像の実体は mirumi.media の直下に並んでいるのでファイル名から URL を組み立てられる
+// リッチテキストを HTML 化したあとに処理するため、属性の引用符は escapeHtml 済みの &quot;
+const INLINE_IMAGE = /\[image\s+name=&quot;(.*?)&quot;((?:[^\]]|&quot;[^&]*&quot;)*?)]/g
+
+const renderInlineImages = (html: string, context: RenderContext): string => {
+  return html.replaceAll(INLINE_IMAGE, (matched, name: string, rest: string) => {
+    const url = safeUrl(`https://mirumi.media/${encodeURIComponent(name)}`)
+    if (!url) {
+      context.warnings.push(`インライン画像の名前が不正です: ${name}`)
+      return matched
+    }
+    const alt = rest.match(/\balt=&quot;(.*?)&quot;/)?.[1] ?? name.replace(/\.[a-z0-9]+$/i, "")
+
+    return `<img src="${escapeHtml(url)}" alt="${alt}" loading="lazy">`
+  })
+}
+
 const renderRichText = (richText: Array<RichText>, context: RenderContext): string => {
-  return richText.map((item) => renderRichTextItem(item, context)).join("")
+  const html = richText.map((item) => renderRichTextItem(item, context)).join("")
+
+  return html.includes("[image ") ? renderInlineImages(html, context) : html
 }
 
 const renderChildren = (block: ContentBlock, context: RenderContext): string => {
@@ -115,8 +144,19 @@ const renderChildren = (block: ContentBlock, context: RenderContext): string => 
   return renderBlocks(block.children, context)
 }
 
+// Notion の Block ID（UUID）を base64url にして 7 文字だけ使う。hex を切り出すより
+// 1 文字あたりの情報量が多く、42 bit を 7 文字で表せる。
+// ただし Notion の ID は時系列順で先頭バイトが作成時刻なので、先頭ではなく末尾から取る
+// （同じ記事のブロックは作成時刻が近く、先頭を使うと大量に衝突する）
 const headingId = (blockId: string): string => {
-  return `h-${blockId.replaceAll("-", "").slice(-8)}`
+  const hex = blockId.replaceAll("-", "")
+  const bytes = Uint8Array.from(hex.match(/../g) ?? [], (pair) => Number.parseInt(pair, 16))
+  const base64url = btoa(String.fromCharCode(...bytes))
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replaceAll("=", "")
+
+  return `h-${base64url.slice(-7)}`
 }
 
 const renderHeading = (block: HeadingBlock, context: RenderContext): string => {
@@ -199,8 +239,11 @@ const renderCallout = (
           ? "box-common box-alert"
           : "waku-common"
   const icon = block.icon && !["💡", "♻️", "🚨"].includes(block.icon) ? `${block.icon} ` : ""
+  // waku-common で ol だけを囲むような、本文を持たないコールアウトでは空の段落を出さない
+  const richText = renderRichText(block.richText, context)
+  const body = icon || richText ? `<p>${icon}${richText}</p>` : ""
 
-  return `<div class="${className}"><p>${icon}${renderRichText(block.richText, context)}</p>${renderChildren(block, context)}</div>`
+  return `<div class="${className}">${body}${renderChildren(block, context)}</div>`
 }
 
 const renderMedia = (
@@ -265,7 +308,9 @@ const splitImageCaption = (
   richText: Array<RichText>,
 ): { options: Record<string, string>; caption: Array<RichText> } => {
   const first = richText.at(0)
-  const token = first?.type === "text" ? first.content.match(/^\[image\b([^\]]*)]( ?)/) : null
+  // 属性値の中の ] を閉じ括弧と間違えないよう、引用符の外にある ] だけを終端とみなす
+  const token =
+    first?.type === "text" ? first.content.match(/^\[image\b((?:[^\]"]|"[^"]*")*)]( ?)/) : null
   if (!first || !token) {
     return { options: {}, caption: richText }
   }
@@ -294,11 +339,131 @@ const imageAltFromUrl = (url: string): string => {
   }
 }
 
+// 画像の実体は mirumi.media の直下に並んでいるのでファイル名から URL を組み立てる
+const mediaUrl = (name: string): string | null => {
+  return safeUrl(`https://mirumi.media/${encodeURIComponent(name)}`)
+}
+
+// クリックするまで iframe を作らない遅延読み込み。実際の差し替えは content-scripts の loadYouTube が行う
+const renderDelayedVideo = (attributes: Record<string, string>, context: RenderContext): string => {
+  const source = attributes.src ? safeUrl(attributes.src) : null
+  if (!source) {
+    return addWarning(context, "遅延読み込み動画の src がありません")
+  }
+  const url = new URL(source)
+  if (attributes.ts) {
+    url.searchParams.set("start", attributes.ts.replace(/s$/, ""))
+  } else {
+    url.searchParams.delete("start")
+  }
+  const thumbnail = attributes.thumbnail ? safeUrl(attributes.thumbnail) : null
+  const image = thumbnail
+    ? `<img src="${escapeHtml(thumbnail)}" alt="" width="100%" height="auto" loading="lazy">`
+    : ""
+
+  return `<div class="youtube" data-video="${escapeHtml(url.href)}">${image}</div>`
+}
+
+// 漫画の引用表現。もとの WordPress でも blockquote.img + wp-caption の組み合わせだった
+// アプリ紹介カード。属性はすべて移行時に焼き込まれているので外部への問い合わせは不要
+const renderApp = (attributes: Record<string, string>, context: RenderContext): string => {
+  const icon = attributes.icon ? mediaUrl(attributes.icon) : null
+  if (!attributes.name || !icon) {
+    return addWarning(context, "アプリカードの name か icon がありません")
+  }
+  const storeLink = (url: string | undefined, className: string, image: string, label: string) => {
+    const safe = url ? safeUrl(url) : null
+    return safe
+      ? `<a class="${className}" href="${escapeHtml(safe)}" target="_blank" rel="nofollow noopener"><img src="https://nabettu.github.io/appreach/img/${image}" alt="${label}" loading="lazy"></a>`
+      : ""
+  }
+  const detail = [
+    attributes.developer
+      ? `<span class="appreach__developper">${escapeHtml(attributes.developer)}</span>`
+      : "",
+    attributes.price ? `<span class="appreach__price">${escapeHtml(attributes.price)}</span>` : "",
+  ].join("")
+
+  return `<div class="appreach"><img class="appreach__icon" src="${escapeHtml(icon)}" alt="${escapeHtml(attributes.name)}" loading="lazy"><div class="appreach__detail"><p class="appreach__name">${escapeHtml(attributes.name)}</p><p class="appreach__info">${detail}</p></div><div class="appreach__links">${storeLink(attributes.ios, "appreach__aslink", "as_ja.svg", "App Store")}${storeLink(attributes.android, "appreach__gplink", "gplay_ja.png", "Google Play")}</div></div>`
+}
+
+const renderQuoteImage = (attributes: Record<string, string>, context: RenderContext): string => {
+  const url = attributes.name ? mediaUrl(attributes.name) : null
+  if (!url) {
+    return addWarning(context, "引用画像の name がありません")
+  }
+  const copyright = attributes.copyright
+    ? `<p class="wp-caption-text">${escapeHtml(attributes.copyright)}</p>`
+    : ""
+
+  return `<blockquote class="img"><div class="wp-caption"><img src="${escapeHtml(url)}" alt="${escapeHtml(attributes.copyright ?? "")}" loading="lazy">${copyright}</div></blockquote>`
+}
+
+// ボタンは WordPress 時代から常に中央寄せの段落に置かれていた（実データ 56 件すべて）ので、
+// 配置はショートコードの指定ではなくレンダリング側の既定として持つ
+const BUTTON_COLORS = new Set([
+  "brown",
+  "cyan",
+  "deep-orange",
+  "green",
+  "indigo",
+  "light-blue",
+  "light-green",
+  "orange",
+  "purple",
+  "red",
+])
+
+const renderButton = (attributes: Record<string, string>, context: RenderContext): string => {
+  const url = attributes.url ? safeUrl(attributes.url) : null
+  if (!url || !attributes.text) {
+    return addWarning(context, "ボタンの url か text がありません")
+  }
+  const color = attributes.color ?? ""
+  if (color && !BUTTON_COLORS.has(color)) {
+    context.warnings.push(`未対応のボタン色です: ${color}`)
+  }
+  const colorClass = BUTTON_COLORS.has(color) ? ` btn-wrap-${color}` : ""
+
+  return `<p style="text-align:center"><span class="btn-wrap${colorClass} btn-wrap-m"><a href="${escapeHtml(url)}">${escapeHtml(attributes.text)}</a></span></p>`
+}
+
+const shortcodeAttributes = (value: string): Record<string, string> => {
+  const attributes: Record<string, string> = {}
+  for (const match of value.matchAll(/([a-zA-Z][\w-]*)\s*=\s*&quot;(.*?)&quot;/g)) {
+    if (match[1] && match[2] !== undefined) {
+      attributes[match[1]] = match[2]
+    }
+  }
+
+  return attributes
+}
+
 const renderBlock = (block: ContentBlock, context: RenderContext): string => {
   switch (block.type) {
     case "paragraph": {
       const plainText = block.richText.map((item) => item.content).join("")
-      const shortcode = plainText.trim().match(/^\[(amazon|button|app|video|image|quoteImage)\b/)
+      // image は renderInlineImages が解決するので、未確定の警告対象から外す
+      const shortcode = plainText.trim().match(/^\[(amazon|button|app|video|quoteImage)\b/)
+      if (
+        shortcode?.[1] === "button" ||
+        shortcode?.[1] === "video" ||
+        shortcode?.[1] === "quoteImage" ||
+        shortcode?.[1] === "app"
+      ) {
+        const body = renderRichText(block.richText, context).trim()
+        const attributes = shortcodeAttributes(body)
+        if (shortcode[1] === "button") {
+          return renderButton(attributes, context)
+        }
+        if (shortcode[1] === "quoteImage") {
+          return renderQuoteImage(attributes, context)
+        }
+        if (shortcode[1] === "app") {
+          return renderApp(attributes, context)
+        }
+        return renderDelayedVideo(attributes, context)
+      }
       if (shortcode) {
         // 🔴 各ショートコードの属性仕様が確定したものから専用 HTML へ置き換える
         return addWarning(
@@ -313,8 +478,12 @@ const renderBlock = (block: ContentBlock, context: RenderContext): string => {
     }
     case "heading":
       return renderHeading(block, context)
-    case "quote":
-      return `<blockquote>${renderRichText(block.richText, context)}${renderChildren(block, context)}</blockquote>`
+    case "quote": {
+      // 2 段落目以降は children として <p> で来るので、先頭も <p> で包んで構造を揃える
+      const richText = renderRichText(block.richText, context)
+
+      return `<blockquote>${richText ? `<p>${richText}</p>` : ""}${renderChildren(block, context)}</blockquote>`
+    }
     case "callout":
       return renderCallout(block, context)
     case "code": {
@@ -330,14 +499,21 @@ const renderBlock = (block: ContentBlock, context: RenderContext): string => {
       }
 
       const { options, caption } = splitImageCaption(block.caption)
-      if (0 < Object.keys(options).filter((name) => name !== "alt").length) {
-        // 🔴 枠線の既定値を決めたあと、width / align / border を実際の HTML へ反映する
-        context.warnings.push(`画像オプションの HTML 変換は未確定です（block: ${block.id}）`)
-      }
       const captionHtml = renderRichText(caption, context)
       const alt = options.alt ?? imageAltFromUrl(url)
+      const unknown = Object.keys(options).filter(
+        (name) => !["alt", "width", "align"].includes(name),
+      )
+      if (0 < unknown.length) {
+        context.warnings.push(
+          `未対応の画像オプションです: ${unknown.join(", ")}（block: ${block.id}）`,
+        )
+      }
+      // 幅は元の指定をそのまま通す。alignnone は左寄せ、それ以外は既定の中央のまま
+      const style = options.width ? ` style="width:${escapeHtml(options.width)}"` : ""
+      const className = options.align === "none" ? ' class="alignnone"' : ""
 
-      return `<div class="wp-caption"><img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" loading="lazy">${captionHtml ? `<p class="wp-caption-text">${captionHtml}</p>` : ""}</div>`
+      return `<div class="wp-caption"><img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}"${className}${style} loading="lazy">${captionHtml ? `<p class="wp-caption-text">${captionHtml}</p>` : ""}</div>`
     }
     case "audio":
     case "video":
