@@ -508,6 +508,45 @@ describe("convertWordPressContent", () => {
     ).toEqual('[image alt="説明的な alt"] 画像の補足')
   })
 
+  test("段落内改行の直後に入る半角スペースを落とす", () => {
+    const converted = convertWordPressContent(
+      makeRecord(
+        "<p>ありがとうございます。<br />\n お世辞ではなく<strong>\n 太字も</strong>本当です。</p>",
+      ),
+    )
+    const block = converted.children[0]
+    const content = (block && "paragraph" in block ? block.paragraph.rich_text : [])
+      .map((item) => ("text" in item ? item.text.content : ""))
+      .join("")
+
+    expect(content).toEqual("ありがとうございます。\nお世辞ではなく 太字も本当です。")
+  })
+
+  test("コードブロックのインデントは残す", () => {
+    const converted = convertWordPressContent(
+      makeRecord("<pre><code>body {\n    margin: 0;\n}</code></pre>"),
+    )
+    const block = converted.children[0]
+
+    expect(block && "code" in block ? block.code.rich_text : []).toEqual([
+      { type: "text", text: { content: "body {\n    margin: 0;\n}" } },
+    ])
+  })
+
+  test("画像の直後の em をキャプションとして image ブロックにまとめる", () => {
+    const converted = convertWordPressContent(
+      makeRecord(
+        '<p><img src="https://mirumi.media/ui.jpg" alt="ui"> <em>こういうやつのこと。</em></p>',
+      ),
+    )
+    const block = converted.children[0]
+
+    expect(converted.children.map(blockType)).toEqual(["image"])
+    expect(block && "image" in block ? (block.image.caption ?? []) : []).toEqual([
+      { type: "text", text: { content: "こういうやつのこと。", link: null }, annotations: {} },
+    ])
+  })
+
   test("中身が空の sup からは数式をつくらず、罫線だけの div は区切り線にする", () => {
     const converted = convertWordPressContent(
       makeRecord(

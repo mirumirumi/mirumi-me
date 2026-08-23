@@ -30,6 +30,7 @@ const { values } = parseArgs({
   options: {
     slug: { type: "string", multiple: true, default: [] },
     limit: { type: "string" },
+    redo: { type: "boolean", default: false },
     "posts-data-source": { type: "string", default: POSTS_DATA_SOURCE_ID },
     "pages-data-source": { type: "string", default: PAGES_DATA_SOURCE_ID },
     state: { type: "string", default: "upload-state.json" },
@@ -38,6 +39,7 @@ const { values } = parseArgs({
 const options: UploadOptions = {
   slugs: values.slug ?? [],
   limit: values.limit === undefined ? null : Number.parseInt(values.limit, 10),
+  redo: values.redo ?? false,
   postsDataSourceId: values["posts-data-source"] ?? POSTS_DATA_SOURCE_ID,
   pagesDataSourceId: values["pages-data-source"] ?? PAGES_DATA_SOURCE_ID,
   statePath: values.state ?? "upload-state.json",
@@ -205,6 +207,7 @@ process.stdout.write(
     `対象: ${conversions.length} 件`,
     `投入先: posts=${options.postsDataSourceId} / pages=${options.pagesDataSourceId}`,
     `状態: ${statePath}`,
+    options.redo ? "投入済みのページもゴミ箱へ入れて作り直します" : "",
     "",
   ].join("\n"),
 )
@@ -214,7 +217,8 @@ let skipped = 0
 for (const input of conversions) {
   const key = String(input.sourceId)
   const previous = state[key]
-  if (previous?.status === "done") {
+  // --redo なら投入済みでも作り直す。古いページはこのあと必ずゴミ箱に入れるので重複しない
+  if (previous?.status === "done" && !options.redo) {
     skipped += 1
     continue
   }

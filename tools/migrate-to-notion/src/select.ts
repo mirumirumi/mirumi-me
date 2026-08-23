@@ -4,6 +4,7 @@ import type { NotionPageInput } from "./types"
 export interface UploadOptions {
   slugs: Array<string>
   limit: number | null
+  redo: boolean
   postsDataSourceId: string
   pagesDataSourceId: string
   statePath: string

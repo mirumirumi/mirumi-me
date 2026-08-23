@@ -245,6 +245,51 @@ describe("renderArticleContent", () => {
     expect(result.warnings).toEqual([])
   })
 
+  test("追記ブロックの日付の書き出しを rewrite-date として復元する", () => {
+    const result = renderArticleContent(
+      article([
+        {
+          id: "rewrite",
+          type: "callout",
+          icon: "♻️",
+          richText: [text("追記 (2020/5/21) ：衝撃的なこと言います。")],
+          children: [
+            {
+              id: "second",
+              type: "paragraph",
+              richText: [text("追記 (2022/12/21) ：前回の追記から 2 年半。")],
+              children: [],
+            },
+            {
+              id: "body",
+              type: "paragraph",
+              richText: [text("追記ではない普通の段落。")],
+              children: [],
+            },
+          ],
+        },
+        {
+          id: "info",
+          type: "callout",
+          icon: "💡",
+          richText: [text("追記 (2020/5/21) ：これは追記ブロックではない。")],
+          children: [],
+        },
+      ]),
+    )
+
+    // ひとつの追記ブロックに複数の追記があっても、子の段落まで拾う
+    expect(result.html).toContain(
+      '<p><span class="rewrite-date">追記 (2020/5/21) ：</span>衝撃的なこと言います。</p>',
+    )
+    expect(result.html).toContain(
+      '<p><span class="rewrite-date">追記 (2022/12/21) ：</span>前回の追記から 2 年半。</p>',
+    )
+    // 書き出しが合わない段落と、追記ブロック以外は触らない
+    expect(result.html).toContain("<p>追記ではない普通の段落。</p>")
+    expect(result.html).toContain("<p>追記 (2020/5/21) ：これは追記ブロックではない。</p>")
+  })
+
   test("引用の先頭段落を p で包み、本文のないコールアウトに空の段落を出さない", () => {
     const result = renderArticleContent(
       article([

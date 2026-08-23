@@ -19,6 +19,7 @@ const makeOptions = (overrides: Partial<UploadOptions> = {}): UploadOptions => {
   return {
     slugs: [],
     limit: null,
+    redo: false,
     postsDataSourceId: POSTS_DATA_SOURCE_ID,
     pagesDataSourceId: PAGES_DATA_SOURCE_ID,
     statePath: "upload-state.json",

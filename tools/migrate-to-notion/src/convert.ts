@@ -489,11 +489,32 @@ const collectRichText = (
   return richText
 }
 
+// WordPress の本文は <br /> のあとに改行が入っているため、そのままだと
+// 改行のあとに半角スペースが 1 個残る。HTML では潰れるが Notion では文字として残ってしまう
+const stripSpaceAfterNewline = (
+  richText: Array<RichTextItemRequest>,
+): Array<RichTextItemRequest> => {
+  let previousEndsWithNewline = false
+  for (const item of richText) {
+    if (!("text" in item)) {
+      previousEndsWithNewline = false
+      continue
+    }
+    const content = item.text.content.replaceAll(/\n /g, "\n")
+    item.text.content = previousEndsWithNewline ? content.replace(/^ /, "") : content
+    previousEndsWithNewline = item.text.content.endsWith("\n")
+  }
+
+  return richText
+}
+
 const richTextFromNodes = (
   nodes: Array<Node>,
   context: ConversionContext,
 ): Array<RichTextItemRequest> => {
-  return splitRichTextItems(trimRichText(collectRichText(nodes, context, DEFAULT_INLINE_STATE)))
+  return splitRichTextItems(
+    trimRichText(stripSpaceAfterNewline(collectRichText(nodes, context, DEFAULT_INLINE_STATE))),
+  )
 }
 
 const plainRichText = (value: string): Array<RichTextItemRequest> => {
@@ -767,7 +788,7 @@ const richTextFromTableNodes = (
     appendText(richText, "\n", DEFAULT_INLINE_STATE)
   }
 
-  return splitRichTextItems(trimRichText(richText))
+  return splitRichTextItems(trimRichText(stripSpaceAfterNewline(richText)))
 }
 
 const tableBlock = (
@@ -1057,9 +1078,19 @@ const convertElement = (
     }
     const images = element.querySelectorAll("img")
     const textWithoutImages = element.text.trim()
-    if (images.length === 1 && !textWithoutImages) {
-      const block = imageBlock(images[0]!, context)
-      return block ? [block] : []
+    if (images.length === 1) {
+      // 技術ブログを統合したときの記事だけ、画像の直後に <em> でキャプションを書く形になっている
+      // （フロントエンドの `img ~ em` にキャプション用のスタイルが当たっている）
+      const captions = directChildrenByTag(element, "em")
+      const captionText = captions.map((caption) => caption.text).join("")
+      if (!textWithoutImages || captionText.trim() === textWithoutImages) {
+        const block = imageBlock(
+          images[0]!,
+          context,
+          captions.flatMap((caption) => richTextFromNodes(caption.childNodes, context)),
+        )
+        return block ? [block] : []
+      }
     }
     const richText = richTextFromNodes(element.childNodes, context)
     return 0 < richText.length ? [paragraph(richText)] : []

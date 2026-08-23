@@ -226,6 +226,15 @@ const renderTable = (block: TableBlock, context: RenderContext): string => {
   return `<div class="table-wrapper"><table>${head}<tbody>${body}</tbody></table></div>`
 }
 
+// 追記ブロックの「追記 (日付) ：」は WordPress では span.rewrite-date で緑の太字にしていた。
+// Notion 側にはこの情報を持たせず、段落の先頭にある決まった書き出しをここで拾って復元する。
+// ひとつの追記ブロックに追記が複数入っている記事もあるので、子の段落もまとめて対象にする
+const REWRITE_DATE = /(<p>)((?:さらに|もっと)?追記(?:\s*[（(][^）)]*[)）])?\s*[：:])/g
+
+const markRewriteDates = (html: string): string => {
+  return html.replaceAll(REWRITE_DATE, '$1<span class="rewrite-date">$2</span>')
+}
+
 const renderCallout = (
   block: Extract<ContentBlock, { type: "callout" }>,
   context: RenderContext,
@@ -242,8 +251,9 @@ const renderCallout = (
   // waku-common で ol だけを囲むような、本文を持たないコールアウトでは空の段落を出さない
   const richText = renderRichText(block.richText, context)
   const body = icon || richText ? `<p>${icon}${richText}</p>` : ""
+  const inner = `${body}${renderChildren(block, context)}`
 
-  return `<div class="${className}">${body}${renderChildren(block, context)}</div>`
+  return `<div class="${className}">${block.icon === "♻️" ? markRewriteDates(inner) : inner}</div>`
 }
 
 const renderMedia = (
