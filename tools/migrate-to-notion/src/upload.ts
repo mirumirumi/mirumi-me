@@ -15,6 +15,8 @@ import {
 import { planBlockBatches } from "./batch"
 import { PAGES_DATA_SOURCE_ID, POSTS_DATA_SOURCE_ID } from "./config"
 import { convertWordPressContent } from "./convert"
+import { createMediaMigrationResolver, readMediaMigrationMapping } from "./media-mapping"
+import { selectMigrationTargets } from "./migration-targets"
 import { readContents } from "./read"
 import { selectConversions, type UploadOptions } from "./select"
 import type { NotionPageInput, UploadState } from "./types"
@@ -34,6 +36,7 @@ const { values } = parseArgs({
     "posts-data-source": { type: "string", default: POSTS_DATA_SOURCE_ID },
     "pages-data-source": { type: "string", default: PAGES_DATA_SOURCE_ID },
     state: { type: "string", default: "upload-state.json" },
+    "media-map": { type: "string", default: "media-mapping.json" },
   },
 })
 const options: UploadOptions = {
@@ -49,6 +52,9 @@ if (options.limit !== null && !Number.isInteger(options.limit)) {
 }
 // 動作確認と本番で状態ファイルを分けられるようにする（混ざると本番分が投入済み扱いになる）
 const statePath = fileURLToPath(new URL(`../${options.statePath}`, import.meta.url))
+const mediaMappingPath = fileURLToPath(
+  new URL(`../${values["media-map"] ?? "media-mapping.json"}`, import.meta.url),
+)
 
 // SDK は POST / PATCH を 429 と 529 でしか再試行しないので、一時的な失敗はこちらで拾う。
 // 内容が悪い系（validation_error など）は何度投げても通らないため対象にしない
@@ -198,8 +204,11 @@ if (!token) {
 
 const client = createNotionClient(token)
 const state = await readState()
+const media = createMediaMigrationResolver(await readMediaMigrationMapping(mediaMappingPath))
 const conversions = selectConversions(
-  (await readContents(sourcePath)).map(convertWordPressContent),
+  selectMigrationTargets(await readContents(sourcePath)).map((record) =>
+    convertWordPressContent(record, media),
+  ),
   options,
 )
 process.stdout.write(
@@ -207,6 +216,7 @@ process.stdout.write(
     `対象: ${conversions.length} 件`,
     `投入先: posts=${options.postsDataSourceId} / pages=${options.pagesDataSourceId}`,
     `状態: ${statePath}`,
+    `画像 mapping: ${mediaMappingPath}`,
     options.redo ? "投入済みのページもゴミ箱へ入れて作り直します" : "",
     "",
   ].join("\n"),

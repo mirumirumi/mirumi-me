@@ -3,3 +3,7 @@
 **/.nuxt
 **/.output
 **/.wrangler
+**/.cache
+**/.env
+**/.env.*
+!**/.env.example

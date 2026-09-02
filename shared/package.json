@@ -12,6 +12,7 @@
     }
   },
   "dependencies": {
-    "@notionhq/client": "^5.25.2"
+    "@notionhq/client": "^5.25.2",
+    "zod": "^4.4.3"
   }
 }

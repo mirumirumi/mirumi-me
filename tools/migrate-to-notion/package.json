@@ -6,12 +6,15 @@
     "tsc": "tsc --noEmit",
     "test": "vitest run --config ../../vitest.config.ts --configLoader runner tools/migrate-to-notion",
     "fetch": "bun src/fetch.ts",
+    "normalize-media": "bun src/normalize-media.ts",
     "dry-run": "bun src/dry-run.ts",
     "upload": "bun src/upload.ts"
   },
   "dependencies": {
     "@notionhq/client": "^5.25.2",
+    "@aws-sdk/client-s3": "^3.1116.0",
     "node-html-parser": "^7.1.0",
+    "sharp": "^0.35.3",
     "shared": "workspace:*"
   },
   "devDependencies": {

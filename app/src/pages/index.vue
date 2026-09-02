@@ -51,11 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import type { PageSummary } from "@/utils/defines"
-
-interface PostId {
-  id: number
-}
+import type { BuildPageSummary, PageSummariesManifest } from "shared/build-manifest"
 
 const appConfig = useAppConfig()
 
@@ -63,144 +59,26 @@ onMounted(async () => {
   await usePageTransition(null)
 })
 
-const postIds: Array<number> = []
+const { data } = await useFetch<PageSummariesManifest>("/api/_build/page-summaries")
+const summaries = data.value?.pages ?? []
+const summaryBySlug = new Map(summaries.map((summary) => [summary.slug, summary]))
+const featuredSlugs = ["pc-freesoft", "good-goods", "indies-game-recommend", "out-of-body"]
+const featured = featuredSlugs.flatMap((slug) => {
+  const summary = summaryBySlug.get(slug)
 
-/**
- * Prepare nice-to-meet-you-10 entries
- */
-let posts: PageSummary[] = [
-  {
-    slug: "pc-freesoft",
-    title: "Windows にまず入れたいおすすめフリーソフト/便利アプリ 40 選",
-    thumbnailUrl: "https://mirumi.media/windows-freesoft-recommend-list-412x216-1.webp",
-  },
-  {
-    slug: "good-goods",
-    title: "これまでの人生で「本当に買ってよかった」と思えるもの 40 選",
-    thumbnailUrl: "https://mirumi.media/good-recommend-goods-milmemo-412x216.webp",
-  },
-  {
-    slug: "indies-game-recommend",
-    title: "個人的インディーズゲームおすすめ 30 本くらいを紹介する！",
-    thumbnailUrl: "https://mirumi.media/indies-game-recommend-1-412x216.webp",
-  },
-  {
-    slug: "out-of-body",
-    title: "この記事で人生変わるかも？体外離脱 (幽体離脱) 総まとめ",
-    thumbnailUrl: "https://mirumi.media/taigai-ridatsu-lucid-dreaming-milmemo-412x216-1.webp",
-  },
+  return summary ? [summary] : []
+})
+const categoryEntries = (categorySlug: string): Array<BuildPageSummary> => {
+  return summaries.filter(({ category }) => category.slug === categorySlug).slice(0, 4)
+}
+const posts: Array<BuildPageSummary> = [
+  ...featured,
+  ...summaries.slice(0, 4),
+  ...categoryEntries("life"),
+  ...categoryEntries("notes"),
+  ...categoryEntries("software-design"),
+  ...categoryEntries("up-and-coming"),
 ]
-
-/**
- * Prepare new entries
- */
-const { data: resNewEntries } = await useFetch("/wp/v2/posts", {
-  baseURL: appConfig.baseURL,
-  params: {
-    page: 1,
-    per_page: 4,
-    type: "post",
-    subtype: "post",
-    status: ["publish"],
-    _fields: "id",
-  },
-  parseResponse: JSON.parse,
-})
-for (const p of resNewEntries.value as Array<PostId>) {
-  postIds.push(p.id)
-}
-
-/**
- * Prepare "life" category entries
- */
-const { data: resLife } = await useFetch("/wp/v2/posts", {
-  baseURL: appConfig.baseURL,
-  params: {
-    page: 1,
-    per_page: 4,
-    type: "post",
-    subtype: "post",
-    status: ["publish"],
-    categories: [169],
-    _fields: "id",
-  },
-  parseResponse: JSON.parse,
-})
-for (const p of resLife.value as Array<PostId>) {
-  postIds.push(p.id)
-}
-
-/**
- * Prepare "notes" category entries
- */
-const { data: resNotes } = await useFetch("/wp/v2/posts", {
-  baseURL: appConfig.baseURL,
-  params: {
-    page: 1,
-    per_page: 4,
-    type: "post",
-    subtype: "post",
-    status: ["publish"],
-    categories: [1230],
-    _fields: "id",
-  },
-  parseResponse: JSON.parse,
-})
-for (const p of resNotes.value as Array<PostId>) {
-  postIds.push(p.id)
-}
-
-/**
- * Prepare "software-design" category entries
- */
-const { data: resSoftwareDesign } = await useFetch("/wp/v2/posts", {
-  baseURL: appConfig.baseURL,
-  params: {
-    page: 1,
-    per_page: 4,
-    type: "post",
-    subtype: "post",
-    status: ["publish"],
-    categories: [1877],
-    _fields: "id",
-  },
-  parseResponse: JSON.parse,
-})
-for (const p of resSoftwareDesign.value as Array<PostId>) {
-  postIds.push(p.id)
-}
-
-/**
- * Prepare "up-and-coming" category entries
- */
-const { data: resUpAndComing } = await useFetch("/wp/v2/posts", {
-  baseURL: appConfig.baseURL,
-  params: {
-    page: 1,
-    per_page: 4,
-    type: "post",
-    subtype: "post",
-    status: ["publish"],
-    categories: [1898],
-    _fields: "id",
-  },
-  parseResponse: JSON.parse,
-})
-for (const p of resUpAndComing.value as Array<PostId>) {
-  postIds.push(p.id)
-}
-
-/**
- * Merge them
- */
-const { data: postSummaries } = await useFetch(
-  `/mirumi/post_summaries_with_post_ids/${postIds.join(",")}`,
-  {
-    baseURL: appConfig.baseURL,
-    parseResponse: JSON.parse,
-  },
-)
-posts = posts.concat(postSummaries.value as Array<PageSummary>)
 
 usePageInfo({
   title: "みるめも",

@@ -1,14 +1,18 @@
 import { writeFile } from "node:fs/promises"
 import { fileURLToPath } from "node:url"
+import { parseArgs } from "node:util"
 
 import { countBlockRequests } from "./batch"
 import { convertWordPressContent } from "./convert"
+import { createMediaMigrationResolver, readMediaMigrationMapping } from "./media-mapping"
+import { selectMigrationTargets } from "./migration-targets"
 import { readContents } from "./read"
 import type { MigrationWarning, MigrationWarningCode, NotionPageInput } from "./types"
 
 interface DryRunReport {
   generatedAt: string
   source: string
+  mediaMapping: string
   records: number
   blocks: number
   blockTypes: Record<string, number>
@@ -30,6 +34,14 @@ const sourcePath = fileURLToPath(
   new URL("../blog-content-block-survey/contents.ndjson", import.meta.url),
 )
 const reportPath = fileURLToPath(new URL("../dry-run-report.json", import.meta.url))
+const { values } = parseArgs({
+  options: {
+    "media-map": { type: "string", default: "media-mapping.json" },
+  },
+})
+const mediaMappingPath = fileURLToPath(
+  new URL(`../${values["media-map"] ?? "media-mapping.json"}`, import.meta.url),
+)
 
 const addBlockCounts = (blocks: ReadonlyArray<unknown>, counts: Record<string, number>): number => {
   let total = 0
@@ -78,6 +90,7 @@ const makeReport = (conversions: Array<NotionPageInput>): DryRunReport => {
   return {
     generatedAt: new Date().toISOString(),
     source: sourcePath,
+    mediaMapping: mediaMappingPath,
     records: conversions.length,
     blocks,
     blockTypes: Object.fromEntries(
@@ -117,8 +130,9 @@ const makeReport = (conversions: Array<NotionPageInput>): DryRunReport => {
   }
 }
 
-const records = await readContents(sourcePath)
-const conversions = records.map(convertWordPressContent)
+const records = selectMigrationTargets(await readContents(sourcePath))
+const media = createMediaMigrationResolver(await readMediaMigrationMapping(mediaMappingPath))
+const conversions = records.map((record) => convertWordPressContent(record, media))
 const report = makeReport(conversions)
 
 await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`)

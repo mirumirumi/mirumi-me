@@ -21,6 +21,13 @@ export interface WordPressContentRecord {
   tocClosed: boolean
 }
 
+export interface WordPressAttachmentRecord {
+  id: number
+  mimeType: string
+  originalUrl: string
+  sourceUrls: Array<string>
+}
+
 export type MigrationWarningCode =
   | "anchor_dropped"
   | "empty_element"

@@ -1,3 +1,14 @@
+import {
+  createAmazonItemBatches,
+  hydrateAmazonCards as hydrateAmazonCardsInBrowser,
+} from "shared/amazon-browser"
+
+export { createAmazonItemBatches }
+
+export const hydrateAmazonCards = async (workersApiOrigin: string) => {
+  await hydrateAmazonCardsInBrowser(workersApiOrigin, createAmazonItemBatches)
+}
+
 // Load YouTube Video iframe
 export const loadYouTube = () => {
   ;(document.querySelectorAll(".youtube") as NodeListOf<HTMLDivElement>).forEach((target) => {

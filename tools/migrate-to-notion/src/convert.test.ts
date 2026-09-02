@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest"
 
 import { CATEGORY_PAGE_IDS, PAGES_DATA_SOURCE_ID, POSTS_DATA_SOURCE_ID } from "./config"
 import { convertWordPressContent } from "./convert"
+import { createMediaMigrationResolver } from "./media-mapping"
 import type { WordPressContentRecord } from "./types"
 
 const makeRecord = (
@@ -32,6 +33,64 @@ const blockType = (block: BlockObjectRequest): string => {
 }
 
 describe("convertWordPressContent", () => {
+  test("本文・インライン・thumbnail に media mapping を適用する", () => {
+    const bodySource = "https://mirumi.media/body-1999x1124.png"
+    const inlineSource = "https://mirumi.media/inline-1999x1124.png"
+    const thumbnailSource = "https://mirumi.media/thumb.jpg"
+    const resolver = createMediaMigrationResolver({
+      schemaVersion: 1,
+      generatedAt: "2026-08-24T00:00:00.000Z",
+      entries: [
+        {
+          sourceUrl: bodySource,
+          usage: "body",
+          kind: "responsive",
+          fallbackUrl: "https://mirumi.media/0123456789abcdef-body-1600w.webp",
+          sourceWidth: 1_999,
+        },
+        {
+          sourceUrl: inlineSource,
+          usage: "body",
+          kind: "responsive",
+          fallbackUrl: "https://mirumi.media/abcdef0123456789-inline-1600w.webp",
+          sourceWidth: 1_999,
+        },
+        {
+          sourceUrl: thumbnailSource,
+          usage: "thumbnail",
+          kind: "responsive",
+          fallbackUrl: "https://mirumi.media/fedcba9876543210-thumb-1200x630.webp",
+          sourceWidth: 1_200,
+        },
+      ],
+    })
+    const converted = convertWordPressContent(
+      makeRecord(`<p><img src="${bodySource}"></p><p>前<img src="${inlineSource}">後</p>`, {
+        thumbnailUrl: thumbnailSource,
+      }),
+      resolver,
+    )
+
+    expect(JSON.stringify(converted.children[0])).toContain(
+      "https://mirumi.media/0123456789abcdef-body-1600w.webp",
+    )
+    expect(JSON.stringify(converted.children[1])).toContain(
+      '[image name=\\"abcdef0123456789-inline-1600w.webp\\"]',
+    )
+    expect(converted.properties.thumbnail).toEqual({
+      type: "files",
+      files: [
+        {
+          name: "fedcba9876543210-thumb-1200x630.webp",
+          type: "external",
+          external: {
+            url: "https://mirumi.media/fedcba9876543210-thumb-1200x630.webp",
+          },
+        },
+      ],
+    })
+  })
+
   test("WordPress のメタデータと埋め込み CSS を Notion のプロパティへ変換する", () => {
     const converted = convertWordPressContent(
       makeRecord("<style>.sample { color: red; }</style><p>本文</p>"),
@@ -262,7 +321,7 @@ describe("convertWordPressContent", () => {
         <p><iframe src="https://www.youtube.com/embed/abc"></iframe></p>
         <p>[audio mp3="https://mirumi.media/sound.mp3"][/audio]</p>
         <p>[video mp4="https://mirumi.media/movie.mp4"][/video]</p>
-        <p>[amazon asin="B000000000"]</p>
+        <p>[amazon title="商品名" size="l" asin="B000000000" kw="検索語"]</p>
         <p><img src="https://tracker.example/pixel.gif" width="1" height="1"></p>
       `),
     )
@@ -294,6 +353,20 @@ describe("convertWordPressContent", () => {
         type: "external",
         external: { url: "https://mirumi.media/custom.png" },
         caption: [],
+      },
+    })
+    expect(converted.children[8]).toEqual({
+      object: "block",
+      type: "paragraph",
+      paragraph: {
+        rich_text: [
+          {
+            type: "text",
+            text: {
+              content: '[amazon asin="B000000000" kw="検索語" title="商品名"]',
+            },
+          },
+        ],
       },
     })
     expect(converted.warnings).toEqual([])

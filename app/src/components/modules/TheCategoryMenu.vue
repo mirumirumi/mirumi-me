@@ -70,7 +70,7 @@ const p = defineProps<{
 const emit = defineEmits(["interruptChoose"])
 
 const route = useRoute()
-const appConfig = useAppConfig()
+const currentCategorySlug = useCurrentCategorySlug()
 
 const _isShown = ref(p.isShown)
 const isShownOthers = ref(false)
@@ -109,13 +109,7 @@ async function setIsCurrentCategory() {
   } else if (route.params.post) {
     // In post page
 
-    const pagePath = route.path.replaceAll("/", "")
-
-    // https://github.com/nuxt/nuxt/discussions/??? (The page is gone... (cause by unifying repos for Nuxt 2~3))
-    categorySlug = await $fetch<string>(`/mirumi/category_slug_with_post_slug/${pagePath}`, {
-      baseURL: appConfig.baseURL,
-      parseResponse: JSON.parse,
-    })
+    categorySlug = currentCategorySlug.value
   }
 
   for (const category of categories) {

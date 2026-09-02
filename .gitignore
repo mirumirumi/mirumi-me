@@ -1,6 +1,9 @@
 app/src/public/assets/components/
 tools/migrate-to-notion/blog-content-block-survey/contents.ndjson
 tools/migrate-to-notion/dry-run-report.json
+tools/migrate-to-notion/media-attachments.ndjson
+tools/migrate-to-notion/media-mapping*.json
+tools/migrate-to-notion/media-normalization-report.json
 tools/migrate-to-notion/upload-state*.json
 
 node_modules
@@ -10,6 +13,8 @@ node_modules
 .cache
 .output
 .env
+.env.*
+!app/.env.example
 dist
 
 .wrangler

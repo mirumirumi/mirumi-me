@@ -1,11 +1,11 @@
 {
   "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["bun"]
+  },
   "include": [
     "worker-configuration.d.ts",
     "src/**/*.ts",
     "../shared/src/**/*.ts"
-  ],
-  "exclude": [
-    "**/*.test.ts"
   ]
 }

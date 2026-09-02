@@ -33,10 +33,17 @@
 </template>
 
 <script setup lang="ts">
-import type { PageSummary } from "@/utils/defines"
+import type { PostIndexSummary } from "@/utils/defines"
 
 interface PostId {
   id: number
+}
+
+interface LegacyPageSummary {
+  slug: string
+  title: string
+  createdAt: string
+  updatedAt: string | null
 }
 
 const router = useRouter()
@@ -45,7 +52,7 @@ const appConfig = useAppConfig()
 const keyword = ref(router.currentRoute.value.query.q)
 const page = ref(Number(router.currentRoute.value.query.p ?? 1))
 
-const posts = ref<Array<PageSummary> | null>(null)
+const posts = ref<Array<PostIndexSummary> | null>(null)
 const pageCount = ref(0)
 const itemCount = ref(0)
 const isLoading = ref(false)
@@ -107,13 +114,19 @@ async function search() {
     postIds.push(p.id)
   }
 
-  posts.value = await $fetch<Array<PageSummary>>(
+  const summaries = await $fetch<Array<LegacyPageSummary>>(
     `/mirumi/post_summaries_with_post_ids/${postIds.join(",")}`,
     {
       baseURL: appConfig.baseURL,
       parseResponse: JSON.parse,
     },
   )
+  posts.value = summaries.map((summary) => ({
+    slug: summary.slug,
+    title: summary.title,
+    publishedAt: summary.createdAt,
+    updatedAt: summary.updatedAt,
+  }))
 
   isLoading.value = false
 }

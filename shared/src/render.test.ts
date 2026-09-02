@@ -23,6 +23,7 @@ const article = (blocks: Array<ContentBlock>): ArticleContent => ({
   title: "テスト記事",
   slug: "test",
   thumbnailUrl: null,
+  thumbnailName: null,
   publishedAt: "2026-08-14",
   updatedAt: null,
   category: null,
@@ -104,11 +105,19 @@ describe("renderArticleContent", () => {
           caption: [text('[image alt="タグ編集の例"] 説明文')],
           children: [],
         },
+        {
+          id: "canonical",
+          type: "image",
+          url: "https://mirumi.media/0123456789abcdef-screen-shot-1600w.webp",
+          caption: [],
+          children: [],
+        },
       ]),
     )
 
     // トークンがなければファイル名から復元する
     expect(result.html).toContain('alt="my-cats"')
+    expect(result.html).toContain('alt="screen-shot"')
     // トークンの alt が優先され、トークン部分はキャプションから取り除かれる
     expect(result.html).toContain('alt="タグ編集の例"')
     expect(result.html).toContain('<p class="wp-caption-text">説明文</p>')
@@ -131,6 +140,12 @@ describe("renderArticleContent", () => {
           richText: [text('[image name="246310.png" alt="タグ編集の例"] 説明')],
           children: [],
         },
+        {
+          id: "canonical-inline",
+          type: "paragraph",
+          richText: [text('[image name="0123456789abcdef-inline-image-1200w.webp"]')],
+          children: [],
+        },
       ]),
     )
 
@@ -140,6 +155,9 @@ describe("renderArticleContent", () => {
     // 段落以外のブロックでも解決し、alt があればそれを使う
     expect(result.html).toContain(
       '<li><img src="https://mirumi.media/246310.png" alt="タグ編集の例" loading="lazy"> 説明</li>',
+    )
+    expect(result.html).toContain(
+      '<img src="https://mirumi.media/0123456789abcdef-inline-image-1200w.webp" alt="inline-image" loading="lazy">',
     )
     expect(result.html).not.toContain("[image")
     expect(result.warnings).toEqual([])
@@ -172,7 +190,11 @@ describe("renderArticleContent", () => {
         {
           id: "button",
           type: "paragraph",
-          richText: [text('[button text="購入する" url="https://example.com/buy" color="orange"]')],
+          richText: [
+            text(
+              '[button text="購入 & 確認" url="https://example.com/buy?item=1&from=blog" color="orange"]',
+            ),
+          ],
           children: [],
         },
         {
@@ -185,8 +207,9 @@ describe("renderArticleContent", () => {
     )
 
     expect(result.html).toContain(
-      '<p style="text-align:center"><span class="btn-wrap btn-wrap-orange btn-wrap-m"><a href="https://example.com/buy">購入する</a></span></p>',
+      '<p style="text-align:center"><span class="btn-wrap btn-wrap-orange btn-wrap-m"><a href="https://example.com/buy?item=1&amp;from=blog">購入 &amp; 確認</a></span></p>',
     )
+    expect(result.html).not.toContain("&amp;amp;")
     // 知らない色は無視して既定の見た目にするが、気づけるよう警告は残す
     expect(result.html).toContain('<span class="btn-wrap btn-wrap-m">')
     expect(result.warnings).toEqual(["未対応のボタン色です: magenta"])
@@ -243,6 +266,27 @@ describe("renderArticleContent", () => {
     )
     expect(result.html).toContain('<p class="wp-caption-text">説明</p>')
     expect(result.warnings).toEqual([])
+  })
+
+  test("canonical 本文画像には srcset と sizes を付ける", () => {
+    const result = renderArticleContent(
+      article([
+        {
+          id: "00000000-0000-0000-0000-000000000001",
+          type: "image",
+          url: "https://mirumi.media/0123456789abcdef-screenshot-1600w.webp",
+          caption: [],
+          children: [],
+        },
+      ]),
+    )
+
+    expect(result.html).toContain(
+      'srcset="https://mirumi.media/0123456789abcdef-screenshot-800w.webp 800w, https://mirumi.media/0123456789abcdef-screenshot-1200w.webp 1200w, https://mirumi.media/0123456789abcdef-screenshot-1600w.webp 1600w"',
+    )
+    expect(result.html).toContain(
+      'sizes="(max-width: 428px) calc(100vw - 54px), (max-width: 829px) calc(100vw - 44px), 785px"',
+    )
   })
 
   test("追記ブロックの日付の書き出しを rewrite-date として復元する", () => {
@@ -373,18 +417,89 @@ describe("renderArticleContent", () => {
       ]),
     )
 
-    expect(result.html).toBe("<ul><li>one<ol><li>nested</li></ol></li><li>two</li></ul>")
+    expect(result.html).toEqual("<ul><li>one<ol><li>nested</li></ol></li><li>two</li></ul>")
   })
 
-  test("未確定・未対応の表現を警告付きで可視化する", () => {
+  test("Amazon shortcode を署名付きの静的 fallback card にする", () => {
     const result = renderArticleContent(
       article([
         {
           id: "amazon",
           type: "paragraph",
+          richText: [
+            text('[amazon asin="B000000000" kw="検索語" title="API 取得失敗時の商品名" size="l"]'),
+          ],
+          children: [],
+        },
+      ]),
+      { amazonCardSignatures: { B000000000: "signed-value" } },
+    )
+
+    expect(result.html).toContain('class="amazon-item-box product-item-box')
+    expect(result.html).toContain('data-amazon-asin="B000000000"')
+    expect(result.html).toContain('data-amazon-signature="signed-value"')
+    expect(result.html).toContain('data-amazon-title href="https://www.amazon.co.jp/dp/B000000000')
+    expect(result.html).toContain("API 取得失敗時の商品名")
+    expect(result.html).toContain('class="shoplinkrakuten"')
+    expect(result.html).toContain('class="shoplinkyahoo"')
+    expect(result.html).not.toContain('size="l"')
+    expect(result.warnings).toEqual([])
+  })
+
+  test("Amazon shortcode の必須属性不正と署名欠落を警告にする", () => {
+    const result = renderArticleContent(
+      article([
+        {
+          id: "invalid-amazon",
+          type: "paragraph",
+          richText: [text('[amazon asin="invalid"]')],
+          children: [],
+        },
+        {
+          id: "incomplete-amazon",
+          type: "paragraph",
           richText: [text('[amazon asin="B000000000"]')],
           children: [],
         },
+        {
+          id: "unsigned-amazon",
+          type: "paragraph",
+          richText: [text('[amazon asin="B000000001" kw="検索語" title="fallback 商品名"]')],
+          children: [],
+        },
+      ]),
+    )
+
+    expect(result.html.match(/🚨/g)).toHaveLength(3)
+    expect(result.warnings).toEqual([
+      "Amazon ショートコードの asin、kw、title が不正です",
+      "Amazon ショートコードの asin、kw、title が不正です",
+      "Amazon card の署名がありません（ASIN: B000000001）",
+    ])
+  })
+
+  test("ローカル開発では署名なしでも Amazon の静的 fallback card を表示する", () => {
+    const result = renderArticleContent(
+      article([
+        {
+          id: "unsigned-amazon",
+          type: "paragraph",
+          richText: [text('[amazon asin="B000000001" kw="検索語" title="fallback 商品名"]')],
+          children: [],
+        },
+      ]),
+      { amazonCardSignatures: {}, allowUnsignedAmazonCards: true },
+    )
+
+    expect(result.html).toContain("amazon-item-box")
+    expect(result.html).toContain("fallback 商品名")
+    expect(result.html).not.toContain("data-amazon-signature")
+    expect(result.warnings).toEqual([])
+  })
+
+  test("未確定・未対応の表現を警告付きで可視化する", () => {
+    const result = renderArticleContent(
+      article([
         {
           id: "unsupported",
           type: "unsupported",
@@ -402,14 +517,11 @@ describe("renderArticleContent", () => {
       ]),
     )
 
-    expect(result.html.match(/🔴/g)).toHaveLength(3)
-    expect(result.warnings).toHaveLength(3)
-    expect(result.warnings).toContain(
-      "amazon ショートコードの HTML 変換は未確定です（block: amazon）",
-    )
+    expect(result.html.match(/🚨/g)).toHaveLength(2)
+    expect(result.warnings).toHaveLength(2)
   })
 
-  test("YouTube は iframe にし、未実装の X ポストはリンクと警告を表示する", () => {
+  test("YouTube は iframe にし、未解決の X ポストはリンクと警告を表示する", () => {
     const result = renderArticleContent(
       article([
         {
@@ -431,7 +543,53 @@ describe("renderArticleContent", () => {
 
     expect(result.html).toContain("https://www.youtube-nocookie.com/embed/abcdefghijk")
     expect(result.html).not.toContain('<video controls preload="metadata"')
-    expect(result.html).toContain("🔴 X ポストの Static Tweet 表示は未実装です")
-    expect(result.warnings).toEqual(["X ポストの Static Tweet 表示は未実装です（block: x-post）"])
+    expect(result.html).toContain("🚨 X ポストを解決できませんでした")
+    expect(result.warnings).toEqual(["X ポストを解決できませんでした（block: x-post）"])
+  })
+
+  test("解決済み Bookmark と X ポストを既存 class の card にする", () => {
+    const blocks = [
+      {
+        id: "bookmark",
+        type: "bookmark" as const,
+        url: "https://example.com/article",
+        caption: [],
+        children: [],
+      },
+      {
+        id: "x-post",
+        type: "embed" as const,
+        url: "https://x.com/__mirumi__/status/123",
+        caption: [],
+        children: [],
+      },
+    ]
+    const result = renderArticleContent(article(blocks), {
+      amazonCardSignatures: {},
+      bookmarks: {
+        bookmark: {
+          kind: "external",
+          url: "https://example.com/article",
+          title: "外部記事",
+          description: "説明",
+          imageUrl: "https://example.com/image.png",
+          label: "example.com",
+        },
+      },
+      xPosts: {
+        "x-post": {
+          postId: "123",
+          url: "https://x.com/__mirumi__/status/123",
+          text: "投稿本文",
+          authorName: "みるみ",
+          authorHandle: "__mirumi__",
+          createdAt: "2026-08-24T00:00:00.000Z",
+        },
+      },
+    })
+
+    expect(result.html).toContain('<a class="blogcard external"')
+    expect(result.html).toContain('<div class="static_tweet">')
+    expect(result.warnings).toEqual([])
   })
 })

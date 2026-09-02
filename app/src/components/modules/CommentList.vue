@@ -32,6 +32,7 @@
           >すべて読み込む ({{ remainingAllComments.length }} 件)</PartsBaseButton
         >
       </div>
+      <!-- v-if にすると残りのコメントが SSG の HTML に載らず検索エンジンに拾われないため、意図的に v-show -->
       <div v-show="loadMoreStatus === 'completed'">
         <template v-for="c in remainingAllComments" :key="c.comment_ID">
           <ModulesCommentBase :c="c" :depth="1" />

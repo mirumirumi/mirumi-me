@@ -79,7 +79,6 @@ const p = withDefaults(
 )
 
 const route = useRoute()
-const runtimeConfig = useRuntimeConfig()
 const appConfig = useAppConfig()
 const toast = useToast()
 
@@ -105,11 +104,6 @@ const submit = async () => {
   const { error } = await useFetch("/wp/v2/comments", {
     baseURL: appConfig.baseURL,
     method: "POST",
-    headers: {
-      Authorization: `Basic ${window.btoa(
-        runtimeConfig.userName + ":" + runtimeConfig.applicationPassword,
-      )}`,
-    },
     body: {
       author_email: email.value !== "" ? email.value : "",
       author_name: name.value !== "" ? name.value : "匿名",

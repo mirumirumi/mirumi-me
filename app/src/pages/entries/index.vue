@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import type { PageSummary } from "@/utils/defines"
+import type { BuildPageSummary, PageSummariesManifest } from "shared/build-manifest"
 
 const p = defineProps<{
   pageNumber?: number
@@ -27,27 +27,14 @@ const route = useRoute()
 const appConfig = useAppConfig()
 
 const page = ref(Number(p.pageNumber ?? 1))
-const posts = ref<PageSummary[]>([])
+const posts = ref<Array<BuildPageSummary>>([])
 const pageCount = ref(0)
 
-const { data } = await useFetch("/mirumi/post_ids", {
-  baseURL: appConfig.baseURL,
-  params: {
-    page: page.value,
-    per_page: appConfig.perPage,
-  },
-})
-const postIds: number[] = (data.value as PostIdsRes).post_ids.map((id) => Number(id))
-pageCount.value = (data.value as PostIdsRes).total_pages
-
-const { data: postSummaries } = await useFetch(
-  `/mirumi/post_summaries_with_post_ids/${(postIds as number[]).join(",")}`,
-  {
-    baseURL: appConfig.baseURL,
-    parseResponse: JSON.parse,
-  },
-)
-posts.value = postSummaries.value as PageSummary[]
+const { data } = await useFetch<PageSummariesManifest>("/api/_build/page-summaries")
+const summaries = data.value?.pages ?? []
+pageCount.value = Math.ceil(summaries.length / appConfig.perPage)
+const offset = (page.value - 1) * appConfig.perPage
+posts.value = summaries.slice(offset, offset + appConfig.perPage)
 
 usePageInfo({
   title: "記事一覧",

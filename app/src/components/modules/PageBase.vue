@@ -6,19 +6,22 @@
           {{ page.title }}
         </h1>
         <div
-          v-if="slug.startsWith('nice-to-meet-you-10')"
+          v-if="slug.startsWith('nice-to-meet-you-10') && page.thumbnailUrls"
           class="thumbnail page_transition_target"
           itemprop="image"
           itemscope
           itemtype="https://schema.org/ImageObject"
         >
-          <img
-            :src="page.thumbnail_url.replace(/\.(png|jpg|jpeg)$/gim, '.webp')"
-            :alt="page.title"
-            width="1200"
-            height="630"
-          />
-          <meta itemprop="url" :content="page.thumbnail_url" />
+          <picture>
+            <source media="(max-width: 428px)" :srcset="page.thumbnailUrls.mobile" />
+            <img
+              :src="page.thumbnailUrls.article"
+              :alt="page.title"
+              width="1200"
+              height="630"
+            />
+          </picture>
+          <meta itemprop="url" :content="page.thumbnailUrls.article" />
           <meta itemprop="width" content="1200" />
           <meta itemprop="height" content="630" />
         </div>
@@ -26,7 +29,7 @@
       <article class="page_transition_target">
         <div
           id="content"
-          v-html="page.content"
+          v-html="page.contentHtml"
           @click="useClickLink"
           itemprop="mainEntityOfPage"
         ></div>
@@ -41,6 +44,9 @@
 </template>
 
 <script setup lang="ts">
+import type { BuildPage } from "shared/build-manifest"
+import { resolvePublicRoute } from "shared/site-routes"
+
 const route = useRoute()
 const appConfig = useAppConfig()
 
@@ -49,18 +55,26 @@ onMounted(async () => {
 })
 
 const slug = route.name as string
-
-const { data } = await useFetch(`/mirumi/page_data/${slug}`, {
-  baseURL: appConfig.baseURL,
-  parseResponse: JSON.parse,
+const publicRoute = resolvePublicRoute("page", slug)
+if (!publicRoute) {
+  throw createError({ statusCode: 404, statusMessage: "Page not found" })
+}
+const { data } = await useFetch<BuildPage>("/api/_build/page", {
+  query: { route: publicRoute },
 })
-const page = data.value as Record<string, any>
+const page = data.value
+if (!page || page.kind !== "page") {
+  throw createError({ statusCode: 404, statusMessage: "Page not found" })
+}
+if (page.customCss) {
+  useHead({ style: [{ textContent: page.customCss }] })
+}
 
 usePageInfo({
   title: page.title,
   url: appConfig.siteFullPath + "/" + slug,
-  createdAt: page.date,
-  updatedAt: page.modified,
-  thumbnail: page.thumbnail_url,
+  createdAt: page.publishedAt,
+  updatedAt: page.updatedAt ?? page.publishedAt,
+  thumbnail: page.ogImageUrl,
 })
 </script>

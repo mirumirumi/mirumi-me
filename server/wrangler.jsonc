@@ -2,7 +2,7 @@
   "$schema": "../node_modules/wrangler/config-schema.json",
   "name": "mirumi-me",
   "main": "src/main.ts",
-  "compatibility_date": "2026-08-12",
+  "compatibility_date": "2026-08-24",
   "compatibility_flags": ["nodejs_compat"],
   // mirumi.me の DNS は AWS 側にあるため、本番 API もカスタムドメインは使わない
   "workers_dev": true,
@@ -14,20 +14,36 @@
       "upload_source_maps": true,
       "vars": {
         "APP_ENV": "dev",
-        "ACCESS_AUD": "84cc688b6267419444da69a5a070b1043a8e1de0cf4c072d5affcd4ec779b239",
+        "ACCESS_PREVIEW_AUD": "84cc688b6267419444da69a5a070b1043a8e1de0cf4c072d5affcd4ec779b239",
+        "ACCESS_ADMIN_AUD": "e42b095901abf896e6644ac39a5b908113f7e4b6ba488f6f765468a9db76a44d",
+        "ACCESS_LOCAL_DEV_AUD": "08b4968d3582797438fb4bfea6812763ee7ec11f3ef1396ea0edcf1fa09b8afc",
         "ACCESS_TEAM_DOMAIN": "https://little-mud-182a.cloudflareaccess.com",
+        "NOTION_POSTS_DATA_SOURCE_ID": "3c065425-ad40-811a-b50b-000b9271df2c",
+        "NOTION_PAGES_DATA_SOURCE_ID": "dc065425-ad40-8391-8e64-87fc27e80a3a",
+        "NOTION_INTERNAL_STATE_PROPERTY_ID": "o=BU",
+        "WORKERS_API_ORIGIN": "https://mirumi-me-dev.v2p04rubfuwnvttj.workers.dev",
+        "FRONTEND_ORIGIN": "https://d3694gpnjd4x49.cloudfront.net",
+        "AMAZON_CREATORS_MARKETPLACE": "www.amazon.co.jp",
+        "AMAZON_ASSOCIATE_TAG": "milmemo-22",
+        "AMAZON_CREATORS_CREDENTIAL_VERSION": "3.3",
+        "XAI_MODEL": "grok-4.6",
         "AWS_REGION": "ap-northeast-1",
         "SITE_BUCKET_NAME": "mirumime-dev-mirumi-me",
+        "MEDIA_BUCKET_NAME": "mirumime-prd-mirumi-media",
         "CLOUDFRONT_DISTRIBUTION_ID": "E16GU2ZPNLT91U"
       },
       "secrets": {
         "required": [
-          "NOTION_TOKEN",
-          "NOTION_WEBHOOK_SECRET",
+          "NOTION_TOKEN", // dev/prd で同じ
+          "NOTION_WEBHOOK_SECRET", // わけてる
           "TURNSTILE_SECRET",
-          "AWS_ACCESS_KEY_ID",
-          "AWS_SECRET_ACCESS_KEY",
-          "XAI_API_KEY"
+          "AMAZON_CARD_SIGNING_SECRET", // わけてる
+          "AMAZON_CREATORS_CREDENTIAL_ID", // dev/prd で同じ
+          "AMAZON_CREATORS_CREDENTIAL_SECRET", // dev/prd で同じ
+          "THUMBNAIL_FUNCTION_URL", // わけてる
+          "AWS_ACCESS_KEY_ID", // dev/prd で同じ
+          "AWS_SECRET_ACCESS_KEY", // dev/prd で同じ
+          "XAI_API_KEY" // dev/prd で同じ
         ]
       },
       "observability": {
@@ -86,10 +102,20 @@
           "binding": "MIRUMI_ME_PV"
         }
       ],
+      "ratelimits": [
+        {
+          "name": "RATE_LIMITER_60_PER_MINUTE",
+          "namespace_id": "913240001",
+          "simple": {
+            "limit": 60,
+            "period": 60
+          }
+        }
+      ],
       "kv_namespaces": [
         {
           "id": "ab630ddb5e9144c986d766ca9f7e454e",
-          "binding": "X_POST_CACHE"
+          "binding": "CONTENT_CACHE"
         }
       ],
       "r2_buckets": [
@@ -105,10 +131,21 @@
       "upload_source_maps": false,
       "vars": {
         "APP_ENV": "prd",
-        "ACCESS_AUD": "84cc688b6267419444da69a5a070b1043a8e1de0cf4c072d5affcd4ec779b239",
+        "ACCESS_PREVIEW_AUD": "84cc688b6267419444da69a5a070b1043a8e1de0cf4c072d5affcd4ec779b239",
+        "ACCESS_ADMIN_AUD": "e42b095901abf896e6644ac39a5b908113f7e4b6ba488f6f765468a9db76a44d",
         "ACCESS_TEAM_DOMAIN": "https://little-mud-182a.cloudflareaccess.com",
+        "NOTION_POSTS_DATA_SOURCE_ID": "399e5acd-5762-442b-a3f5-be983498d926",
+        "NOTION_PAGES_DATA_SOURCE_ID": "53765425-ad40-828e-976a-0789d64d4dee",
+        "NOTION_INTERNAL_STATE_PROPERTY_ID": "o=BU",
+        "WORKERS_API_ORIGIN": "https://mirumi-me-prd.v2p04rubfuwnvttj.workers.dev",
+        "FRONTEND_ORIGIN": "https://mirumi.me",
+        "AMAZON_CREATORS_MARKETPLACE": "www.amazon.co.jp",
+        "AMAZON_ASSOCIATE_TAG": "milmemo-22",
+        "AMAZON_CREATORS_CREDENTIAL_VERSION": "3.3",
+        "XAI_MODEL": "grok-4.6",
         "AWS_REGION": "ap-northeast-1",
         "SITE_BUCKET_NAME": "mirumime-prd-mirumi-me",
+        "MEDIA_BUCKET_NAME": "mirumime-prd-mirumi-media",
         "CLOUDFRONT_DISTRIBUTION_ID": "E1UPWIMHFP5TEC"
       },
       "secrets": {
@@ -116,6 +153,10 @@
           "NOTION_TOKEN",
           "NOTION_WEBHOOK_SECRET",
           "TURNSTILE_SECRET",
+          "AMAZON_CARD_SIGNING_SECRET",
+          "AMAZON_CREATORS_CREDENTIAL_ID",
+          "AMAZON_CREATORS_CREDENTIAL_SECRET",
+          "THUMBNAIL_FUNCTION_URL",
           "AWS_ACCESS_KEY_ID",
           "AWS_SECRET_ACCESS_KEY",
           "XAI_API_KEY"
@@ -177,9 +218,21 @@
           "binding": "MIRUMI_ME_PV"
         }
       ],
+      "ratelimits": [
+        {
+          "name": "RATE_LIMITER_60_PER_MINUTE",
+          "namespace_id": "913240002",
+          "simple": {
+            "limit": 60,
+            "period": 60
+          }
+        }
+      ],
       "kv_namespaces": [
         {
-          "binding": "X_POST_CACHE"
+          // prd の KV namespace をつくったら入れる、未設定だと deploy が通らない🔴
+          // "id": "",
+          "binding": "CONTENT_CACHE"
         }
       ],
       "r2_buckets": [

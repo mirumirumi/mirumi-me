@@ -12,11 +12,7 @@
       >
         <div class="thumbnail">
           <img
-            :src="
-              index.thumbnailUrl.includes('412x216')
-                ? index.thumbnailUrl
-                : index.thumbnailUrl.replace(/(.*)(\..*?)$/gim, '$1-412x216$2')
-            "
+            :src="index.thumbnailUrls?.card ?? '/assets/no-image.jpg'"
             :alt="index.title"
             loading="lazy"
             width="412"
@@ -38,11 +34,11 @@
 </template>
 
 <script setup lang="ts">
-import type { PageSummary } from "@/utils/defines"
+import type { BuildPageSummary } from "shared/build-manifest"
 
 defineProps<{
   blockTitle: string
-  indexes: PageSummary[]
+  indexes: Array<BuildPageSummary>
   linkText: string
   linkTo: string
 }>()

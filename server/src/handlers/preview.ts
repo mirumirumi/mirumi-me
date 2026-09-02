@@ -1,6 +1,7 @@
 import { Context } from "hono"
 import { z } from "zod"
 
+import { collectAmazonAsins, createAmazonCardSignature } from "shared/amazon"
 import { createNotionClient, fetchNotionArticle, isNotionObjectNotFound } from "shared/notion"
 import { renderArticleContent } from "shared/render"
 
@@ -26,7 +27,20 @@ export const getPreview = async (c: Context<HonoEnv>): Promise<Response> => {
   try {
     const notion = createNotionClient(c.env.NOTION_TOKEN)
     const article = await fetchNotionArticle(notion, query.data.pageId)
-    const renderedContent = renderArticleContent(article)
+    const amazonAsins = collectAmazonAsins(article.blocks)
+    if (0 < amazonAsins.length && !c.env.AMAZON_CARD_SIGNING_SECRET) {
+      console.error({ event: "preview_failed", reason: "AMAZON_CARD_SIGNING_SECRET is missing" })
+      return c.text("プレビューを生成できませんでした", 500)
+    }
+    const amazonCardSignatures = Object.fromEntries(
+      await Promise.all(
+        amazonAsins.map(async (asin) => [
+          asin,
+          await createAmazonCardSignature(asin, c.env.AMAZON_CARD_SIGNING_SECRET ?? ""),
+        ]),
+      ),
+    )
+    const renderedContent = renderArticleContent(article, { amazonCardSignatures })
 
     const template = await fetch("https://mirumi.me/")
     if (!template.ok) {
@@ -50,7 +64,13 @@ export const getPreview = async (c: Context<HonoEnv>): Promise<Response> => {
 
     const articleHtml = renderPreviewArticle(article, renderedContent)
 
-    return applyPreviewTemplate(template, article.title, articleHtml, article.customCss)
+    return applyPreviewTemplate(
+      template,
+      article.title,
+      articleHtml,
+      article.customCss,
+      0 < amazonAsins.length,
+    )
   } catch (err) {
     if (isNotionObjectNotFound(err)) {
       return c.text("記事が見つかりませんでした", 404)

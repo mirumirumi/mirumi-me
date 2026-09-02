@@ -8,15 +8,9 @@ export interface PageMeta {
   updatedAt?: string
 }
 
-export interface PageSummary {
+export interface PostIndexSummary {
   slug: string
   title: string
-  thumbnailUrl: string
-  createdAt?: string
-  updatedAt?: string
-}
-
-export interface PostIdsRes {
-  post_ids: Array<string>
-  total_pages: number
+  publishedAt: string
+  updatedAt: string | null
 }

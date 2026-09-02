@@ -1,4 +1,11 @@
-import secret from "./src/secrets"
+import { createPrerenderConfiguration } from "./build/prerender"
+
+const { buildPlan, prerenderRoutes, isAllowedPrerenderRoute } = createPrerenderConfiguration()
+const workersApiOrigin =
+  process.env.WORKERS_API_ORIGIN ??
+  (process.env.NODE_ENV === "development"
+    ? "https://mirumi-me-dev.v2p04rubfuwnvttj.workers.dev"
+    : "https://mirumi-me-prd.v2p04rubfuwnvttj.workers.dev")
 
 export default defineNuxtConfig({
   compatibilityDate: "2024-04-03",
@@ -63,13 +70,6 @@ export default defineNuxtConfig({
           title: "RSS feed",
           href: "https://mirumi.me/feed.xml",
         },
-        // No comment feed for each article
-        {
-          rel: "alternate",
-          type: "application/rss+xml",
-          title: "RSS feed (Comments)",
-          href: "https://mirumi.me/feed-comments.xml",
-        },
       ],
       style: [],
       script: [],
@@ -100,6 +100,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       turnstileSiteKey: "0x4AAAAAAEO8PjpC2BzSTS2T",
+      workersApiOrigin,
     },
   },
   serverDir: "src/server",
@@ -122,10 +123,31 @@ export default defineNuxtConfig({
   },
   nitro: {
     prerender: {
+      // 1 route でも生成に失敗したらビルドごと落とす。exit 0 のまま欠けた HTML を deploy させない
+      failOnError: true,
+      crawlLinks: buildPlan ? false : undefined,
       concurrency: 2,
-      interval: 1_000,
       retry: 5,
       retryDelay: 1_000,
+      routes: prerenderRoutes,
+    },
+    hooks: {
+      "prerender:generate": (route) => {
+        if (buildPlan && route.route && !isAllowedPrerenderRoute(route.route)) {
+          route.skip = true
+        }
+      },
+    },
+  },
+  hooks: {
+    "prerender:routes": (context) => {
+      if (!buildPlan) {
+        return
+      }
+      context.routes.clear()
+      for (const route of prerenderRoutes) {
+        context.routes.add(route)
+      }
     },
   },
 })

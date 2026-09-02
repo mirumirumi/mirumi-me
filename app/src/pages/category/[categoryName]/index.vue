@@ -1,7 +1,7 @@
 <template>
   <div class="category_view indexes_single_column">
     <h1 class="title">
-      <span v-html="category.categoryName"></span>
+      <span v-html="category.name"></span>
     </h1>
     <ModulesPaginationBase
       :currentPage="page"
@@ -20,7 +20,11 @@
 </template>
 
 <script setup lang="ts">
-import type { PageSummary, PostIdsRes } from "@/utils/defines"
+import type {
+  BuildPageSummary,
+  CategoriesManifest,
+  PageSummariesManifest,
+} from "shared/build-manifest"
 
 const p = defineProps<{
   pageNumber?: number
@@ -33,44 +37,30 @@ const appConfig = useAppConfig()
  * Prepare post list
  */
 const page = ref(Number(p.pageNumber ?? 1))
-const posts = ref<PageSummary[]>([])
+const posts = ref<Array<BuildPageSummary>>([])
 const pageCount = ref(0)
 
-const { data: resCategory } = await useFetch(
-  `/mirumi/category_id_with_category_slug/${route.params.categoryName}`,
-  {
-    baseURL: appConfig.baseURL,
-  },
+const categorySlug = route.params.categoryName as string
+const [{ data: categories }, { data: summaries }] = await Promise.all([
+  useFetch<CategoriesManifest>("/api/_build/categories"),
+  useFetch<PageSummariesManifest>("/api/_build/page-summaries"),
+])
+const category = categories.value?.categories.find(({ slug }) => slug === categorySlug)
+if (!category) {
+  throw createError({ statusCode: 404, statusMessage: "Category not found" })
+}
+const categoryPages = (summaries.value?.pages ?? []).filter(
+  (summary) => summary.category.slug === categorySlug,
 )
-
-// Hack for JSON parse error (unexpected token)
-const category = JSON.parse(JSON.stringify(resCategory.value as any))
-
-const { data } = await useFetch("/mirumi/post_ids", {
-  baseURL: appConfig.baseURL,
-  params: {
-    category_id: Number(category.categoryId),
-    page: page.value,
-    per_page: appConfig.perPage,
-  },
-})
-const postIds: number[] = (data.value as PostIdsRes).post_ids.map((id) => Number(id))
-pageCount.value = (data.value as PostIdsRes).total_pages
-
-const { data: postSummaries } = await useFetch(
-  `/mirumi/post_summaries_with_post_ids/${(postIds as number[]).join(",")}`,
-  {
-    baseURL: appConfig.baseURL,
-    parseResponse: JSON.parse,
-  },
-)
-posts.value = postSummaries.value as PageSummary[]
+pageCount.value = Math.ceil(categoryPages.length / appConfig.perPage)
+const offset = (page.value - 1) * appConfig.perPage
+posts.value = categoryPages.slice(offset, offset + appConfig.perPage)
 
 /**
  * Utils
  */
 usePageInfo({
-  title: category.categoryName,
+  title: category.name,
   url: appConfig.siteFullPath + route.fullPath,
 })
 </script>

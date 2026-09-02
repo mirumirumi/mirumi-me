@@ -7,7 +7,7 @@
         :key="entries.categorySlug"
       >
         <NuxtLink :to="`/category/${entries.categorySlug}/`">
-          <span v-html="entries.categoryName"></span>
+          <span>{{ entries.categoryName }}</span>
         </NuxtLink>
         <ul>
           <li v-for="e in entries.entries" class="entry" :key="e.slug">
@@ -27,18 +27,13 @@
 </template>
 
 <script setup lang="ts">
+import type { PageSummariesManifest } from "shared/build-manifest"
+
 import { categories, others } from "../constants/category"
 
 interface Entry {
   slug: string
   title: string
-}
-
-interface EntryListItem {
-  slug: string
-  title: string
-  categoryName: string
-  categorySlug: string
 }
 
 interface EntriesByCategory {
@@ -50,33 +45,26 @@ interface EntriesByCategory {
 const route = useRoute()
 const appConfig = useAppConfig()
 
-const { data } = await useFetch("/mirumi/entry_list", {
-  baseURL: appConfig.baseURL,
-  parseResponse: JSON.parse,
-})
-const entries = data.value as Array<EntryListItem>
+const { data } = await useFetch<PageSummariesManifest>("/api/_build/page-summaries")
+const entries = data.value?.pages ?? []
 
-const entriesByCategories: Array<EntriesByCategory> = []
+const entriesByCategoryMap = new Map<string, EntriesByCategory>()
 for (const e of entries) {
-  const entriesByCategory = entriesByCategories.at(-1)
-  if (!entriesByCategory || entriesByCategory.categorySlug !== e.categorySlug) {
-    entriesByCategories.push({
-      categoryName: e.categoryName,
-      categorySlug: e.categorySlug,
-      entries: [
-        {
-          slug: e.slug,
-          title: e.title,
-        },
-      ],
-    })
-    continue
+  let entriesByCategory = entriesByCategoryMap.get(e.category.slug)
+  if (!entriesByCategory) {
+    entriesByCategory = {
+      categoryName: e.category.name,
+      categorySlug: e.category.slug,
+      entries: [],
+    }
+    entriesByCategoryMap.set(e.category.slug, entriesByCategory)
   }
   entriesByCategory.entries.push({
     slug: e.slug,
     title: e.title,
   })
 }
+const entriesByCategories = [...entriesByCategoryMap.values()]
 
 // Sort order by categories/others defined in constants
 const orderedSlugs: Array<string> = [

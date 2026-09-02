@@ -1,15 +1,18 @@
 import { spawn } from "node:child_process"
 import { createWriteStream } from "node:fs"
-import { readFile, rename, rm } from "node:fs/promises"
+import { readFile, rename, rm, writeFile } from "node:fs/promises"
 import { finished } from "node:stream/promises"
 import { fileURLToPath } from "node:url"
 
-import type { WordPressContentRecord } from "./types"
+import type { WordPressAttachmentRecord, WordPressContentRecord } from "./types"
 
 const outputPath = fileURLToPath(
   new URL("../blog-content-block-survey/contents.ndjson", import.meta.url),
 )
+const attachmentsPath = fileURLToPath(new URL("../media-attachments.ndjson", import.meta.url))
+const rawTemporaryPath = `${outputPath}.raw.tmp`
 const temporaryPath = `${outputPath}.tmp`
+const attachmentsTemporaryPath = `${attachmentsPath}.tmp`
 
 const php = String.raw`<?php
 ini_set('display_errors', 'stderr');
@@ -148,10 +151,70 @@ foreach ($posts as $post) {
         'tocClosed' => in_array($id, $tocClosedIds, true),
     ];
     echo json_encode(
-        $record,
+        ['recordType' => 'content', 'record' => $record],
         JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE
     ) . PHP_EOL;
 }
+
+$rows = query($database, "
+SELECT
+  attachments.ID,
+  attachments.guid,
+  attachments.post_mime_type,
+  attached_file.meta_value AS attached_file,
+  attachment_metadata.meta_value AS attachment_metadata
+FROM {$postsTable} AS attachments
+LEFT JOIN {$postmetaTable} AS attached_file
+  ON attached_file.post_id = attachments.ID
+  AND attached_file.meta_key = '_wp_attached_file'
+LEFT JOIN {$postmetaTable} AS attachment_metadata
+  ON attachment_metadata.post_id = attachments.ID
+  AND attachment_metadata.meta_key = '_wp_attachment_metadata'
+WHERE attachments.post_type = 'attachment'
+  AND attachments.post_mime_type LIKE 'image/%'
+ORDER BY attachments.ID
+");
+foreach ($rows as $row) {
+    $metadataValue = $row['attachment_metadata'];
+    $attachmentMetadata = is_string($metadataValue)
+        ? @unserialize($metadataValue, ['allowed_classes' => false])
+        : false;
+    $file = is_array($attachmentMetadata) && !empty($attachmentMetadata['file'])
+        ? $attachmentMetadata['file']
+        : $row['attached_file'];
+    if (!is_string($file) || $file === '') {
+        continue;
+    }
+    $directory = dirname($file);
+    $directory = $directory === '.' ? '' : trim($directory, '/') . '/';
+    $sourceUrls = ['https://mirumi.media/' . ltrim($file, '/') => true];
+    $guid = preg_replace(
+        '/(mirumi\.me|milmemo\.net|mirumi\.in)\/wp-content\/uploads\//i',
+        'mirumi.media/',
+        $row['guid']
+    );
+    if (is_string($guid) && $guid !== '') {
+        $sourceUrls[$guid] = true;
+    }
+    if (is_array($attachmentMetadata) && isset($attachmentMetadata['sizes'])) {
+        foreach ($attachmentMetadata['sizes'] as $size) {
+            if (is_array($size) && !empty($size['file'])) {
+                $sourceUrls['https://mirumi.media/' . $directory . $size['file']] = true;
+            }
+        }
+    }
+    $attachment = [
+        'id' => (int) $row['ID'],
+        'mimeType' => $row['post_mime_type'],
+        'originalUrl' => 'https://mirumi.media/' . ltrim($file, '/'),
+        'sourceUrls' => array_keys($sourceUrls),
+    ];
+    echo json_encode(
+        ['recordType' => 'attachment', 'record' => $attachment],
+        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE
+    ) . PHP_EOL;
+}
+$rows->free();
 $database->close();
 `
 
@@ -175,10 +238,28 @@ const validateRecord = (value: unknown, index: number): WordPressContentRecord =
   return record as WordPressContentRecord
 }
 
+const validateAttachment = (value: unknown, index: number): WordPressAttachmentRecord => {
+  if (!value || typeof value !== "object") {
+    throw Error(`${index + 1} 行目の attachment がオブジェクトではありません`)
+  }
+  const record = value as Partial<WordPressAttachmentRecord>
+  if (
+    typeof record.id !== "number" ||
+    typeof record.mimeType !== "string" ||
+    typeof record.originalUrl !== "string" ||
+    !Array.isArray(record.sourceUrls) ||
+    record.sourceUrls.some((url) => typeof url !== "string")
+  ) {
+    throw Error(`${index + 1} 行目の attachment 形式が不正です`)
+  }
+
+  return record as WordPressAttachmentRecord
+}
+
 const child = spawn("ssh", ["conoha-wing", "php"], {
   stdio: ["pipe", "pipe", "pipe"],
 })
-const output = createWriteStream(temporaryPath, { mode: 0o600 })
+const output = createWriteStream(rawTemporaryPath, { mode: 0o600 })
 let stderr = ""
 const exitCodePromise = new Promise<number | null>((resolve, reject) => {
   child.on("error", reject)
@@ -196,14 +277,34 @@ child.stdin.end(php)
 const exitCode = await exitCodePromise
 await outputFinishedPromise
 if (exitCode !== 0) {
-  await rm(temporaryPath, { force: true })
+  await rm(rawTemporaryPath, { force: true })
   throw Error(`取得に失敗しました (${exitCode})\n${stderr}`)
 }
 
-const lines = (await readFile(temporaryPath, "utf8")).trimEnd().split("\n").filter(Boolean)
+const lines = (await readFile(rawTemporaryPath, "utf8")).trimEnd().split("\n").filter(Boolean)
+const contents: Array<string> = []
+const attachments: Array<string> = []
 for (const [index, line] of lines.entries()) {
-  validateRecord(JSON.parse(line) as unknown, index)
+  const value = JSON.parse(line) as {
+    recordType?: unknown
+    record?: unknown
+  }
+  if (value.recordType === "content") {
+    contents.push(JSON.stringify(validateRecord(value.record, index)))
+  } else if (value.recordType === "attachment") {
+    attachments.push(JSON.stringify(validateAttachment(value.record, index)))
+  } else {
+    throw Error(`${index + 1} 行目の recordType が不正です`)
+  }
 }
 
+await Promise.all([
+  writeFile(temporaryPath, `${contents.join("\n")}\n`, { mode: 0o600 }),
+  writeFile(attachmentsTemporaryPath, `${attachments.join("\n")}\n`, { mode: 0o600 }),
+])
+await rm(rawTemporaryPath, { force: true })
+await rename(attachmentsTemporaryPath, attachmentsPath)
 await rename(temporaryPath, outputPath)
-process.stdout.write(`${lines.length} 件を ${outputPath} に保存しました\n`)
+process.stdout.write(
+  `${contents.length} 件を ${outputPath}、${attachments.length} 件を ${attachmentsPath} に保存しました\n`,
+)

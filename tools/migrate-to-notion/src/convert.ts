@@ -8,7 +8,10 @@ import { createHash } from "node:crypto"
 import type { BlockObjectRequest, CreatePageParameters } from "@notionhq/client"
 import { HTMLElement, Node, NodeType, parse } from "node-html-parser"
 
+import { canonicalizeAmazonShortcode } from "shared/amazon"
+
 import { CATEGORY_PAGE_IDS, PAGES_DATA_SOURCE_ID, POSTS_DATA_SOURCE_ID } from "./config"
+import type { MediaMigrationResolver } from "./media-mapping"
 import type {
   MigrationWarning,
   MigrationWarningCode,
@@ -30,6 +33,7 @@ interface ConversionContext {
   articleUrl: string
   customCss: Array<string>
   warnings: Array<MigrationWarning>
+  media: MediaMigrationResolver
 }
 
 interface InlineState {
@@ -377,17 +381,25 @@ const imageOptions = (element: HTMLElement, url: string): string | null => {
 }
 
 // 段落の途中に置かれた画像は image ブロックにできないため、ショートコードのまま本文に残す
-const imageShortcode = (element: HTMLElement, url: string): string => {
+const imageShortcode = (element: HTMLElement, url: string, altSourceUrl?: string): string => {
   const name = decodeURIComponent(
     new URL(url).pathname.split("/").filter(Boolean).at(-1) ?? "image",
   )
-  const alt = authoredAlt(element, url)
+  const alt = authoredAlt(element, altSourceUrl ?? url)
 
   return `[image ${[
     shortcodeValue("name", name),
     ...imageAttributes(element),
     ...(alt ? [shortcodeValue("alt", alt)] : []),
   ].join(" ")}]`
+}
+
+const migratedImageUrl = (
+  context: ConversionContext,
+  sourceUrl: string,
+  usage: "body" | "thumbnail",
+): string => {
+  return context.media.resolve(sourceUrl, usage)
 }
 
 // 前後の空白の除去と分割は呼び出し元がまとめて行う。再帰の各段でやると
@@ -422,7 +434,11 @@ const collectRichText = (
       }
       const url = imageUrl(node, context)
       if (url) {
-        appendText(richText, imageShortcode(node, url), state)
+        appendText(
+          richText,
+          imageShortcode(node, migratedImageUrl(context, url, "body"), url),
+          state,
+        )
       }
       continue
     }
@@ -593,8 +609,9 @@ const specialTextBlock = (value: string, context: ConversionContext): BlockObjec
     return url ? { object: "block", type: "bookmark", bookmark: { url } } : null
   }
 
-  if (/^\[amazon\b[^\]]*]$/i.test(text)) {
-    return paragraph(plainRichText(text))
+  const amazon = canonicalizeAmazonShortcode(text)
+  if (amazon) {
+    return paragraph(plainRichText(amazon))
   }
 
   const url = /^https?:\/\/\S+$/.test(text) ? safeUrl(text, context, value) : null
@@ -638,7 +655,11 @@ const imageBlock = (
   return {
     object: "block",
     type: "image",
-    image: { type: "external", external: { url }, caption: [...optionToken, ...caption] },
+    image: {
+      type: "external",
+      external: { url: migratedImageUrl(context, url, "body") },
+      caption: [...optionToken, ...caption],
+    },
   }
 }
 
@@ -887,13 +908,15 @@ const appShortcode = (element: HTMLElement): string => {
   return `[app ${attributes.join(" ")}]`
 }
 
-const delayedVideoShortcode = (element: HTMLElement): string | null => {
+const delayedVideoShortcode = (element: HTMLElement, context: ConversionContext): string | null => {
   const source = element.getAttribute("data-video")
   if (!source) {
     return null
   }
 
-  const thumbnail = element.querySelector("img")?.getAttribute("src")
+  const thumbnailSource = element.querySelector("img")?.getAttribute("src")
+  const thumbnailUrl = thumbnailSource ? safeUrl(thumbnailSource, context, element.outerHTML) : null
+  const thumbnail = thumbnailUrl ? migratedImageUrl(context, thumbnailUrl, "body") : null
   const sourceUrl = new URL(source, "https://www.youtube.com")
   const start = sourceUrl.searchParams.get("start")
   const attributes = [
@@ -946,7 +969,8 @@ const quoteImageShortcode = (
   }
 
   const name = decodeURIComponent(
-    new URL(url).pathname.split("/").filter(Boolean).at(-1) ?? "image",
+    new URL(migratedImageUrl(context, url, "body")).pathname.split("/").filter(Boolean).at(-1) ??
+      "image",
   )
   const copyright = normalizeInlineWhitespace(
     element.text.replaceAll(/\[\/?caption[^\]]*]/gi, ""),
@@ -1125,7 +1149,7 @@ const convertElement = (
       return [paragraph(plainRichText(appShortcode(element)))]
     }
     if (element.classList.contains("youtube")) {
-      const shortcode = delayedVideoShortcode(element)
+      const shortcode = delayedVideoShortcode(element, context)
       return shortcode ? [paragraph(plainRichText(shortcode))] : []
     }
     if (element.classList.contains("box-common") || element.classList.contains("waku-common")) {
@@ -1320,21 +1344,34 @@ const makeProperties = (
     record.showThumbnailOnFrontend && record.thumbnailUrl
       ? safeUrl(record.thumbnailUrl, context, record.thumbnailUrl)
       : null
+  const migratedThumbnailUrl = thumbnailUrl
+    ? migratedImageUrl(context, thumbnailUrl, "thumbnail")
+    : null
   properties.thumbnail = {
     type: "files",
-    files: thumbnailUrl
-      ? [{ name: filename(thumbnailUrl), type: "external", external: { url: thumbnailUrl } }]
+    files: migratedThumbnailUrl
+      ? [
+          {
+            name: filename(migratedThumbnailUrl),
+            type: "external",
+            external: { url: migratedThumbnailUrl },
+          },
+        ]
       : [],
   }
 
   return properties
 }
 
-export const convertWordPressContent = (record: WordPressContentRecord): NotionPageInput => {
+export const convertWordPressContent = (
+  record: WordPressContentRecord,
+  media?: MediaMigrationResolver,
+): NotionPageInput => {
   const context: ConversionContext = {
     articleUrl: `https://mirumi.me/${record.slug}/`,
     customCss: [],
     warnings: [],
+    media: media ?? { resolve: (sourceUrl) => sourceUrl },
   }
   const root = parse(prepareHtml(record.content), {
     comment: true,

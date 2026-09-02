@@ -1,3 +1,4 @@
+import { createAmazonHydrationScript } from "shared/amazon-browser"
 import type { ArticleContent, RenderedContent } from "shared/content"
 
 const SITE_ORIGIN = "https://mirumi.me"
@@ -73,6 +74,17 @@ const renderUpdatedAt = (article: ArticleContent): string => {
   return `<span class="updated_at"><span class="parentheses first">（</span>${updatedIcon}<time datetime="${escapeHtml(article.updatedAt)}" itemprop="dateModified">${formatDate(article.updatedAt)}</time><span class="parentheses">）</span></span>`
 }
 
+const renderDates = (article: ArticleContent): string => {
+  const published = article.publishedAt
+    ? `<span class="created_at"><time datetime="${escapeHtml(article.publishedAt)}" itemprop="datePublished">${formatDate(article.publishedAt)}</time></span>`
+    : ""
+  if (!published && !article.updatedAt) {
+    return ""
+  }
+
+  return `<div class="dates">${calendarIcon}${published}${renderUpdatedAt(article)}</div>`
+}
+
 // プレビューでだけ、変換時の警告をまとめて最上部に出す。
 // 本文を壊さずに「未実装のショートコードが何件あるか」などを一望できるようにするため
 const renderPreviewWarnings = (warnings: Array<string>): string => {
@@ -94,14 +106,14 @@ const renderPreviewWarnings = (warnings: Array<string>): string => {
     })
     .join("")
 
-  return `<details class="preview-warnings" open><summary>🔴 変換時の警告 ${warnings.length} 件</summary><ul>${items}</ul></details>`
+  return `<details class="preview-warnings" open><summary>🚨 変換時の警告 ${warnings.length} 件</summary><ul>${items}</ul></details>`
 }
 
 export const renderPreviewArticle = (
   article: ArticleContent,
   renderedContent: RenderedContent,
 ): string => {
-  return `${renderPreviewWarnings(renderedContent.warnings)}<div class="post_view article_layout"><main role="main" itemscope itemtype="https://schema.org/Blog"><header itemscope itemprop="blogPost" itemtype="https://schema.org/BlogPosting"><h1 class="title page_transition_target run" itemprop="headline">${escapeHtml(article.title)}</h1>${renderThumbnail(article)}<div class="meta page_transition_target run" role="contentinfo"><div class="meta_block"><div class="author">${atIcon}<a href="https://x.com/__mirumi__" target="_blank" rel="nofollow">みるみ</a></div>${renderCategory(article)}<div class="dates">${calendarIcon}<span class="created_at"><time datetime="${escapeHtml(article.publishedAt)}" itemprop="datePublished">${formatDate(article.publishedAt)}</time></span>${renderUpdatedAt(article)}</div></div></div></header><article class="page_transition_target run"><div id="content" itemprop="mainEntityOfPage">${renderedContent.html}</div></article></main></div>`
+  return `${renderPreviewWarnings(renderedContent.warnings)}<div class="post_view article_layout"><main role="main" itemscope itemtype="https://schema.org/Blog"><header itemscope itemprop="blogPost" itemtype="https://schema.org/BlogPosting"><h1 class="title page_transition_target run" itemprop="headline">${escapeHtml(article.title)}</h1>${renderThumbnail(article)}<div class="meta page_transition_target run" role="contentinfo"><div class="meta_block"><div class="author">${atIcon}<a href="https://x.com/__mirumi__" target="_blank" rel="nofollow">みるみ</a></div>${renderCategory(article)}${renderDates(article)}</div></div></header><article class="page_transition_target run"><div id="content" itemprop="mainEntityOfPage">${renderedContent.html}</div></article></main></div>`
 }
 
 // 文字色などの見た目は mirumi.me の CSS をそのまま読み込んで再現するので、ここでは足さない
@@ -168,6 +180,12 @@ const safeStyle = (value: string): string => {
   return value.replaceAll(/<\/style/gi, "<\\/style")
 }
 
+export const createPreviewHeadContent = (customCss: string, hydrateAmazon: boolean): string => {
+  const amazonScript = hydrateAmazon ? createAmazonHydrationScript() : ""
+
+  return `<meta name="robots" content="noindex,nofollow"><style>${previewStyle}${safeStyle(customCss)}</style>${previewThemeScript}${amazonScript}`
+}
+
 export const resolvePreviewStylesheetUrl = (href: string): string | null => {
   try {
     const url = new URL(href, SITE_ORIGIN)
@@ -186,8 +204,9 @@ export const applyPreviewTemplate = (
   title: string,
   articleHtml: string,
   customCss: string,
+  hydrateAmazon: boolean,
 ): Response => {
-  const headContent = `<meta name="robots" content="noindex,nofollow"><style>${previewStyle}${safeStyle(customCss)}</style>${previewThemeScript}`
+  const headContent = createPreviewHeadContent(customCss, hydrateAmazon)
   const transformed = new HTMLRewriter()
     .on("head", {
       element(element) {
@@ -222,7 +241,10 @@ export const applyPreviewTemplate = (
     })
     .on("script", {
       element(element) {
-        if (element.hasAttribute("data-preview-theme")) {
+        if (
+          element.hasAttribute("data-preview-theme") ||
+          element.hasAttribute("data-preview-amazon")
+        ) {
           return
         }
 

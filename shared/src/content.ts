@@ -103,7 +103,8 @@ export interface ArticleContent {
   title: string
   slug: string
   thumbnailUrl: string | null
-  publishedAt: string
+  thumbnailName: string | null
+  publishedAt: string | null
   updatedAt: string | null
   category: ArticleCategory | null
   customCss: string

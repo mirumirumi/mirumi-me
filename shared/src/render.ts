@@ -1,3 +1,5 @@
+import { createAmazonFallbackLinks, parseAmazonShortcode } from "./amazon"
+import type { BookmarkCardData } from "./bookmark"
 import type {
   ArticleContent,
   ContentBlock,
@@ -7,9 +9,19 @@ import type {
   TableBlock,
   TableRowBlock,
 } from "./content"
+import { resolveResponsiveBodyImage } from "./media"
+import type { StaticXPostData } from "./x-post"
+
+export interface RenderOptions {
+  amazonCardSignatures: Readonly<Record<string, string>>
+  allowUnsignedAmazonCards?: boolean
+  bookmarks?: Readonly<Record<string, BookmarkCardData>>
+  xPosts?: Readonly<Record<string, StaticXPostData>>
+}
 
 interface RenderContext {
   warnings: Array<string>
+  options: RenderOptions
 }
 
 const escapeHtml = (value: string): string => {
@@ -37,7 +49,7 @@ const safeUrl = (value: string): string | null => {
 const addWarning = (context: RenderContext, message: string): string => {
   context.warnings.push(message)
 
-  return `<div class="box-common box-alert"><p><strong>🔴 ${escapeHtml(message)}</strong></p></div>`
+  return `<div class="box-common box-alert"><p><strong>🚨 ${escapeHtml(message)}</strong></p></div>`
 }
 
 const renderEquation = (expression: string, context: RenderContext): string => {
@@ -68,7 +80,7 @@ const renderEquation = (expression: string, context: RenderContext): string => {
 
   context.warnings.push(`未対応のインライン数式です: ${expression}`)
 
-  return `<span title="🔴 未対応のインライン数式">🔴 ${escapeHtml(expression)}</span>`
+  return `<span title="🚨 未対応のインライン数式">🚨 ${escapeHtml(expression)}</span>`
 }
 
 const renderRichTextItem = (item: RichText, context: RenderContext): string => {
@@ -117,6 +129,18 @@ const renderRichTextItem = (item: RichText, context: RenderContext): string => {
 // リッチテキストを HTML 化したあとに処理するため、属性の引用符は escapeHtml 済みの &quot;
 const INLINE_IMAGE = /\[image\s+name=&quot;(.*?)&quot;((?:[^\]]|&quot;[^&]*&quot;)*?)]/g
 
+const imageAltFromFilename = (name: string): string => {
+  return name
+    .replace(/\.[a-z0-9]+$/i, "")
+    .replace(/^[a-f0-9]{16}-/, "")
+    .replace(/-(?:\d+w|\d+x\d+)$/, "")
+}
+
+// alt はエスケープ済みの HTML から切り出すため、`&` を二重変換しないよう属性を閉じられる文字だけを潰す
+const escapeAttributeValue = (value: string): string => {
+  return value.replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;")
+}
+
 const renderInlineImages = (html: string, context: RenderContext): string => {
   return html.replaceAll(INLINE_IMAGE, (matched, name: string, rest: string) => {
     const url = safeUrl(`https://mirumi.media/${encodeURIComponent(name)}`)
@@ -124,9 +148,13 @@ const renderInlineImages = (html: string, context: RenderContext): string => {
       context.warnings.push(`インライン画像の名前が不正です: ${name}`)
       return matched
     }
-    const alt = rest.match(/\balt=&quot;(.*?)&quot;/)?.[1] ?? name.replace(/\.[a-z0-9]+$/i, "")
+    const alt = rest.match(/\balt=&quot;(.*?)&quot;/)?.[1] ?? imageAltFromFilename(name)
+    // ショートコードの一部に色やリンクの注釈が当たると、その HTML が alt に流れ込む
+    if (alt.includes("<")) {
+      context.warnings.push(`インライン画像の alt に書式が含まれています: ${name}`)
+    }
 
-    return `<img src="${escapeHtml(url)}" alt="${alt}" loading="lazy">`
+    return `<img src="${escapeHtml(url)}" alt="${escapeAttributeValue(alt)}" loading="lazy">`
   })
 }
 
@@ -277,7 +305,7 @@ const renderMedia = (
     const youtubeId =
       youtubeUrl.hostname === "youtu.be"
         ? youtubeUrl.pathname.split("/").filter(Boolean).at(0)
-        : youtubeUrl.hostname.endsWith("youtube.com")
+        : youtubeUrl.hostname === "youtube.com" || youtubeUrl.hostname.endsWith(".youtube.com")
           ? (youtubeUrl.searchParams.get("v") ??
             youtubeUrl.pathname.match(/^\/(?:embed|shorts)\/([^/]+)/)?.[1])
           : null
@@ -297,19 +325,37 @@ const renderMedia = (
       hostname === "twitter.com" ||
       hostname.endsWith(".twitter.com")
     ) {
-      // 🔴 xAI と KV を使う Static Tweet block の実装時に置き換える
-      context.warnings.push(`X ポストの Static Tweet 表示は未実装です（block: ${block.id}）`)
+      const post = context.options.xPosts?.[block.id]
+      if (!post) {
+        context.warnings.push(`X ポストを解決できませんでした（block: ${block.id}）`)
 
-      return `<div class="waku-common"><p>🔴 X ポストの Static Tweet 表示は未実装です</p><p><a href="${escapedUrl}">${escapedUrl}</a></p></div>`
+        return `<div class="waku-common"><p>🚨 X ポストを解決できませんでした</p><p><a href="${escapedUrl}">${escapedUrl}</a></p></div>`
+      }
+      const timestamp = post.createdAt
+        ? `<div class="timestamp">${escapeHtml(new Date(post.createdAt).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }))}</div>`
+        : ""
+
+      return `<div class="static_tweet"><a href="${escapeHtml(post.url)}" target="_blank" rel="noopener"><div class="content_wrap"><div class="header"><div class="author"><div class="name">${escapeHtml(post.authorName)}</div><div class="id">@${escapeHtml(post.authorHandle)}</div></div></div><div class="body">${escapeHtml(post.text).replaceAll("\n", "<br>")}</div><div class="meta">${timestamp}</div></div></a></div>`
     }
 
     return `<div><iframe src="${escapedUrl}" loading="lazy" allowfullscreen></iframe>${captionHtml}</div>`
   }
 
-  // 🔴 OGP の取得元とキャッシュ方針を決めたあとに既存 blogcard HTML へ置き換える
-  context.warnings.push(`ブックマークの OGP 表示は未実装です（block: ${block.id}）`)
+  const bookmark = context.options.bookmarks?.[block.id]
+  if (!bookmark) {
+    context.warnings.push(`ブックマークを解決できませんでした（block: ${block.id}）`)
 
-  return `<div class="waku-common"><p>🔴 ブックマークの OGP 表示は未実装です</p><p><a href="${escapedUrl}">${caption || escapedUrl}</a></p></div>`
+    return `<div class="waku-common"><p>🚨 ブックマークを解決できませんでした</p><p><a href="${escapedUrl}">${caption || escapedUrl}</a></p></div>`
+  }
+  const external = bookmark.kind === "external"
+  const image = bookmark.imageUrl
+    ? `<div class="thumbnail"><img src="${escapeHtml(bookmark.imageUrl)}" alt="" loading="lazy"></div>`
+    : ""
+  const snippet = bookmark.description
+    ? `<div class="snippet">${escapeHtml(bookmark.description)}</div>`
+    : ""
+
+  return `<a class="blogcard${external ? " external" : ""}" href="${escapeHtml(bookmark.url)}"${external ? ' target="_blank" rel="noopener"' : ""}><div class="blogcard">${image}<div class="content"><div class="title">${escapeHtml(bookmark.title)}</div>${snippet}<div class="footer">${escapeHtml(bookmark.label)}</div></div></div></a>`
 }
 
 // image ブロックのキャプションは、先頭に `[image …]` のオプショントークンを置ける。
@@ -343,7 +389,7 @@ const splitImageCaption = (
 const imageAltFromUrl = (url: string): string => {
   try {
     const name = decodeURIComponent(new URL(url).pathname.split("/").filter(Boolean).at(-1) ?? "")
-    return name.replace(/\.[a-z0-9]+$/i, "").replace(/-\d+x\d+$/, "")
+    return imageAltFromFilename(name)
   } catch {
     return ""
   }
@@ -438,11 +484,32 @@ const renderButton = (attributes: Record<string, string>, context: RenderContext
   return `<p style="text-align:center"><span class="btn-wrap${colorClass} btn-wrap-m"><a href="${escapeHtml(url)}">${escapeHtml(attributes.text)}</a></span></p>`
 }
 
+const renderAmazon = (value: string, context: RenderContext): string => {
+  const shortcode = parseAmazonShortcode(value)
+  if (!shortcode) {
+    return addWarning(context, "Amazon ショートコードの asin、kw、title が不正です")
+  }
+
+  const signature = context.options.amazonCardSignatures[shortcode.asin]
+  if (!signature && !context.options.allowUnsignedAmazonCards) {
+    return addWarning(context, `Amazon card の署名がありません（ASIN: ${shortcode.asin}）`)
+  }
+
+  const title = shortcode.fallbackTitle
+  const links = createAmazonFallbackLinks(shortcode)
+
+  const hydrationAttributes = signature
+    ? ` data-amazon-asin="${shortcode.asin}" data-amazon-signature="${escapeHtml(signature)}"`
+    : ""
+
+  return `<div class="amazon-item-box product-item-box no-icon no-after cf"${hydrationAttributes}><div class="amazon-item-content product-item-content amazon-card-content-fallback cf"><div class="amazon-item-title product-item-title"><a class="amazon-item-title-link product-item-title-link" data-amazon-title href="${escapeHtml(links.amazon)}" target="_blank" rel="nofollow noopener">${escapeHtml(title)}</a></div><div class="amazon-item-snippet product-item-snippet"><span class="amazon-item-maker product-item-maker" data-amazon-byline></span></div><div class="amazon-item-buttons product-item-buttons"><div class="shoplinkamazon"><a data-amazon-link href="${escapeHtml(links.amazon)}" target="_blank" rel="nofollow noopener">Amazon で見る</a></div><div class="shoplinkrakuten"><a href="${escapeHtml(links.rakuten)}" target="_blank" rel="nofollow noopener">楽天市場で探す</a></div><div class="shoplinkyahoo"><a href="${escapeHtml(links.yahoo)}" target="_blank" rel="nofollow noopener">Yahoo!ショッピングで探す</a></div></div></div></div>`
+}
+
 const shortcodeAttributes = (value: string): Record<string, string> => {
   const attributes: Record<string, string> = {}
-  for (const match of value.matchAll(/([a-zA-Z][\w-]*)\s*=\s*&quot;(.*?)&quot;/g)) {
+  for (const match of value.matchAll(/([a-zA-Z][\w-]*)\s*=\s*"((?:[^"\\]|\\.)*)"/g)) {
     if (match[1] && match[2] !== undefined) {
-      attributes[match[1]] = match[2]
+      attributes[match[1]] = match[2].replaceAll('\\"', '"')
     }
   }
 
@@ -456,13 +523,16 @@ const renderBlock = (block: ContentBlock, context: RenderContext): string => {
       // image は renderInlineImages が解決するので、未確定の警告対象から外す
       const shortcode = plainText.trim().match(/^\[(amazon|button|app|video|quoteImage)\b/)
       if (
+        shortcode?.[1] === "amazon" ||
         shortcode?.[1] === "button" ||
         shortcode?.[1] === "video" ||
         shortcode?.[1] === "quoteImage" ||
         shortcode?.[1] === "app"
       ) {
-        const body = renderRichText(block.richText, context).trim()
-        const attributes = shortcodeAttributes(body)
+        if (shortcode[1] === "amazon") {
+          return renderAmazon(plainText.trim(), context)
+        }
+        const attributes = shortcodeAttributes(plainText.trim())
         if (shortcode[1] === "button") {
           return renderButton(attributes, context)
         }
@@ -474,14 +544,6 @@ const renderBlock = (block: ContentBlock, context: RenderContext): string => {
         }
         return renderDelayedVideo(attributes, context)
       }
-      if (shortcode) {
-        // 🔴 各ショートコードの属性仕様が確定したものから専用 HTML へ置き換える
-        return addWarning(
-          context,
-          `${shortcode[1]} ショートコードの HTML 変換は未確定です（block: ${block.id}）`,
-        )
-      }
-
       const content = renderRichText(block.richText, context) || "<br>"
 
       return `<p>${content}</p>${renderChildren(block, context)}`
@@ -522,8 +584,12 @@ const renderBlock = (block: ContentBlock, context: RenderContext): string => {
       // 幅は元の指定をそのまま通す。alignnone は左寄せ、それ以外は既定の中央のまま
       const style = options.width ? ` style="width:${escapeHtml(options.width)}"` : ""
       const className = options.align === "none" ? ' class="alignnone"' : ""
+      const responsive = resolveResponsiveBodyImage(url)
+      const responsiveAttributes = responsive
+        ? ` srcset="${escapeHtml(responsive.srcset)}" sizes="${escapeHtml(responsive.sizes)}"`
+        : ""
 
-      return `<div class="wp-caption"><img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}"${className}${style} loading="lazy">${captionHtml ? `<p class="wp-caption-text">${captionHtml}</p>` : ""}</div>`
+      return `<div class="wp-caption"><img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}"${responsiveAttributes}${className}${style} loading="lazy">${captionHtml ? `<p class="wp-caption-text">${captionHtml}</p>` : ""}</div>`
     }
     case "audio":
     case "video":
@@ -638,8 +704,11 @@ const renderToc = (article: ArticleContent, context: RenderContext): string => {
   return `<div class="toc"><input id="${tocId}" class="toc-checkbox" type="checkbox"${checked}><label class="toc-title" for="${tocId}">もくじ</label><div class="toc-content">${html}</div></div>`
 }
 
-export const renderArticleContent = (article: ArticleContent): RenderedContent => {
-  const context: RenderContext = { warnings: [] }
+export const renderArticleContent = (
+  article: ArticleContent,
+  options: RenderOptions = { amazonCardSignatures: {} },
+): RenderedContent => {
+  const context: RenderContext = { warnings: [], options }
   const body = renderBlocks(article.blocks, context)
   const toc = renderToc(article, context)
   const firstHeadingIndex = body.search(/<h[1-6]\b/)
