@@ -7,7 +7,7 @@
     "stylelint": "stylelint \"src/**/*.{css,scss,vue}\" --fix",
     "stylelint:ci": "stylelint \"src/**/*.{css,scss,vue}\"",
     "tsc": "nuxt prepare && vue-tsc -b --noEmit",
-    "test": "vitest run --config ../vitest.config.ts --configLoader runner app",
+    "test": "nuxt prepare && vitest run --config ../vitest.config.ts --configLoader runner app",
     "generate": "nuxt generate"
   },
   "dependencies": {
