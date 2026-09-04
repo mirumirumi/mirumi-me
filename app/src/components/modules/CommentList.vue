@@ -5,161 +5,127 @@
       コメントはまだひとつもありません :)
     </div>
     <div v-else class="comments_wrap">
-      <template v-for="c in leading5Comments" :key="c.comment_ID">
-        <ModulesCommentBase :c="c" :depth="1" />
-        <template v-if="1 <= c.children.length">
-          <template v-for="cc in c.children" :key="cc.comment_ID">
-            <ModulesCommentBase :c="cc" :depth="2" />
-            <template v-if="1 <= cc.children.length">
-              <template v-for="ccc in cc.children" :key="ccc.comment_ID">
-                <ModulesCommentBase :c="ccc" :depth="3" />
-                <template v-if="1 <= ccc.children.length">
-                  <template v-for="cccc in ccc.children" :key="cccc.comment_ID">
-                    <ModulesCommentBase :c="cccc" :depth="4" />
-                  </template>
-                </template>
-              </template>
-            </template>
-          </template>
-        </template>
-      </template>
-      <div v-if="0 < remainingAllComments.length" class="load_more" @click="loadMore()">
+      <ModulesCommentBase
+        v-for="entry in leadingComments"
+        :key="entry.comment.comment_ID"
+        :c="entry.comment"
+        :depth="entry.depth"
+      />
+      <div v-if="0 < remainingConversationCount" class="load_more" @click="loadMore()">
         <PartsBaseButton
           v-if="loadMoreStatus !== 'completed'"
           :type="'text'"
           :isSubmitting="loadMoreStatus === 'loading'"
           :spinner-color="'var(--color-text)'"
-          >すべて読み込む ({{ remainingAllComments.length }} 件)</PartsBaseButton
+          >すべて読み込む ({{ remainingConversationCount }} 件)</PartsBaseButton
         >
       </div>
       <!-- v-if にすると残りのコメントが SSG の HTML に載らず検索エンジンに拾われないため、意図的に v-show -->
       <div v-show="loadMoreStatus === 'completed'">
-        <template v-for="c in remainingAllComments" :key="c.comment_ID">
-          <ModulesCommentBase :c="c" :depth="1" />
-          <template v-if="1 <= c.children.length">
-            <template v-for="cc in c.children" :key="cc.comment_ID">
-              <ModulesCommentBase :c="cc" :depth="2" />
-              <template v-if="1 <= cc.children.length">
-                <template v-for="ccc in cc.children" :key="ccc.comment_ID">
-                  <ModulesCommentBase :c="ccc" :depth="3" />
-                  <template v-if="1 <= ccc.children.length">
-                    <template v-for="cccc in ccc.children" :key="cccc.comment_ID">
-                      <ModulesCommentBase :c="cccc" :depth="4" />
-                    </template>
-                  </template>
-                </template>
-              </template>
-            </template>
-          </template>
-        </template>
+        <ModulesCommentBase
+          v-for="entry in remainingComments"
+          :key="entry.comment.comment_ID"
+          :c="entry.comment"
+          :depth="entry.depth"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+interface CommentData {
+  comment_ID: string
+  comment_parent: string
+  user_id: string
+  comment_author: string
+  comment_date: string
+  comment_content: string
+}
+
+interface StructuredComment extends CommentData {
+  children: Array<StructuredComment>
+}
+
+interface CommentEntry {
+  comment: StructuredComment
+  depth: number
+}
+
 const route = useRoute()
 const appConfig = useAppConfig()
 
 const slug = route.params.post as string
 const loadMoreStatus = ref<"none" | "loading" | "completed">("none")
 
-const { data } = await useFetch(`/mirumi/comments_per_post/${slug}`, {
+const selectPublicCommentFields = (comment: CommentData): CommentData => {
+  return {
+    comment_ID: comment.comment_ID,
+    comment_parent: comment.comment_parent,
+    user_id: comment.user_id,
+    comment_author: comment.comment_author,
+    comment_date: comment.comment_date,
+    comment_content: comment.comment_content,
+  }
+}
+
+const { data } = await useFetch<Array<CommentData>>(`/mirumi/comments_per_post/${slug}`, {
   baseURL: appConfig.baseURL,
+  transform: (comments) => {
+    return comments.map(selectPublicCommentFields)
+  },
 })
 
 // Hack for JSON parse error (unexpected token)
-const res = JSON.parse(JSON.stringify(data.value as any))
+const res = JSON.parse(JSON.stringify(data.value)) as Array<CommentData>
+const commentsById = new Map<string, StructuredComment>()
 
-const allComments: Record<string, any>[] = []
-const used: number[] = []
-
-// Max comment replies depth is 4, so firstly structure comments which depth is 4 or less
-for (const [i, r] of res.entries()) {
-  if (r.comment_parent === "0") {
-    const _to = r
-    _to.children = []
-    allComments.push(_to)
-    used.push(i)
+for (const comment of res) {
+  if (commentsById.has(comment.comment_ID)) {
+    throw Error(`Duplicate comment ID: ${comment.comment_ID}`)
   }
-  for (const c of allComments) {
-    if (r.comment_parent === c.comment_ID) {
-      const _to = r
-      _to.children = []
-      c.children.push(_to)
-      used.push(i)
-    }
-    for (const cc of c.children) {
-      if (r.comment_parent === cc.comment_ID) {
-        const _to = r
-        _to.children = []
-        cc.children.push(_to)
-        used.push(i)
-      }
-      for (const ccc of cc.children) {
-        if (r.comment_parent === ccc.comment_ID) {
-          const _to = r
-          _to.children = []
-          ccc.children.push(_to)
-          used.push(i)
-        }
-      }
-    }
-  }
+  commentsById.set(comment.comment_ID, { ...comment, children: [] })
 }
 
-// Compare the comment_ID of the `comments` with the comment_parent of the remaining comments
-// This will always be depth 4, so put all in the parent found here (this would also limit indentation to 4 times)
-const remainingIndecies: number[] = [...Array(res.length).keys()].filter(
-  (i) => used.indexOf(i) === -1,
-)
-const remainingComments: Record<string, any>[] = []
-for (const index of remainingIndecies) {
-  remainingComments.push(res[index])
-}
-
-// The parent-child relationship between which lefts needs to be settled first
-const _toDelete: number[] = []
-for (const r of remainingComments) {
-  for (const other of remainingComments) {
-    if (r.comment_ID === other.comment_ID) continue
-
-    if (r.comment_ID === other.comment_parent) {
-      r.children = []
-      r.children.push(other)
-      _toDelete.push(other.comment_ID)
-    }
+const allComments: Array<StructuredComment> = []
+for (const comment of res) {
+  const structuredComment = commentsById.get(comment.comment_ID)
+  if (!structuredComment) {
+    throw Error(`Comment not found: ${comment.comment_ID}`)
   }
-}
-const cleanRemainingComments: Record<string, any>[] = remainingComments.filter(
-  (x) => !_toDelete.includes(x.comment_ID),
-)
-
-// Merge them!
-for (const c of allComments) {
-  for (const cc of c.children) {
-    for (const ccc of cc.children) {
-      for (const cccc of ccc.children) {
-        for (const r of cleanRemainingComments) {
-          if (r.comment_parent === cccc.comment_ID) {
-            cccc.children.push(r)
-          }
-        }
-      }
-    }
+  if (comment.comment_parent === "0") {
+    allComments.push(structuredComment)
+    continue
   }
+  const parent = commentsById.get(comment.comment_parent)
+  if (!parent) {
+    throw Error(`Parent comment not found: ${comment.comment_parent}`)
+  }
+  parent.children.push(structuredComment)
 }
 
-const leading5Comments = allComments.slice(0, 5)
-const remainingAllComments = allComments.slice(5)
+const flattenComments = (
+  comments: Array<StructuredComment>,
+  depth: number,
+): Array<CommentEntry> => {
+  const entries: Array<CommentEntry> = []
+  for (const comment of comments) {
+    entries.push({ comment, depth: Math.min(depth, 4) })
+    entries.push(...flattenComments(comment.children, depth + 1))
+  }
+  return entries
+}
+
+const leadingComments = flattenComments(allComments.slice(0, 5), 1)
+const remainingConversationCount = Math.max(allComments.length - 5, 0)
+const remainingComments = flattenComments(allComments.slice(5), 1)
 const loadMore = async () => {
   loadMoreStatus.value = "loading"
   await delay(Math.floor(Math.random() * 600) + 100) // 0.1s ~ 0.7s
   loadMoreStatus.value = "completed"
 }
 
-// Testing
-if (res.length !== (JSON.stringify(allComments).match(/"comment_ID":/g) ?? []).length) {
+if (res.length !== leadingComments.length + remainingComments.length) {
   throw Error("Comments could not be structured correctly")
 }
 </script>
