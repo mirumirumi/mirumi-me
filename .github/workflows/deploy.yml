@@ -5,8 +5,7 @@ on:
   push:
     branches:
       - main
-      # Enable only when in use
-      - chore/migrate-nuxt-4
+      - dev
 
 jobs:
   deploy:

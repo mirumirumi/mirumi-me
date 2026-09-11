@@ -41,6 +41,9 @@ publish index の保存は S3 配信のあとに行うため、最後の index �
 
 ### Webhook subscription の初回設定
 
+購読するイベントは `page.properties_updated` だけでよい。
+Worker が処理するのはこの型のみで、他の型は署名検証後に `ignored` として 200 を返すだけになる。
+
 Notion が送った `verification_token` は通常ログへ出さず、`CONTENT_CACHE` に 10 分だけ保存する。
 subscription 作成直後に Access 配下の `GET /admin/notion-webhook-verification` で 1 回だけ取得し、
 Notion の確認画面へ貼り付けたあと、同じ値を `NOTION_WEBHOOK_SECRET` へ登録する。
@@ -212,6 +215,7 @@ Creators API の日本向け credential version `3.3` と media bucket 名は va
 - dev で新規公開、更新、非公開、重複 Webhook、途中失敗を実動確認する
 - dev / prd の bucket、CloudFront、KV、Secrets と Access policy を確認する
 - Creators API を実 ASIN で確認する
+- production の site bucket に `_internal/*` の Deny を入れる。dev には入っているが production にはまだない
 - media normalization の unresolved static image を 0 件にする
 - dev Notion data source へ external WebP canary を投入する
 - 470 page の route uniqueness と full generate を通す

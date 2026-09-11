@@ -3,6 +3,7 @@ import type { Context } from "hono"
 import {
   createNotionClient,
   fetchNotionPageRevision,
+  InvalidNotionPageRevisionError,
   isNotionObjectNotFound,
   isNotionValidationError,
 } from "shared/notion"
@@ -131,7 +132,13 @@ export const handleNotionWebhook = async (
       workflowId: started.workflowId,
     })
   } catch (err) {
-    if (isNotionObjectNotFound(err) || isNotionValidationError(err)) {
+    // dev と prd は同じ workspace にあり internal-state のプロパティ ID も同じなので、
+    // 別環境のページの更新もここまで届く。自分の data source のページでなければ黙って無視する
+    if (
+      isNotionObjectNotFound(err) ||
+      isNotionValidationError(err) ||
+      err instanceof InvalidNotionPageRevisionError
+    ) {
       console.warn(
         JSON.stringify({
           event: "notion_webhook_page_ignored",

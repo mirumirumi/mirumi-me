@@ -7,6 +7,17 @@ const workersApiOrigin =
     ? "https://mirumi-me-dev.v2p04rubfuwnvttj.workers.dev"
     : "https://mirumi-me-prd.v2p04rubfuwnvttj.workers.dev")
 
+// dev サイトも常時閲覧できるようにしたため、本番の計測プロパティと広告枠を汚さないように計測タグと AdSense は prd の build でだけ有効にする
+const isProductionSite = process.env.APP_ENV === "prd"
+const googleAdSenseModule: [string, Record<string, unknown>] = [
+  "@nuxtjs/google-adsense",
+  {
+    id: "ca-pub-2873410957106428",
+    analyticsUacct: "UA-79701523-1",
+    analyticsDomainName: "mirumi.me",
+  },
+]
+
 export default defineNuxtConfig({
   compatibilityDate: "2024-04-03",
   app: {
@@ -85,22 +96,13 @@ export default defineNuxtConfig({
   dir: {
     public: "src/public",
   },
-  modules: [
-    "@vueuse/nuxt",
-    [
-      "@nuxtjs/google-adsense",
-      {
-        id: "ca-pub-2873410957106428",
-        analyticsUacct: "UA-79701523-1",
-        analyticsDomainName: "mirumi.me",
-      },
-    ],
-  ],
+  modules: ["@vueuse/nuxt", ...(isProductionSite ? [googleAdSenseModule] : [])],
   pages: true,
   runtimeConfig: {
     public: {
       turnstileSiteKey: "0x4AAAAAAEO8PjpC2BzSTS2T",
       workersApiOrigin,
+      isProductionSite,
     },
   },
   serverDir: "src/server",

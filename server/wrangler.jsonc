@@ -34,7 +34,7 @@
       },
       "secrets": {
         "required": [
-          "NOTION_TOKEN", // dev/prd で同じ
+          "NOTION_TOKEN", // わけてる
           "NOTION_WEBHOOK_SECRET", // わけてる
           "TURNSTILE_SECRET",
           "AMAZON_CARD_SIGNING_SECRET", // わけてる

@@ -18,3 +18,9 @@ node_modules
 dist
 
 .wrangler
+
+# .terraform-version と .terraform.lock.hcl は provider の版を固定するため追跡する
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan

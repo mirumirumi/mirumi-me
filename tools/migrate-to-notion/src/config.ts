@@ -1,6 +1,38 @@
-export const POSTS_DATA_SOURCE_ID = "399e5acd-5762-442b-a3f5-be983498d926"
+export type MigrationTarget = "dev" | "prd"
 
-export const PAGES_DATA_SOURCE_ID = "53765425-ad40-828e-976a-0789d64d4dee"
+interface MigrationDataSourceIds {
+  posts: string
+  pages: string
+}
+
+const MIGRATION_DATA_SOURCE_IDS: Readonly<Record<MigrationTarget, MigrationDataSourceIds>> = {
+  dev: {
+    posts: "3c065425-ad40-811a-b50b-000b9271df2c",
+    pages: "dc065425-ad40-8391-8e64-87fc27e80a3a",
+  },
+  prd: {
+    posts: "399e5acd-5762-442b-a3f5-be983498d926",
+    pages: "53765425-ad40-828e-976a-0789d64d4dee",
+  },
+}
+
+// dev と prd は同じワークスペース内の別データソースで、categories だけは共用する。
+// 既定を prd にしているのは従来の挙動を変えないためで、dev へ投入するときは
+// MIGRATION_TARGET=dev を明示する
+const resolveMigrationTarget = (): MigrationTarget => {
+  const value = process.env.MIGRATION_TARGET ?? "prd"
+  if (value !== "dev" && value !== "prd") {
+    throw Error(`MIGRATION_TARGET には dev か prd を指定してください: ${value}`)
+  }
+
+  return value
+}
+
+export const MIGRATION_TARGET = resolveMigrationTarget()
+
+export const POSTS_DATA_SOURCE_ID = MIGRATION_DATA_SOURCE_IDS[MIGRATION_TARGET].posts
+
+export const PAGES_DATA_SOURCE_ID = MIGRATION_DATA_SOURCE_IDS[MIGRATION_TARGET].pages
 
 export const CATEGORY_PAGE_IDS: Readonly<Record<string, string>> = {
   pc: "39765425-ad40-80c9-a3a0-ed4de6084a42",

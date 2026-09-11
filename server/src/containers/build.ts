@@ -23,6 +23,7 @@ interface GenerateSiteInput {
   pages: Array<BuildPage>
   deploymentState: SiteDeploymentState
   workersApiOrigin: string
+  appEnv: "dev" | "prd"
 }
 
 export interface GeneratedSite {
@@ -45,9 +46,12 @@ const buildEnvironment = (
   manifestDirectory: string,
   plan: BuildPlan,
   workersApiOrigin: string,
+  appEnv: string,
 ): Record<string, string> => {
+  // 計測タグと広告は prd の生成物にだけ埋め込む
   const environment: Record<string, string> = {
     NODE_ENV: "production",
+    APP_ENV: appEnv,
     MIRUMI_BUILD_MANIFEST_DIR: manifestDirectory,
     MIRUMI_BUILD_MODE: plan.mode,
     WORKERS_API_ORIGIN: workersApiOrigin,
@@ -68,6 +72,7 @@ export const generateSite = async ({
   pages,
   deploymentState,
   workersApiOrigin,
+  appEnv,
 }: GenerateSiteInput): Promise<GeneratedSite> => {
   const jobDirectory = join(BUILD_ROOT, safeJobName(workflowId))
   const manifestDirectory = join(jobDirectory, "manifest")
@@ -95,7 +100,7 @@ export const generateSite = async ({
   if (0 < plan.routes.length) {
     const child = spawn("bun", ["run", "generate"], {
       cwd: APP_DIRECTORY,
-      env: buildEnvironment(manifestDirectory, plan, workersApiOrigin),
+      env: buildEnvironment(manifestDirectory, plan, workersApiOrigin, appEnv),
       stdio: "inherit",
     })
     const [exitCode] = await once(child, "exit")

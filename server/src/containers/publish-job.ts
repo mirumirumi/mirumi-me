@@ -418,6 +418,7 @@ export const runContainerPublishJob = async (
     pages: buildPages,
     deploymentState: nextState,
     workersApiOrigin: config.workersApiOrigin,
+    appEnv: config.appEnv,
   })
   await confirmFreshness(builtPages, config)
   const deletedContentRoutes = findUnpublishedContentRoutes(builtPages)
