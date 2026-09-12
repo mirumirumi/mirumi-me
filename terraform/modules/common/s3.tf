@@ -33,6 +33,28 @@ resource "aws_s3_bucket_website_configuration" "mirumi_me" {
   }
 }
 
+locals {
+  # dev は誰にも配信していないので一発で入れ替えてよい。
+  # prd は CloudFront の伝播中に 403 が出るため、policy を [旧, 新] にする → distribution を新へ →
+  # policy を [新] だけにする、の 3 段階で入れ替える
+  origin_referer = var.env_name == "dev" ? random_string.origin_referer[0].result : aws_s3_bucket.mirumi_me.bucket_domain_name
+}
+
+# bucket policy に平文で入る値なので sensitive にはしない。
+# random_password にすると distribution の plan 差分まで伏せられて確認できなくなる
+resource "random_string" "origin_referer" {
+  count   = var.env_name == "dev" ? 1 : 0
+  length  = 48
+  special = false
+}
+
+# Function のゲートを解錠する鍵。Referer とは用途が別なので値も分ける
+resource "random_password" "site_gate_unlock" {
+  count   = var.env_name == "dev" ? 1 : 0
+  length  = 32
+  special = false
+}
+
 # publish index は page ID と revision を含むため配信しない。
 # production は bootstrap の明示 GO 時に dev と同じ Deny を入れる
 resource "aws_s3_bucket_policy" "mirumi_me" {
@@ -51,7 +73,7 @@ resource "aws_s3_bucket_policy" "mirumi_me" {
       "Condition": {
         "StringLike": {
           "aws:Referer": [
-            "${aws_s3_bucket.mirumi_me.bucket_domain_name}"
+            "${local.origin_referer}"
           ]
         }
       }
@@ -64,7 +86,7 @@ resource "aws_s3_bucket_policy" "mirumi_me" {
       "Resource": "arn:aws:s3:::${aws_s3_bucket.mirumi_me.id}/_internal/*",
       "Condition": {
         "StringLike": {
-          "aws:Referer": "${aws_s3_bucket.mirumi_me.bucket_domain_name}"
+          "aws:Referer": "${local.origin_referer}"
         }
       }
     }%{endif}

@@ -7,9 +7,8 @@ mirumi.me と mirumi.media の AWS リソースを管理する。
 
 | | 中身 |
 | --- | --- |
-| `modules/site` | サイト本体の S3 と CloudFront。dev / prd 両方に存在する |
-| `modules/media` | mirumi.media の S3 と CloudFront。prd だけに存在し dev も共用する |
-| `modules/dns` | mirumi.me / mirumi.media の Route53 と ACM。prd だけ |
+| `modules/common` | サイト本体と mirumi.media の S3 / CloudFront。mirumi.media は prd だけで dev も共用する |
+| `modules/virginia` | mirumi.me / mirumi.media の Route53 と ACM。prd だけ。フェーズ 2 で移設する |
 | `envs/dev`、`envs/prd` | backend と module の組み立て |
 
 Terraform のバージョンは `.terraform-version` で固定する。
@@ -23,7 +22,8 @@ OAC / OAI はウェブサイトエンドポイントでは使えないため、C
 カスタムヘッダと bucket policy の条件一致でオリジン直叩きを塞いでいる。
 
 この方式のおかげで、ディレクトリインデックス解決（`/foo` → `foo/index.html`）と
-リダイレクトルールを S3 側が処理でき、CloudFront Function が不要になっている。
+リダイレクトルールを S3 側が処理でき、そのための CloudFront Function が要らない。
+dev だけは閲覧を絞る目的で Function を 1 つ持つ。
 
 mirumi.media だけは通常の S3 オリジンなので OAI を使う。
 
@@ -47,12 +47,40 @@ Route53 と ACM はフェーズ 2 として分ける。ゾーンを作り直す�
 `aws_acm_certificate_validation` は import できない。証明書が発行済みなら apply 時に
 即座に完了するだけで証明書自体には何もしないため、plan に `+ create` が出ても問題ない。
 
-## 現状との差分として意図的に残しているもの
+## 環境ごとの差分
 
-- dev の CloudFront は `enabled = false`。閲覧を絞る CloudFront Function を入れてから true にする
+- dev の CloudFront は常時有効で、CloudFront Function で閲覧を絞る。prd に Function はない
+- `Referer` は dev だけランダム値。prd はバケット名のままで推測可能なので、いずれ差し替える
+    - prd は伝播中に 403 が出るため、policy を [旧, 新] にする → distribution を新へ →
+      policy を [新] だけにする、の 3 段階で入れ替える
 - `_internal/*` の Deny は dev だけ。production は bootstrap の明示 GO 時に
-  `modules/site/s3.tf` の `deny_internal_objects` を prd でも true にする
-- `Referer` の値がバケット名そのもので推測可能。ランダムな秘密値へ変更する
+  `modules/common/s3.tf` の heredoc の条件を prd でも真にする
+
+## ローカルで terraform を叩くとき
+
+`~/.aws/config` の `default` プロファイルが assume role 構成になっており、terraform は環境変数より先に
+これを読むため `failed to load assume role ... of profile login` で落ちる。
+AWS CLI は通るのに terraform だけ落ちるのはこのためで、共有設定を読ませなければよい。
+
+```bash
+export AWS_CONFIG_FILE=$(mktemp) AWS_SHARED_CREDENTIALS_FILE=$(mktemp)
+# このあと一時クレデンシャルを export してから terraform を実行する
+```
+
+## dev サイトの閲覧
+
+dev の CloudFront は常時有効で、CloudFront Function が閲覧できる相手を絞っている。
+端末ごとに一度だけ `https://d3694gpnjd4x49.cloudfront.net/__unlock?k=<鍵>` を踏むと
+1 年間有効な Cookie が入り、以降はそのまま閲覧できる。鍵を知らないリクエストはすべて 403 になる。
+
+鍵は state にだけ存在する。
+
+```bash
+terraform state pull | jq -r '.resources[]|select(.name=="site_gate_unlock").instances[0].attributes.result'
+```
+
+ID ベースの認証ではなく鍵を持っている人が通る方式なので、漏れたら `random_password` を作り直して
+apply すれば既存の Cookie はすべて無効になる。
 
 ## GitHub Actions の認証
 

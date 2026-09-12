@@ -14,16 +14,13 @@ resource "aws_cloudfront_distribution" "mirumi_me" {
 
     custom_header {
       name  = "Referer"
-      value = aws_s3_bucket.mirumi_me.bucket_domain_name
+      value = local.origin_referer
     }
   }
 
   aliases             = var.env_name == "dev" ? null : ["mirumi.me"]
   default_root_object = "index.html"
-
-  # dev は「使うときだけ有効化」の手運用が続いていた。閲覧を絞る CloudFront Function を入れてから true にする
-  enabled = var.env_name == "dev" ? false : true
-  comment = var.env_name == "dev" ? "使わないときはインデックス防止のため必ず「無効」にしておくこと！" : null
+  enabled             = true
 
   viewer_certificate {
     cloudfront_default_certificate = var.env_name == "dev" ? true : null
@@ -39,6 +36,14 @@ resource "aws_cloudfront_distribution" "mirumi_me" {
     target_origin_id       = aws_s3_bucket.mirumi_me.id
     compress               = true
     viewer_protocol_policy = "redirect-to-https"
+
+    dynamic "function_association" {
+      for_each = aws_cloudfront_function.dev_site_gate
+      content {
+        event_type   = "viewer-request"
+        function_arn = function_association.value.arn
+      }
+    }
   }
 
   ordered_cache_behavior {
@@ -49,6 +54,14 @@ resource "aws_cloudfront_distribution" "mirumi_me" {
     compress               = true
     path_pattern           = "/_nuxt/*"
     viewer_protocol_policy = "redirect-to-https"
+
+    dynamic "function_association" {
+      for_each = aws_cloudfront_function.dev_site_gate
+      content {
+        event_type   = "viewer-request"
+        function_arn = function_association.value.arn
+      }
+    }
   }
 
   custom_error_response {
@@ -117,4 +130,16 @@ resource "aws_cloudfront_distribution" "mirumi_media" {
 resource "aws_cloudfront_origin_access_identity" "mirumi_media" {
   count   = var.env_name == "prd" ? 1 : 0
   comment = "mirumi.media for assets of mirumi.me"
+}
+
+# dev サイトは常時配信し、閲覧できる相手をこの Function で絞る
+resource "aws_cloudfront_function" "dev_site_gate" {
+  count = var.env_name == "dev" ? 1 : 0
+
+  name    = "mirumime-${var.env_name}-site-gate"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+  code = templatefile("${path.module}/functions/dev-site-gate.js", {
+    unlock_secret = random_password.site_gate_unlock[count.index].result
+  })
 }
