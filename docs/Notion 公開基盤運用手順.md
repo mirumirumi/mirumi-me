@@ -80,6 +80,20 @@ thumbnail の再生成は起きず、書き戻しは 350 ms 間隔の chunk で�
 
 dev CloudFront distribution は常時有効で、CloudFront Function が閲覧を絞る。
 
+`deploy.yml` の trigger は `mode` を `full` で決め打ちしているため、CI から `bootstrap` は流れない。
+初回は CI を有効化する前に手元から 1 回 `bootstrap` を流し、それを見届けてから CI へ切り替える。
+
+### full / bootstrap build の見かた
+
+- 470 記事で **40 分から 1 時間**かかる。大半は thumbnail を持たない記事の自動生成 Lambda で、
+  publish index に載れば次回以降は省略される。**止まって見えても落とさない**
+- 進捗は site bucket の `_internal/jobs/<workflowId>.json` に出る。`phase` は
+  prepare / load-articles / build-pages / generate / deploy / done
+- `full` と `bootstrap` は `retries: 0`。数時間をやり直さないための判断なので、
+  失敗したら原因を直して手動で投げ直す
+- Container の標準出力はどこからも読めない。generate が落ちた原因は例外へ載せて
+  Workflow まで持ち上げている
+
 本番では workflow 名と env を `mirumi-me-publish-prd` / `prd` に変える。
 GitHub Actions では commit SHA と run attempt を instance ID に含め、Cloudflare deploy token だけを持たせる。
 Notion / AWS の secret は GitHub へ置かない。

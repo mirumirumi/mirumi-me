@@ -75,7 +75,6 @@ dev / prd のリソースと、共通にしているものの理由をまとめ�
 
 ## dev にまだ揃っていないもの
 
-- dev サイトの常時閲覧手段。dev CloudFront を常時有効にし、CloudFront Function で閲覧を絞る方針
 - `Referer` によるオリジン保護の値がバケット名そのもので推測可能。ランダムな秘密値へ変更する
 - dev 専用の AWS IAM ユーザー
 - prd の KV namespace
