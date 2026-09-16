@@ -132,7 +132,7 @@ Bun.serve({
     try {
       return await handleRequest(request)
     } catch (err) {
-      const detail = err instanceof Error ? err.message.slice(0, 500) : null
+      const detail = err instanceof Error ? err.message.slice(0, 2_000) : null
       console.error(
         JSON.stringify({
           event: "container_request_failed",

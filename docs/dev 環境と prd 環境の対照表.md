@@ -61,8 +61,8 @@ dev / prd のリソースと、共通にしているものの理由をまとめ�
 | `AMAZON_CARD_SIGNING_SECRET` | 分離 | 分離 | 分離 | 署名 token が環境をまたがないようにする |
 | xAI API key | 共通 | 共通 | 共通 | アカウントに 1 つ。dev の呼び出しも課金対象 |
 | Turnstile | site key ハードコード | prd と同じ | 共通（要対応） | ウィジェットはホスト名制限があるため dev ホスト名の登録が必要 |
-| GA4 | `G-Y7HSDMHBW5` | prd と同じ | 共通（要対応） | dev では読み込まないようにする |
-| AdSense | `ca-pub-2873410957106428` | prd と同じ | 共通（要対応） | 同上 |
+| GA4 | `G-Y7HSDMHBW5` | 読み込まない | 実質分離 | `APP_ENV=prd` の build でだけ計測タグを差し込む |
+| AdSense | `ca-pub-2873410957106428` | `ca-google`（テスト ID） | 実質分離 | 枠は prd と同じだけ出してレイアウトを揃え、本番アカウントへは記録させない |
 | 通知メール | `marumorumirumeri@outlook.com` | 未定 | 未定 | コメント実装時に決める |
 
 ## CI / ローカル
@@ -77,6 +77,5 @@ dev / prd のリソースと、共通にしているものの理由をまとめ�
 
 - dev サイトの常時閲覧手段。dev CloudFront を常時有効にし、CloudFront Function で閲覧を絞る方針
 - `Referer` によるオリジン保護の値がバケット名そのもので推測可能。ランダムな秘密値へ変更する
-- GA / AdSense の環境別無効化。常時閲覧を始める前提条件になる
 - dev 専用の AWS IAM ユーザー
 - prd の KV namespace

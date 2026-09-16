@@ -39,6 +39,13 @@ export const PUBLISH_WORKFLOW_STEP_CONFIGS = {
     retries: { limit: 2, delay: "10 seconds", backoff: "exponential" },
     timeout: "30 minutes",
   },
+  // full と bootstrap は全記事の取得に加えて、thumbnail を持たない記事ぶんの自動生成 Lambda を
+  // 直列で通すため初回は数時間かかる。publish index が保存されれば次回以降は生成を省略できる。
+  // 途中で失敗したときに数時間をもう一度やり直すのは無駄なので retry はしない
+  publishSiteFullBuild: {
+    retries: { limit: 0, delay: "10 seconds", backoff: "constant" },
+    timeout: "6 hours",
+  },
   invalidateCloudFront: {
     retries: { limit: 5, delay: "10 seconds", backoff: "exponential" },
     timeout: "2 minutes",
@@ -264,7 +271,11 @@ export const runPublishWorkflow = async ({
 
   let summary: PublishJobSummary
   try {
-    summary = await step.do("publish-site", PUBLISH_WORKFLOW_STEP_CONFIGS.publishSite, async () => {
+    const publishSiteConfig =
+      params.mode === "partial"
+        ? PUBLISH_WORKFLOW_STEP_CONFIGS.publishSite
+        : PUBLISH_WORKFLOW_STEP_CONFIGS.publishSiteFullBuild
+    summary = await step.do("publish-site", publishSiteConfig, async () => {
       return dependencies.publishSite({ workflowId, params, pages: publishablePages })
     })
     validateJobSummary(summary, workflowId, publishablePages)

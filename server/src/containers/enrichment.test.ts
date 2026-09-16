@@ -91,6 +91,32 @@ describe("article enrichment", () => {
     })
   })
 
+  test("外部 bookmark の失敗でも記事全体を落とさない", async () => {
+    const bookmarkOnlyArticle: ArticleContent = {
+      ...article,
+      blocks: [article.blocks[1]!],
+    }
+    const fetcher = vi.fn(async () => {
+      return new Response("Gateway Timeout", { status: 504 })
+    })
+
+    expect(await resolveArticleEnrichment(bookmarkOnlyArticle, new Map(), fetcher)).toEqual({
+      bookmarks: {},
+      xPosts: {},
+    })
+  })
+
+  test("bridge への fetch には timeout 用の signal を渡す", async () => {
+    const fetcher = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => {
+      return new Response("Unavailable", { status: 503 })
+    })
+    await resolveArticleEnrichment(article, new Map(), fetcher)
+    expect(0 < fetcher.mock.calls.length).toEqual(true)
+    for (const call of fetcher.mock.calls) {
+      expect(call[1]?.signal).toBeInstanceOf(AbortSignal)
+    }
+  })
+
   test("xAI failure は未解決のまま renderer へ渡す", async () => {
     const xOnlyArticle: ArticleContent = {
       ...article,

@@ -77,7 +77,11 @@ const { data } = await useFetch<Array<CommentData>>(`/mirumi/comments_per_post/$
 })
 
 // Hack for JSON parse error (unexpected token)
-const res = JSON.parse(JSON.stringify(data.value)) as Array<CommentData>
+// WordPress が JSON 以外（存在しない slug に対する PHP の警告 HTML など）を返すと data.value が
+// undefined になる。記事 1 本のコメント取得の失敗で generate 全体を落とさない
+const res = Array.isArray(data.value)
+  ? (JSON.parse(JSON.stringify(data.value)) as Array<CommentData>)
+  : []
 const commentsById = new Map<string, StructuredComment>()
 
 for (const comment of res) {

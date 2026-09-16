@@ -86,6 +86,35 @@ describe("syncArticleMedia", () => {
     expect(result.article.thumbnailUrl).toEqual(thumbnailUrls.article)
   })
 
+  test("WordPress 時代の非 canonical thumbnail もホストを問わず取り込む", async () => {
+    const thumbnailUrls = {
+      article: "https://mirumi.media/hash-dygma-defy-1200x630.webp",
+      mobile: "https://mirumi.media/hash-dygma-defy-600x315.webp",
+      card: "https://mirumi.media/hash-dygma-defy-412x216.webp",
+    }
+    const normalizeThumbnailImage = vi.fn(async () => thumbnailUrls)
+    const downloader = vi.fn(async () => new Uint8Array([1, 2, 3]))
+    const result = await syncArticleMedia(
+      {
+        ...article,
+        thumbnailUrl: "https://mirumi.media/dygma-defy.jpg",
+        thumbnailName: "dygma-defy.jpg",
+        blocks: [],
+      },
+      { normalizeThumbnailImage } as unknown as MediaNormalizer,
+      downloader,
+      vi.fn(),
+    )
+    expect(downloader).toHaveBeenCalledWith("https://mirumi.media/dygma-defy.jpg")
+    expect(normalizeThumbnailImage).toHaveBeenCalledWith(
+      new Uint8Array([1, 2, 3]),
+      "dygma-defy.jpg",
+      "thumbnail-000000000001",
+    )
+    expect(result.thumbnailUrls).toEqual(thumbnailUrls)
+    expect(result.article.thumbnailUrl).toEqual(thumbnailUrls.article)
+  })
+
   test("thumbnail が空なら自動生成画像を OGP だけに使う", async () => {
     const normalizeThumbnailImage = vi.fn(async () => ({
       article: "https://mirumi.media/generated-1200x630.webp",

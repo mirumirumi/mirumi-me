@@ -1,7 +1,11 @@
-export const insertAdSense = (contentHtml: string): string => {
+// prd 以外では module と同じテスト用 client ID を使う。枠そのものは本番と同じだけ出して
+// レイアウトを揃えたうえで、本番アカウントへインプレッションだけ記録させない
+const AD_CLIENT_ID = "ca-pub-2873410957106428"
+const TEST_AD_CLIENT_ID = "ca-google"
+
+export const insertAdSense = (contentHtml: string, isProductionSite: boolean): string => {
   const PROBABILITY = 0.7
-  const AD_TAG =
-    '<ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2873410957106428" data-ad-slot="2068327194" data-ad-format="auto" data-full-width-responsive="true"></ins>'
+  const AD_TAG = `<ins class="adsbygoogle" style="display:block" data-ad-client="${isProductionSite ? AD_CLIENT_ID : TEST_AD_CLIENT_ID}" data-ad-slot="2068327194" data-ad-format="auto" data-full-width-responsive="true"></ins>`
 
   let result = contentHtml
 

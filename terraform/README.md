@@ -58,14 +58,20 @@ Route53 と ACM はフェーズ 2 として分ける。ゾーンを作り直す�
 
 ## ローカルで terraform を叩くとき
 
-`~/.aws/config` の `default` プロファイルが assume role 構成になっており、terraform は環境変数より先に
-これを読むため `failed to load assume role ... of profile login` で落ちる。
-AWS CLI は通るのに terraform だけ落ちるのはこのためで、共有設定を読ませなければよい。
+`~/.aws/config` の `[default]` が `credential_process` で AWS CLI から一時クレデンシャルを
+受け取るため、環境変数の設定は要らない。ブラウザで `aws login` のサインインが済んでいれば
+`terraform plan` がそのまま通る。
 
-```bash
-export AWS_CONFIG_FILE=$(mktemp) AWS_SHARED_CREDENTIALS_FILE=$(mktemp)
-# このあと一時クレデンシャルを export してから terraform を実行する
+```ini
+[profile login]
+login_session = arn:aws:sts::145943270736:assumed-role/local-development/kei_login
+
+[default]
+credential_process = aws configure export-credentials --profile login --format process
 ```
+
+ブラウザのサインインでスイッチロールまで終わっているため、CLI 側で assume role を挟むと
+自分自身を二重に引き受けることになり `AccessDenied` になる。
 
 ## dev サイトの閲覧
 

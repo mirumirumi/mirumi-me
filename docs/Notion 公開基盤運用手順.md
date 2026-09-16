@@ -71,8 +71,14 @@ bunx wrangler workflows trigger mirumi-me-publish-dev \
   --id release-COMMIT_SHA-RUN_ATTEMPT
 ```
 
-dev の初回だけ、上の `mode` を `bootstrap` にする。
-dev CloudFront distribution は通常無効のままとし、外部配信の確認時だけ一時的に有効化して、確認後に必ず無効へ戻す。
+初回だけ、上の `mode` を `bootstrap` にする。**これは省略できない。**
+`full` は Notion へ結果を書き戻さない（全件 writeback を避けるための仕様）ため、
+`full` だけで初回を通すとサイトは正しく配信されるのに Notion の `last-deploy` が空のままになり、
+`status` が全件 `⚪ 未公開` に見える。`last-deploy` を初期化するのは `bootstrap` だけ。
+`bootstrap` は publish index があればそれを読むので、あとから流し直しても
+thumbnail の再生成は起きず、書き戻しは 350 ms 間隔の chunk で行われる。
+
+dev CloudFront distribution は常時有効で、CloudFront Function が閲覧を絞る。
 
 本番では workflow 名と env を `mirumi-me-publish-prd` / `prd` に変える。
 GitHub Actions では commit SHA と run attempt を instance ID に含め、Cloudflare deploy token だけを持たせる。
@@ -132,6 +138,7 @@ MIRUMI_BUILD_MANIFEST_DIR=/tmp/mirumi-build/JOB/manifest bun run dev
 - 同じ画像セットは同じ `assetHash`、入力 bytes または変換契約が変われば hash も変わる
 - 本文 animation は変換せず byte-for-byte で S3 へコピーし、`srcset` を付けない
 - animated thumbnail は現在 validation error
+- thumbnail が canonical でなければ publish 時にホストを問わず取り込んで正規化する。Notion upload も WordPress 時代の `mirumi.media` 直下の画像も同じ経路を通る
 
 ### 既存 WordPress 画像の最終移行
 

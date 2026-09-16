@@ -140,7 +140,7 @@ const postCategory = post.category
 useCurrentCategorySlug().value = postCategory.slug
 
 // Insert Google AdSense before each h2
-const contentHtml = insertAdSense(post.contentHtml)
+const contentHtml = insertAdSense(post.contentHtml, runtimeConfig.public.isProductionSite)
 
 const headings = ref<Array<HTMLHeadingElement>>([])
 const tocIds = ref<Array<string>>([])

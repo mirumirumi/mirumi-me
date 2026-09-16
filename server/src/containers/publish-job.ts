@@ -35,6 +35,7 @@ import {
   resolveArticleEnrichment,
 } from "./enrichment"
 import { MediaNormalizer } from "./images"
+import { JobProgressReporter } from "./job-progress"
 import type { SyncedArticleMedia } from "./media-sync"
 import { createThumbnailGenerator, downloadImage, syncArticleMedia } from "./media-sync"
 import {
@@ -306,6 +307,11 @@ export const runContainerPublishJob = async (
   const repository = new DeploymentIndexRepository(
     new S3DeploymentIndexStore(awsConfig, config.siteBucketName),
   )
+  const progress = new JobProgressReporter(
+    new S3SiteObjectStore(awsConfig, config.siteBucketName),
+    request.workflowId,
+  )
+  await progress.report("prepare", 0, 0)
   const loaded = await repository.load(
     request.params.mode === "bootstrap",
     request.params.requestedAt,
@@ -331,6 +337,7 @@ export const runContainerPublishJob = async (
   const loadedPages: Array<PreparedPageRevision> = []
   // 1 page の失敗で batch 全体を落とすと、どの page が原因か Notion 側に出せなくなる
   for (const page of prepared.pages) {
+    await progress.report("load-articles", loadedPages.length, prepared.pages.length)
     if (page.action !== "publish") {
       loadedPages.push(page)
       continue
@@ -353,6 +360,7 @@ export const runContainerPublishJob = async (
     publishArticles.map((article) => [article.prepared.revision.pageId, article]),
   )
   for (const page of loadedPages) {
+    await progress.report("build-pages", buildPages.length, loadedPages.length)
     try {
       if (page.action === "publish") {
         const source = publishArticleById.get(page.revision.pageId)
@@ -412,6 +420,7 @@ export const runContainerPublishJob = async (
     summaries: summaries.pages,
     changedPages: builtPages,
   })
+  await progress.report("generate", 0, plan.routes.length)
   const generated = await generateSite({
     workflowId: request.workflowId,
     plan,
@@ -429,10 +438,12 @@ export const runContainerPublishJob = async (
       ...RETIRED_CONTENT_ROUTES,
     ]),
   ]
+  await progress.report("deploy", 0, plan.routes.length)
   const updatedPaths = await new SiteDeployer(
     new S3SiteObjectStore(awsConfig, config.siteBucketName),
   ).deploy(generated.outputDirectory, plan, deletedRoutes)
   await repository.save(nextState, loaded.etag)
+  await progress.report("done", results.length, prepared.pages.length)
 
   return {
     workflowId: request.workflowId,

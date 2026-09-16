@@ -87,7 +87,19 @@ export const resolveArticleEnrichment = async (
         }
         bookmarks[block.id] = card
       } else {
-        bookmarks[block.id] = await resolvers.externalBookmark(block.url)
+        try {
+          bookmarks[block.id] = await resolvers.externalBookmark(block.url)
+        } catch (err) {
+          // 外部サイト 1 つの不調で記事全体を落とさない。X post と同じく render 側の警告に委ねる
+          console.warn(
+            JSON.stringify({
+              event: "external_bookmark_unresolved",
+              blockId: block.id,
+              url: block.url,
+              error: err instanceof Error ? err.message : String(err),
+            }),
+          )
+        }
       }
       continue
     }

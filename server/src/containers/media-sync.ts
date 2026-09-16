@@ -143,19 +143,19 @@ export const syncArticleMedia = async (
     return { article, thumbnailUrls: null, ogImageUrl: generatedUrls.article }
   }
 
+  // 判定は「どこにある画像か」ではなく「すでに canonical か」で行う。WordPress から移行した
+  // mirumi.media 直下の画像のようにホストだけでは正規化済みか判断できないものがあるため
   let thumbnailUrls: ThumbnailUrls | null
-  if (isNotionHostedImage(article.thumbnailUrl)) {
+  const canonicalThumbnailUrls = resolveThumbnailUrls(article.thumbnailUrl)
+  if (canonicalThumbnailUrls) {
+    thumbnailUrls = canonicalThumbnailUrls
+  } else {
     thumbnailUrls = await normalizer.normalizeThumbnailImage(
       await downloader(article.thumbnailUrl),
       article.thumbnailName ?? article.thumbnailUrl,
       `thumbnail-${article.id.replaceAll("-", "").slice(-12)}`,
     )
     article.thumbnailUrl = thumbnailUrls.article
-  } else {
-    thumbnailUrls = resolveThumbnailUrls(article.thumbnailUrl)
-    if (!thumbnailUrls) {
-      throw Error("thumbnail が canonical media URL ではありません")
-    }
   }
 
   return { article, thumbnailUrls, ogImageUrl: thumbnailUrls.article }

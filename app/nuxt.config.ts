@@ -15,6 +15,9 @@ const googleAdSenseModule: [string, Record<string, unknown>] = [
     id: "ca-pub-2873410957106428",
     analyticsUacct: "UA-79701523-1",
     analyticsDomainName: "mirumi.me",
+    // prd 以外では module 公式のテスト用 client ID に差し替わるため、本番アカウントへ
+    // インプレッションが記録されない
+    test: !isProductionSite,
   },
 ]
 
@@ -96,7 +99,7 @@ export default defineNuxtConfig({
   dir: {
     public: "src/public",
   },
-  modules: ["@vueuse/nuxt", ...(isProductionSite ? [googleAdSenseModule] : [])],
+  modules: ["@vueuse/nuxt", googleAdSenseModule],
   pages: true,
   runtimeConfig: {
     public: {
