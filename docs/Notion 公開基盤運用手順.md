@@ -75,8 +75,10 @@ bunx wrangler workflows trigger mirumi-me-publish-dev \
 `full` は Notion へ結果を書き戻さない（全件 writeback を避けるための仕様）ため、
 `full` だけで初回を通すとサイトは正しく配信されるのに Notion の `last-deploy` が空のままになり、
 `status` が全件 `⚪ 未公開` に見える。`last-deploy` を初期化するのは `bootstrap` だけ。
-`bootstrap` は publish index があればそれを読むので、あとから流し直しても
-thumbnail の再生成は起きず、書き戻しは 350 ms 間隔の chunk で行われる。
+**`bootstrap` は publish index が存在すると実行できない**（`validateBootstrapIndex`）。
+`full` を先に流すと index ができてしまい、以後 `bootstrap` は永久に拒否される。
+順序を間違えると `last-deploy` を初期化する手段がなくなるので、初回は必ず `bootstrap` から始める。
+例外は同じ `requestedAt` で投げ直したときだけで、これは中断した bootstrap を再開するための経路。
 
 dev CloudFront distribution は常時有効で、CloudFront Function が閲覧を絞る。
 
@@ -93,6 +95,9 @@ dev CloudFront distribution は常時有効で、CloudFront Function が閲覧�
   失敗したら原因を直して手動で投げ直す
 - Container の標準出力はどこからも読めない。generate が落ちた原因は例外へ載せて
   Workflow まで持ち上げている
+- job が終わったのに Container instance が `running` のままなら、`sleepAfter` は SIGTERM を
+  送るだけで PID 1 は既定ではシグナルを無視することを疑う。`wrangler containers instances <id>`
+  で確認できる。気づく手がかりが課金しかないので、build のあとは一度見ておく
 
 本番では workflow 名と env を `mirumi-me-publish-prd` / `prd` に変える。
 GitHub Actions では commit SHA と run attempt を instance ID に含め、Cloudflare deploy token だけを持たせる。

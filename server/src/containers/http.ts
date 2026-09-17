@@ -126,7 +126,7 @@ const handleRequest = async (request: Request): Promise<Response> => {
   return jsonResponse({ error: "Not found" }, 404)
 }
 
-Bun.serve({
+const server = Bun.serve({
   port: 8080,
   fetch: async (request) => {
     try {
@@ -146,3 +146,13 @@ Bun.serve({
     }
   },
 })
+
+// sleepAfter の停止は SIGTERM を送るだけで、PID 1 のプロセスには既定のシグナル動作が入らず
+// ハンドラがないと黙って無視される。明示的に受けて終了しないと Container が動き続ける。
+// sleepAfter はアイドル時にしか発火しないため、ここで待つべき処理は残っていない
+const shutdown = () => {
+  void server.stop()
+  process.exit(0)
+}
+process.on("SIGTERM", shutdown)
+process.on("SIGINT", shutdown)
