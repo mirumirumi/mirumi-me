@@ -1,5 +1,7 @@
 # terraform
 
+この README は AI が書いています。僕が書いたものじゃないから注意してね！
+
 mirumi.me と mirumi.media の AWS リソースを管理する。
 もともと `aws-common-infrastructures` にあったものをこのリポジトリへ移設した。
 
@@ -47,6 +49,32 @@ Route53 と ACM はフェーズ 2 として分ける。ゾーンを作り直す�
 `aws_acm_certificate_validation` は import できない。証明書が発行済みなら apply 時に
 即座に完了するだけで証明書自体には何もしないため、plan に `+ create` が出ても問題ない。
 
+### フェーズ 2 の手順（Route53 と ACM）
+
+本番 DNS を扱うため、必ず人が見ている状態で 1 段階ずつ進める。
+
+1. `envs/prd/main.tf` に `module "virginia"` を追加し、`envs/prd/imports.tf` に次を書く。
+   `_A` record の ID は `<zone id>_<name>_A`、`_ACM` は `<zone id>_<validation record name>_CNAME`
+   （validation record name は旧リポの `terraform state show` で取る）
+
+   | 新リポの address | ID |
+   | --- | --- |
+   | `module.virginia.aws_route53_zone.mirumi_me[0]` | `Z04229741AEBGX62O3Q3M` |
+   | `module.virginia.aws_route53_zone.mirumi_media[0]` | `Z06934302ROKCUFEMLKT7` |
+   | `module.virginia.aws_acm_certificate.mirumi_me[0]` | `arn:aws:acm:us-east-1:145943270736:certificate/f2197a78-d84c-42f2-9d89-0811b5c2a63a` |
+   | `module.virginia.aws_acm_certificate.mirumi_media[0]` | `arn:aws:acm:us-east-1:145943270736:certificate/2780fa06-a8a2-490a-8c54-ff842cedbab6` |
+
+2. `terraform plan`。**zone / record / certificate に `~ update` や `-/+ replace` が 1 つでも出たら止める。**
+   許されるのは import と `aws_acm_certificate_validation` の `+ create` だけ
+3. apply したら `acm_arn_*` の local を `module.virginia` の output へ差し替え、plan が No changes になることを確認する
+4. 旧リポで 1.2.2 を使い、上の 4 つと `_A` / `_ACM` record 計 8 リソースを `terraform state rm`。
+   コードを消して plan が No changes になることを確認し、push する
+5. mirumi.tech は旧リポで destroy する。hosted zone と証明書が消えるので、そのドメインを本当に手放すかは
+   人が決める。kei.ooo は旧リポに残す
+6. 旧リポの `deploy.yaml` の push トリガーを戻して push する
+
+人の作業が要るのは、`aws login`、両リポの push、mirumi.tech を消す判断の 3 つ。
+
 ## 環境ごとの差分
 
 - dev の CloudFront は常時有効で、CloudFront Function で閲覧を絞る。prd に Function はない
@@ -88,6 +116,24 @@ terraform state pull | jq -r '.resources[]|select(.name=="site_gate_unlock").ins
 ID ベースの認証ではなく鍵を持っている人が通る方式なので、漏れたら `random_password` を作り直して
 apply すれば既存の Cookie はすべて無効になる。
 
+## publish 用の IAM ユーザー
+
+Worker / Container が S3 と CloudFront invalidation に使う `mirumime-{env}-publisher` を
+`modules/common/iam.tf` で環境ごとに作る。アクセスキーは state に秘密を残さないよう
+Terraform では作らず、apply のあとに手で発行して Wrangler の secret へ入れる。
+
+```bash
+aws iam create-access-key --user-name mirumime-dev-publisher
+cd server
+bunx wrangler secret put AWS_ACCESS_KEY_ID --env dev
+bunx wrangler secret put AWS_SECRET_ACCESS_KEY --env dev
+```
+
+policy には `s3:ListBucket` が要る。ないと存在しないキーの GetObject / HeadObject が
+404 ではなく 403 になり、Container が「publish index がない」「media が未登録」を判定できない。
+
+旧キーはすべての環境が新ユーザーへ移ってから無効化する。
+
 ## GitHub Actions の認証
 
 長期のアクセスキーは置かず、GitHub の OIDC で IAM ロールを引き受ける。
@@ -103,3 +149,14 @@ apply すれば既存の Cookie はすべて無効になる。
 `repo:mirumirumi/mirumi-me:ref:refs/heads/deploy/{env}/terraform` に固定しているため、
 別のリポジトリや別のブランチからは引き受けられない。
 権限も分離してあり、dev のロールから production の bucket、distribution、Route53 へは到達できない。
+
+ロールは Terraform の外で手動管理している（自分自身を作れないため）。`modules/common/iam.tf` の
+publisher ユーザーを apply するには、各ロールのインラインポリシー `terraform` に次の statement が要る。
+`Resource` は `user/mirumime-{env}-publisher` に絞る。
+
+```
+iam:CreateUser iam:GetUser iam:UpdateUser iam:DeleteUser
+iam:TagUser iam:UntagUser iam:ListUserTags
+iam:PutUserPolicy iam:GetUserPolicy iam:DeleteUserPolicy
+iam:ListUserPolicies iam:ListAttachedUserPolicies iam:ListGroupsForUser
+```
