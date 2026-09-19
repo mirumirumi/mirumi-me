@@ -67,10 +67,13 @@ Route53 と ACM はフェーズ 2 として分ける。ゾーンを作り直す�
 2. `terraform plan`。**zone / record / certificate に `~ update` や `-/+ replace` が 1 つでも出たら止める。**
    許されるのは import と `aws_acm_certificate_validation` の `+ create` だけ
 3. apply したら `acm_arn_*` の local を `module.virginia` の output へ差し替え、plan が No changes になることを確認する
-4. 旧リポで 1.2.2 を使い、上の 4 つと `_A` / `_ACM` record 計 8 リソースを `terraform state rm`。
-   コードを消して plan が No changes になることを確認し、push する
+4. 旧リポで 1.2.2 を使い、上の 4 つと `_A` / `_ACM` record、`aws_acm_certificate_validation` の
+   計 10 リソースを `terraform state rm`。コードを消して plan に destroy / change が出ないことを確認し、push する
 5. mirumi.tech は旧リポで destroy する。hosted zone と証明書が消えるので、そのドメインを本当に手放すかは
-   人が決める。kei.ooo は旧リポに残す
+   人が決める。kei.ooo は旧リポに残す。
+   2026-09-19 時点で証明書は期限切れ、DNS は解決せず、証明書を掴んでいる CloudFront `E2QCFKU2S6S2EE` は
+   Terraform 管理外。期限切れ証明書の validation は apply で完了しないため、これを片付けるまで
+   旧リポの CI を戻せない
 6. 旧リポの `deploy.yaml` の push トリガーを戻して push する
 
 人の作業が要るのは、`aws login`、両リポの push、mirumi.tech を消す判断の 3 つ。
