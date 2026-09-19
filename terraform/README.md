@@ -10,7 +10,7 @@ mirumi.me と mirumi.media の AWS リソースを管理する。
 | | 中身 |
 | --- | --- |
 | `modules/common` | サイト本体と mirumi.media の S3 / CloudFront。mirumi.media は prd だけで dev も共用する |
-| `modules/virginia` | mirumi.me / mirumi.media の Route53 と ACM。prd だけ。フェーズ 2 で移設する |
+| `modules/virginia` | mirumi.me / mirumi.media の Route53 と ACM。prd だけ |
 | `envs/dev`、`envs/prd` | backend と module の組み立て |
 
 Terraform のバージョンは `.terraform-version` で固定する。
@@ -42,41 +42,20 @@ mirumi.media だけは通常の S3 オリジンなので OAI を使う。
 5. 旧リポジトリで `terraform state rm`（1.2.2 で実行）してから、対応するコードを削除する
 6. 旧リポジトリで `plan` が No changes になることを確認する
 
-Route53 と ACM はフェーズ 2 として分ける。ゾーンを作り直すと NS が変わって DNS が停止するため、
-サイトと media の移設を検証してから着手する。フェーズ 1 の間は `envs/prd/main.tf` の
-`acm_certificate_arn_*` が既存証明書の ARN を直接指す。
+Route53 と ACM はフェーズ 2 として分けた。ゾーンを作り直すと NS が変わって DNS が停止するため、
+サイトと media の移設を検証してから着手した。
 
 `aws_acm_certificate_validation` は import できない。証明書が発行済みなら apply 時に
 即座に完了するだけで証明書自体には何もしないため、plan に `+ create` が出ても問題ない。
 
-### フェーズ 2 の手順（Route53 と ACM）
+### フェーズ 2（Route53 と ACM）
 
-本番 DNS を扱うため、必ず人が見ている状態で 1 段階ずつ進める。
+2026-09-19 に完了した。`envs/prd/main.tf` の `module.virginia` が mirumi.me / mirumi.media の
+zone、A record、ACM 検証 record、証明書を持つ。import 時の差分は tag と Terraform 側フラグだけで、
+DNS と TLS の実体は変えていない。旧リポからは `terraform state rm` で外し、CI の push トリガーも戻した。
 
-1. `envs/prd/main.tf` に `module "virginia"` を追加し、`envs/prd/imports.tf` に次を書く。
-   `_A` record の ID は `<zone id>_<name>_A`、`_ACM` は `<zone id>_<validation record name>_CNAME`
-   （validation record name は旧リポの `terraform state show` で取る）
-
-   | 新リポの address | ID |
-   | --- | --- |
-   | `module.virginia.aws_route53_zone.mirumi_me[0]` | `Z04229741AEBGX62O3Q3M` |
-   | `module.virginia.aws_route53_zone.mirumi_media[0]` | `Z06934302ROKCUFEMLKT7` |
-   | `module.virginia.aws_acm_certificate.mirumi_me[0]` | `arn:aws:acm:us-east-1:145943270736:certificate/f2197a78-d84c-42f2-9d89-0811b5c2a63a` |
-   | `module.virginia.aws_acm_certificate.mirumi_media[0]` | `arn:aws:acm:us-east-1:145943270736:certificate/2780fa06-a8a2-490a-8c54-ff842cedbab6` |
-
-2. `terraform plan`。**zone / record / certificate に `~ update` や `-/+ replace` が 1 つでも出たら止める。**
-   許されるのは import と `aws_acm_certificate_validation` の `+ create` だけ
-3. apply したら `acm_arn_*` の local を `module.virginia` の output へ差し替え、plan が No changes になることを確認する
-4. 旧リポで 1.2.2 を使い、上の 4 つと `_A` / `_ACM` record、`aws_acm_certificate_validation` の
-   計 10 リソースを `terraform state rm`。コードを消して plan に destroy / change が出ないことを確認し、push する
-5. mirumi.tech は旧リポで destroy する。hosted zone と証明書が消えるので、そのドメインを本当に手放すかは
-   人が決める。kei.ooo は旧リポに残す。
-   2026-09-19 時点で証明書は期限切れ、DNS は解決せず、証明書を掴んでいる CloudFront `E2QCFKU2S6S2EE` は
-   Terraform 管理外。期限切れ証明書の validation は apply で完了しないため、これを片付けるまで
-   旧リポの CI を戻せない
-6. 旧リポの `deploy.yaml` の push トリガーを戻して push する
-
-人の作業が要るのは、`aws login`、両リポの push、mirumi.tech を消す判断の 3 つ。
+mirumi.tech はドメインを手放し済みだったため、旧リポで zone / record / 証明書を destroy し、
+証明書を掴んでいた Terraform 管理外の CloudFront も削除した。kei.ooo だけが旧リポに残る。
 
 ## 環境ごとの差分
 

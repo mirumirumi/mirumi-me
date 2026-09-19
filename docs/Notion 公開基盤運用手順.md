@@ -53,7 +53,9 @@ endpoint は取得時に一時保存値を削除する。期限切れの場合�
 
 - `mirumi-me-preview` は dev / prd の `/preview` と `/preview/*`、`mirumi-me-admin` は `/admin` と `/admin/*` を保護する
 - どちらも Cloudflare account member だけを許可し、session duration は 24 時間
-- application cookie は SameSite=Strict、HttpOnly、Binding Cookie、Path Cookie を有効にする
+- application cookie は SameSite=Lax、HttpOnly、Binding Cookie、Path Cookie を有効にする。
+  Strict にすると Access のログイン（team domain → callback → app）がクロスサイトのリダイレクト連鎖になり、
+  最後のリクエストに cookie が送られずリダイレクトループになる
 - Worker は `ACCESS_PREVIEW_AUD` と `ACCESS_ADMIN_AUD` を分けて JWT を検証し、issuer は共通の `ACCESS_TEAM_DOMAIN` を使う
 - `mirumi-me-local-x-post` は dev の `POST /_dev/x-post` だけを専用 service token で保護する。production は同 route を 404 にする
 

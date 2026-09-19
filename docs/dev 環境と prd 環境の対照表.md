@@ -34,7 +34,7 @@ dev / prd のリソースと、共通にしているものの理由をまとめ�
 | origin アクセス制御 | `Referer` カスタムヘッダ | prd と同じ方式 | 共通 | bucket policy が `aws:Referer` 一致時だけ `GetObject` を許可。現在の値はバケット名そのもので推測可能 |
 | `_internal/*` の Deny | 未設定 | 設定済み | 分離 | prd は bootstrap の GO 後に設定する |
 | media CloudFront | mirumi.media | prd と同じ | 共通 | media bucket と同じ理由 |
-| IAM アクセスキー | 共通 | 共通 | 共通（要検討） | dev から prd の site bucket へ書ける状態。分離候補 |
+| IAM アクセスキー | `mirumime-prd-publisher`（キー未発行、暫定で `S3_FullAccess_IAM`） | `mirumime-dev-publisher` | 分離 | dev のキーから prd の site bucket と distribution へは届かない。media bucket だけ両方が書く |
 | サムネイル生成 Lambda | 専用 URL | 専用 URL | 分離 | `THUMBNAIL_FUNCTION_URL` |
 | お問い合わせ Lambda | あり | なし | prd のみ | 当面そのまま |
 | Route53 / ACM | あり | なし | prd のみ | dev はカスタムドメインを持たない |
@@ -73,8 +73,13 @@ dev / prd のリソースと、共通にしているものの理由をまとめ�
 | `CLOUDFLARE_API_TOKEN` | 共通 | 共通 | 共通 | deploy 権限のみのトークン 1 本 |
 | ローカル `app/.env` | 使わない | dev を参照 | dev のみ | Notion token と Access service token |
 
-## dev にまだ揃っていないもの
+## dev に揃っていないもの
+
+なし。dev 側のセットは 2026-09-19 に揃った。
+
+## prd 側にまだないもの（production bootstrap 前に揃える）
 
 - `Referer` によるオリジン保護の値がバケット名そのもので推測可能。ランダムな秘密値へ変更する
-- dev 専用の AWS IAM ユーザー
-- prd の KV namespace
+- `CONTENT_CACHE` KV namespace
+- `mirumime-prd-publisher` のアクセスキー発行と secret 登録。ユーザーと policy は作成済み
+- site bucket の `_internal/*` Deny
