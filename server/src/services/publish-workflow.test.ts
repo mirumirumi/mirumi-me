@@ -63,6 +63,7 @@ describe("runPublishWorkflow", () => {
           deployedAt: "2026-08-24T02:05:00.000Z",
           publishedAt: "2026-08-24T02:00:00.000Z",
           contentHash: "content-hash",
+          updatedAt: null,
         },
       ],
       failed: [],
@@ -144,6 +145,7 @@ describe("runPublishWorkflow", () => {
         pageId: "00000000-0000-0000-0000-000000000001",
         deployedAt: "2026-08-24T02:05:00.000Z",
         publishedAt: "2026-08-24T02:00:00.000Z",
+        updatedAt: null,
       },
     ])
   })
@@ -181,6 +183,7 @@ describe("runPublishWorkflow", () => {
           pageId: "00000000-0000-0000-0000-000000000001",
           deployedAt: "2026-08-24T02:05:00.000Z",
           publishedAt: "2026-08-24T02:00:00.000Z",
+          updatedAt: null,
         },
       ],
       350,
@@ -216,6 +219,7 @@ describe("runPublishWorkflow", () => {
           deployedAt: "2026-08-24T02:05:00.000Z",
           publishedAt: "2026-08-24T02:00:00.000Z",
           contentHash: "content-hash",
+          updatedAt: null,
         })),
       }),
     )

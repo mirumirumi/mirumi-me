@@ -21,6 +21,7 @@ describe("generateSiteFeed", () => {
       deployedNotionEdit: "2026-08-24T00:00:00.000Z",
       deployedAt: "2026-08-24T00:01:00.000Z",
       contentHash: "hash",
+      sourceHash: null,
       ...overrides,
     }
   }

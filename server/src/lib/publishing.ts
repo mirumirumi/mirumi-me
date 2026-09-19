@@ -44,6 +44,9 @@ export interface DeployedPage {
   deployedNotionEdit: string
   deployedAt: string
   contentHash: string
+  // Notion 由来の内容だけのハッシュ。再公開で内容が変わったかの判定に使う。
+  // この項目を持たない時期の index は null で読む
+  sourceHash: string | null
 }
 
 export interface SiteDeploymentState {
@@ -154,6 +157,8 @@ export type PublishJobPageResult =
       deployedAt: string
       publishedAt: string
       contentHash: string
+      // 内容が変わった再公開で決めた新しい 更新日。Notion へ書き戻すときだけ値が入る
+      updatedAt: string | null
     }
   | {
       pageId: string

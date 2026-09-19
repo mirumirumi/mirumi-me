@@ -213,6 +213,7 @@ const toSuccessfulNotionResults = (summary: PublishJobSummary): Array<NotionPubl
         pageId: page.pageId,
         deployedAt: page.deployedAt,
         publishedAt: page.publishedAt,
+        updatedAt: page.updatedAt,
       }
     }
 

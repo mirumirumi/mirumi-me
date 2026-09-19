@@ -33,6 +33,7 @@ const deployedPageSchema = z.strictObject({
   deployedNotionEdit: dateTimeSchema,
   deployedAt: dateTimeSchema,
   contentHash: z.string().min(1),
+  sourceHash: z.string().min(1).nullable().default(null),
 })
 const deploymentStateSchema: z.ZodType<SiteDeploymentState> = z
   .strictObject({

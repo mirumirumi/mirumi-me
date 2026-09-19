@@ -72,6 +72,38 @@ describe("DeploymentIndexRepository", () => {
     })
   })
 
+  test("sourceHash を持たない旧 index は null として読む", async () => {
+    const pageId = "3c065425-ad40-811a-b50b-000b9271df2c"
+    const legacyPage = {
+      pageId,
+      kind: "post",
+      status: "published",
+      route: "/article/",
+      slug: "article",
+      title: "記事",
+      excerpt: "概要",
+      category: { name: "技術", slug: "tech" },
+      publishedAt: "2026-08-20T00:00:00.000Z",
+      updatedAt: null,
+      thumbnailUrls: null,
+      ogImageUrl: "https://mirumi.media/og.webp",
+      deployedNotionEdit: "2026-08-24T00:00:00.000Z",
+      deployedAt: "2026-08-24T00:00:00.000Z",
+      contentHash: "hash",
+    }
+    const repository = new DeploymentIndexRepository(
+      new MemoryStore({
+        body: JSON.stringify({
+          ...validState,
+          pages: { [pageId]: legacyPage },
+          routeOwners: { "/article/": pageId },
+        }),
+        etag: '"etag-1"',
+      }),
+    )
+    expect((await repository.load(false, "ignored")).state.pages[pageId]?.sourceHash).toEqual(null)
+  })
+
   test("既存 ETag は If-Match、bootstrap は If-None-Match で保存する", async () => {
     const existingStore = new MemoryStore(null)
     const bootstrapStore = new MemoryStore(null)
@@ -132,6 +164,7 @@ describe("DeploymentIndexRepository", () => {
               deployedNotionEdit: "2026-08-24T00:00:00.000Z",
               deployedAt: "2026-08-24T00:00:00.000Z",
               contentHash: "hash",
+              sourceHash: null,
             },
           },
           routeOwners: {},

@@ -154,6 +154,7 @@ describe("createNotionPublishUpdate", () => {
         pageId: "page-id",
         deployedAt: "2026-08-24T02:00:00.000Z",
         publishedAt: "2026-08-24T01:00:00.000Z",
+        updatedAt: null,
       }),
     ).toEqual({
       page_id: "page-id",
@@ -169,6 +170,20 @@ describe("createNotionPublishUpdate", () => {
         },
         公開エラー: { type: "rich_text", rich_text: [] },
       },
+    })
+  })
+
+  test("内容が変わった再公開では更新日も書く", () => {
+    const update = createNotionPublishUpdate({
+      status: "published",
+      pageId: "page-id",
+      deployedAt: "2026-08-24T02:00:00.000Z",
+      publishedAt: "2026-08-24T01:00:00.000Z",
+      updatedAt: "2026-08-24T02:00:00.000Z",
+    })
+    expect(update.properties).toHaveProperty("更新日", {
+      type: "date",
+      date: { start: "2026-08-24T02:00:00.000Z" },
     })
   })
 
@@ -314,6 +329,7 @@ describe("writeNotionPublishResult", () => {
       pageId: "page-id",
       deployedAt: "2026-08-24T02:00:00.000Z",
       publishedAt: "2026-08-24T01:00:00.000Z",
+      updatedAt: null,
     } as const
 
     expect(isNotionPublishResultApplied(page, result)).toEqual(true)

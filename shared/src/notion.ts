@@ -584,6 +584,7 @@ export type NotionPublishResult =
       pageId: string
       deployedAt: string
       publishedAt: string
+      updatedAt: string | null
     }
   | {
       status: "unpublished"
@@ -622,6 +623,12 @@ export const createNotionPublishUpdate = (result: NotionPublishResult): UpdatePa
       type: "date",
       date: { start: result.publishedAt },
     }
+    if (result.updatedAt) {
+      properties.更新日 = {
+        type: "date",
+        date: { start: result.updatedAt },
+      }
+    }
   } else if (result.status === "unpublished") {
     properties["internal-state"] = { type: "select", select: { name: "非公開" } }
   } else if (result.internalState) {
@@ -656,6 +663,7 @@ export const isNotionPublishResultApplied = (
       state === "公開中" &&
       getDateProperty(properties["last-deploy"]) === result.deployedAt &&
       getDateProperty(properties.公開日) === result.publishedAt &&
+      (!result.updatedAt || getDateProperty(properties.更新日) === result.updatedAt) &&
       error === ""
     )
   }

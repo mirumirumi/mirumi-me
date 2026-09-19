@@ -3,6 +3,7 @@ import { createHash } from "node:crypto"
 import { collectAmazonAsins, createAmazonCardSignature } from "shared/amazon"
 import type { BuildPage } from "shared/build-manifest"
 import { createArticleExcerpt, createBuildPage } from "shared/build-manifest"
+import type { ArticleContent, ContentBlock } from "shared/content"
 import { createNotionClient, fetchNotionArticle, fetchNotionPageRevision } from "shared/notion"
 import { renderArticleContent } from "shared/render"
 
@@ -37,7 +38,12 @@ import {
 import { MediaNormalizer } from "./images"
 import { JobProgressReporter } from "./job-progress"
 import type { SyncedArticleMedia } from "./media-sync"
-import { createThumbnailGenerator, downloadImage, syncArticleMedia } from "./media-sync"
+import {
+  createThumbnailGenerator,
+  downloadImage,
+  isNotionHostedImage,
+  syncArticleMedia,
+} from "./media-sync"
 import {
   createSiteBuildPlan,
   findRemovedAggregateRoutes,
@@ -48,6 +54,56 @@ const RETIRED_CONTENT_ROUTES = ["/what-is-this-blog/"]
 
 const contentHash = (page: BuildPage): string => {
   return createHash("sha256").update(JSON.stringify(page)).digest("hex")
+}
+
+// Notion ホストのファイル URL は取得のたびに署名が変わるため、比較には path だけを使う。
+// 外部 URL のクエリ（YouTube の v= など）は内容そのものなので残す
+const stableBlockUrls = (blocks: Array<ContentBlock>): Array<ContentBlock> => {
+  return blocks.map((block) => {
+    const children = stableBlockUrls(block.children)
+    if ("url" in block && isNotionHostedImage(block.url)) {
+      const url = new URL(block.url)
+      url.search = ""
+
+      return { ...block, url: url.href, children }
+    }
+
+    return { ...block, children }
+  })
+}
+
+// 「著者が内容を変えたか」だけを見たいので、公開日・更新日は含めない。
+// レンダリング結果（BuildPage）を使うとコードの変更でも一致しなくなる
+export const createArticleSourceHash = (article: ArticleContent): string => {
+  const source = {
+    ...article,
+    publishedAt: null,
+    updatedAt: null,
+    blocks: stableBlockUrls(article.blocks),
+  }
+
+  return createHash("sha256").update(JSON.stringify(source)).digest("hex")
+}
+
+// 前回の配信から内容が変わった再公開でだけ 更新日 を requestedAt にする。
+// full は Notion へ書き戻さないため、ここで決めると HTML と index だけが動いて Notion と食い違う。
+// 初回公開や、sourceHash を持たない古い index からの再公開では決めない（更新日が動くのは安全側に倒す）。
+// 予約公開の記事を公開日より前に直したときは、更新日が公開日より前になるので決めない
+export const resolveUpdatedAt = (
+  mode: PublishJobRequest["params"]["mode"],
+  deployed: Pick<DeployedPage, "sourceHash"> | undefined,
+  sourceHash: string,
+  publishedAt: string | null,
+  requestedAt: string,
+): string | null => {
+  if (mode === "full" || !deployed?.sourceHash || deployed.sourceHash === sourceHash) {
+    return null
+  }
+  if (!publishedAt || Date.parse(requestedAt) <= Date.parse(publishedAt)) {
+    return null
+  }
+
+  return requestedAt
 }
 
 const buildHash = (state: SiteDeploymentState, workflowId: string): string => {
@@ -74,6 +130,7 @@ export const createPublishedPageSnapshot = (
   page: BuildPage,
   deployedAt: string,
   hash: string,
+  sourceHash: string,
 ): DeployedPage => {
   if (prepared.action !== "publish" || !prepared.route || !prepared.effectivePublishedAt) {
     throw Error("公開 snapshot を作れない page です")
@@ -95,6 +152,7 @@ export const createPublishedPageSnapshot = (
     deployedNotionEdit: prepared.revision.lastEditedTime,
     deployedAt,
     contentHash: hash,
+    sourceHash,
   }
 }
 
@@ -170,6 +228,9 @@ export const preparePages = (
 interface PreparedPublishArticle {
   prepared: PreparedPageRevision
   media: SyncedArticleMedia
+  sourceHash: string
+  // 内容が変わった再公開で決めた新しい 更新日。HTML、index、Notion 書き戻しが同じ値を使う
+  updatedAt: string | null
 }
 
 const loadPublishArticle = async (
@@ -177,6 +238,7 @@ const loadPublishArticle = async (
   state: SiteDeploymentState,
   config: ContainerConfig,
   mediaNormalizer: MediaNormalizer,
+  params: PublishJobRequest["params"],
 ): Promise<PreparedPublishArticle> => {
   const notion = createNotionClient(config.notionToken)
   const fetched = await fetchNotionArticle(notion, prepared.revision.pageId)
@@ -193,15 +255,27 @@ const loadPublishArticle = async (
     !article.thumbnailUrl && deployed?.thumbnailUrls === null && deployed.title === article.title
       ? deployed.ogImageUrl
       : null
+  const media = await syncArticleMedia(
+    article,
+    mediaNormalizer,
+    downloadImage,
+    createThumbnailGenerator(config.thumbnailFunctionUrl),
+    reusableOgImage,
+  )
+  const sourceHash = createArticleSourceHash(media.article)
+  const updatedAt = resolveUpdatedAt(
+    params.mode,
+    deployed,
+    sourceHash,
+    article.publishedAt,
+    params.requestedAt,
+  )
+
   return {
     prepared,
-    media: await syncArticleMedia(
-      article,
-      mediaNormalizer,
-      downloadImage,
-      createThumbnailGenerator(config.thumbnailFunctionUrl),
-      reusableOgImage,
-    ),
+    media: updatedAt ? { ...media, article: { ...media.article, updatedAt } } : media,
+    sourceHash,
+    updatedAt,
   }
 }
 
@@ -343,7 +417,9 @@ export const runContainerPublishJob = async (
       continue
     }
     try {
-      publishArticles.push(await loadPublishArticle(page, deploymentState, config, mediaNormalizer))
+      publishArticles.push(
+        await loadPublishArticle(page, deploymentState, config, mediaNormalizer, request.params),
+      )
       loadedPages.push(page)
     } catch (err) {
       failed.push(toPageFailure(page, err))
@@ -371,7 +447,13 @@ export const runContainerPublishJob = async (
         const hash = contentHash(buildPage)
         buildPages.push(buildPage)
         snapshots.push(
-          createPublishedPageSnapshot(page, buildPage, request.params.requestedAt, hash),
+          createPublishedPageSnapshot(
+            page,
+            buildPage,
+            request.params.requestedAt,
+            hash,
+            source.sourceHash,
+          ),
         )
         results.push({
           pageId: page.revision.pageId,
@@ -379,6 +461,7 @@ export const runContainerPublishJob = async (
           deployedAt: request.params.requestedAt,
           publishedAt: page.effectivePublishedAt!,
           contentHash: hash,
+          updatedAt: source.updatedAt,
         })
       } else {
         const deployed = deploymentState.pages[page.revision.pageId]

@@ -46,6 +46,7 @@ describe("publishing lifecycle", () => {
       deployedNotionEdit: "2026-08-23T00:00:00.000Z",
       deployedAt: "2026-08-23T00:01:00.000Z",
       contentHash: "content-hash",
+      sourceHash: null,
       ...overrides,
     }
   }

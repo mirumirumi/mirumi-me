@@ -29,6 +29,7 @@ const publishJobSummarySchema = z
             deployedAt: z.string(),
             publishedAt: z.string(),
             contentHash: z.string().min(1).max(200),
+            updatedAt: z.string().nullable(),
           })
           .strict(),
         z

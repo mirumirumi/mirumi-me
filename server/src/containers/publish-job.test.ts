@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest"
 
 import type { BuildPage } from "shared/build-manifest"
+import type { ArticleContent } from "shared/content"
 
 import type {
   DeployedPage,
@@ -10,9 +11,11 @@ import type {
 } from "../lib/publishing"
 import { createEmptyDeploymentState } from "../lib/publishing"
 import {
+  createArticleSourceHash,
   createPublishedPageSnapshot,
   createUnpublishedPageSnapshot,
   preparePages,
+  resolveUpdatedAt,
   validateBootstrapIndex,
 } from "./publish-job"
 
@@ -55,7 +58,13 @@ describe("publish job snapshots", () => {
 
   test("公開 snapshot に build 済み metadata と開始 revision を固定する", () => {
     expect(
-      createPublishedPageSnapshot(prepared, page, "2026-08-24T01:05:00.000Z", "content-hash"),
+      createPublishedPageSnapshot(
+        prepared,
+        page,
+        "2026-08-24T01:05:00.000Z",
+        "content-hash",
+        "source-hash",
+      ),
     ).toEqual({
       pageId: prepared.revision.pageId,
       kind: "post",
@@ -72,6 +81,7 @@ describe("publish job snapshots", () => {
       deployedNotionEdit: "2026-08-24T00:00:00.000Z",
       deployedAt: "2026-08-24T01:05:00.000Z",
       contentHash: "content-hash",
+      sourceHash: "source-hash",
     })
   })
 
@@ -81,6 +91,7 @@ describe("publish job snapshots", () => {
       page,
       "2026-08-24T01:05:00.000Z",
       "content-hash",
+      "source-hash",
     )
     const result: DeployedPage = createUnpublishedPageSnapshot(
       { ...prepared, action: "unpublish" },
@@ -109,6 +120,154 @@ describe("publish job snapshots", () => {
       "publish index が存在するため bootstrap できません",
     )
     expect(() => validateBootstrapIndex("full", retry, "other-request-at")).not.toThrow()
+  })
+
+  describe("createArticleSourceHash", () => {
+    const article: ArticleContent = {
+      id: "00000000-0000-0000-0000-000000000001",
+      title: "記事",
+      slug: "article",
+      thumbnailUrl: "https://mirumi.media/hash-cover-1200x630.webp",
+      thumbnailName: "cover.png",
+      publishedAt: "2026-08-24T01:00:00.000Z",
+      updatedAt: null,
+      category: { name: "技術", slug: "tech" },
+      customCss: "",
+      toc: { hidden: false, closed: false },
+      blocks: [
+        {
+          id: "00000000-0000-0000-0000-000000000010",
+          type: "video",
+          url: "https://prod-files-secure.s3.us-west-2.amazonaws.com/ws/file/clip.mp4?X-Amz-Signature=aaa&X-Amz-Expires=3600",
+          caption: [],
+          children: [],
+        },
+        {
+          id: "00000000-0000-0000-0000-000000000011",
+          type: "embed",
+          url: "https://www.youtube.com/watch?v=abc",
+          caption: [],
+          children: [],
+        },
+      ],
+    }
+
+    test("公開日と更新日を変えてもハッシュは変わらない", () => {
+      const base = createArticleSourceHash(article)
+      expect(
+        createArticleSourceHash({ ...article, publishedAt: "2020-01-01T00:00:00.000Z" }),
+      ).toEqual(base)
+      expect(
+        createArticleSourceHash({ ...article, updatedAt: "2026-09-01T00:00:00.000Z" }),
+      ).toEqual(base)
+    })
+
+    test("本文や title が変わればハッシュも変わる", () => {
+      const base = createArticleSourceHash(article)
+      expect(createArticleSourceHash({ ...article, title: "別の題" })).not.toEqual(base)
+      expect(createArticleSourceHash({ ...article, blocks: article.blocks.slice(1) })).not.toEqual(
+        base,
+      )
+    })
+
+    test("Notion ホストの署名付き URL は署名が変わってもハッシュは変わらない", () => {
+      const base = createArticleSourceHash(article)
+      const resigned = {
+        ...article,
+        blocks: [
+          {
+            ...article.blocks[0]!,
+            url: "https://prod-files-secure.s3.us-west-2.amazonaws.com/ws/file/clip.mp4?X-Amz-Signature=bbb&X-Amz-Expires=3600",
+          },
+          article.blocks[1]!,
+        ],
+      }
+      expect(createArticleSourceHash(resigned)).toEqual(base)
+    })
+
+    test("外部 URL のクエリは意味を持つのでハッシュに含める", () => {
+      const base = createArticleSourceHash(article)
+      const other = {
+        ...article,
+        blocks: [
+          article.blocks[0]!,
+          { ...article.blocks[1]!, url: "https://www.youtube.com/watch?v=def" },
+        ],
+      }
+      expect(createArticleSourceHash(other)).not.toEqual(base)
+    })
+  })
+
+  describe("resolveUpdatedAt", () => {
+    const requestedAt = "2026-09-19T10:00:00.000Z"
+    const publishedAt = "2026-08-24T01:00:00.000Z"
+
+    test("初回公開（前回の配信がない）なら更新日を決めない", () => {
+      expect(resolveUpdatedAt("partial", undefined, "new", publishedAt, requestedAt)).toEqual(null)
+    })
+
+    test("前回の index に sourceHash がなければ判定できないので決めない", () => {
+      expect(
+        resolveUpdatedAt("partial", { sourceHash: null }, "new", publishedAt, requestedAt),
+      ).toEqual(null)
+    })
+
+    test("内容が変わっていなければ決めない", () => {
+      expect(
+        resolveUpdatedAt("partial", { sourceHash: "same" }, "same", publishedAt, requestedAt),
+      ).toEqual(null)
+    })
+
+    test("内容が変わっていれば requestedAt を更新日にする", () => {
+      expect(
+        resolveUpdatedAt("partial", { sourceHash: "old" }, "new", publishedAt, requestedAt),
+      ).toEqual(requestedAt)
+    })
+
+    test("bootstrap も書き戻すので決める", () => {
+      expect(
+        resolveUpdatedAt("bootstrap", { sourceHash: "old" }, "new", publishedAt, requestedAt),
+      ).toEqual(requestedAt)
+    })
+
+    test("full は Notion へ書き戻さないので内容が変わっていても決めない", () => {
+      expect(
+        resolveUpdatedAt("full", { sourceHash: "old" }, "new", publishedAt, requestedAt),
+      ).toEqual(null)
+    })
+
+    test("公開日が requestedAt より未来なら更新日が公開日より前になるので決めない", () => {
+      expect(
+        resolveUpdatedAt(
+          "partial",
+          { sourceHash: "old" },
+          "new",
+          "2026-12-31T00:00:00.000Z",
+          requestedAt,
+        ),
+      ).toEqual(null)
+    })
+
+    test("公開日のタイムゾーン表記が違っても時刻で比較する", () => {
+      expect(
+        resolveUpdatedAt(
+          "partial",
+          { sourceHash: "old" },
+          "new",
+          "2026-09-19T18:59:00.000+09:00",
+          requestedAt,
+        ),
+      ).toEqual(requestedAt)
+      expect(
+        resolveUpdatedAt(
+          "partial",
+          { sourceHash: "old" },
+          "new",
+          "2026-09-19T19:01:00.000+09:00",
+          requestedAt,
+        ),
+      ).toEqual(null)
+    })
   })
 
   describe("preparePages", () => {

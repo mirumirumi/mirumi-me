@@ -25,6 +25,7 @@ describe("selectDeploymentPageStates", () => {
           deployedNotionEdit: "2026-08-24T01:00:00.000Z",
           deployedAt: "2026-08-24T02:00:00.000Z",
           contentHash: "hash",
+          sourceHash: null,
         },
         unpublished: {
           pageId: "unpublished",
@@ -42,6 +43,7 @@ describe("selectDeploymentPageStates", () => {
           deployedNotionEdit: "2026-08-24T01:00:00.000Z",
           deployedAt: "2026-08-24T02:00:00.000Z",
           contentHash: "hash",
+          sourceHash: null,
         },
       },
       routeOwners: { "/published/": "published", "/unpublished/": "unpublished" },

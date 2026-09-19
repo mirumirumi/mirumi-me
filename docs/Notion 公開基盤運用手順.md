@@ -29,6 +29,9 @@ Notion だけに存在する新規記事では現行コメント処理が WordPr
 - Webhook は同じ event ID の重複配送を正常系として扱う
 - build 中に page が再編集された場合は S3 更新前に中止する
 - 一度公開した slug は publish index が所有し続ける。slug 変更や別 page での再利用は自動では行わない
+- `公開日` は初回公開で 1 回だけ Worker が決める。`更新日` は再公開で本文・title・画像などの内容が
+  前回の配信から変わったときだけ Worker が決める（判定は publish index の `sourceHash`）。
+  誤字修正でも動く。full build は Notion へ書き戻さないので `更新日` も動かない
 - production の render warning は 1 件でも公開を止める
 
 手動の部分公開は Access 配下の `POST /admin/publish`、状態確認は `GET /admin/workflows/:instanceId` を使う。action は request ではなく Notion の最新 state から決まる。
