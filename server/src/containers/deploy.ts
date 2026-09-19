@@ -97,6 +97,24 @@ const normalizedRoute = (route: string): string => {
   return route === "/" ? route : route.replace(/\/$/, "")
 }
 
+// CloudFront は wildcard の invalidation を同時に 15 件までしか受け付けない。
+// exact path の上限は 3,000 件なので、絞る必要があるのは wildcard だけ
+const MAX_WILDCARD_INVALIDATIONS = 15
+
+// `/entries/*` は `/entries/page/2/*` の配下も含むため、親の wildcard があれば子の wildcard は要らない
+const dropCoveredWildcards = (paths: Array<string>): Array<string> => {
+  const prefixes = paths.filter((path) => path.endsWith("/*")).map((path) => path.slice(0, -2))
+
+  return paths.filter((path) => {
+    if (!path.endsWith("/*")) {
+      return true
+    }
+    const own = path.slice(0, -2)
+
+    return !prefixes.some((prefix) => prefix !== own && own.startsWith(`${prefix}/`))
+  })
+}
+
 export const createInvalidationPaths = (
   plan: BuildPlan,
   deletedRoutes: Array<string>,
@@ -123,7 +141,12 @@ export const createInvalidationPaths = (
     }
   }
 
-  return [...paths]
+  const result = dropCoveredWildcards([...paths])
+  if (MAX_WILDCARD_INVALIDATIONS < result.filter((path) => path.endsWith("/*")).length) {
+    return ["/*"]
+  }
+
+  return result
 }
 
 export class SiteDeployer {

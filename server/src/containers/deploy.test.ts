@@ -189,5 +189,33 @@ describe("site deploy", () => {
       ])
       expect(createInvalidationPaths({ ...plan, mode: "full" }, [], true)).toEqual(["/*"])
     })
+
+    test("親の wildcard に含まれる wildcard は落とし、exact path は残す", () => {
+      const routes = [
+        "/",
+        "/article/",
+        "/entries/",
+        "/entries/page/1/",
+        "/entries/page/2/",
+        "/category/life/",
+        "/category/life/page/1/",
+      ]
+      const paths = createInvalidationPaths({ ...plan, routes }, [], false)
+      expect(paths.filter((path) => path.endsWith("/*"))).toEqual([
+        "/article/*",
+        "/entries/*",
+        "/category/life/*",
+      ])
+      expect(paths).toContain("/entries/page/2")
+      expect(paths).toContain("/category/life/page/1")
+    })
+
+    test("wildcard が 15 件を超えるなら全体を無効化する", () => {
+      const routes = Array.from({ length: 16 }, (_, index) => `/article-${index}/`)
+      expect(createInvalidationPaths({ ...plan, routes }, [], false)).toEqual(["/*"])
+      expect(
+        createInvalidationPaths({ ...plan, routes: routes.slice(0, 15) }, [], false),
+      ).not.toEqual(["/*"])
+    })
   })
 })
