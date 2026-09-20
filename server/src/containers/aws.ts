@@ -27,6 +27,7 @@ export interface SiteObject {
 }
 
 export interface SiteObjectStore {
+  get(key: string): Promise<Uint8Array | null>
   put(key: string, object: SiteObject): Promise<void>
   delete(key: string): Promise<void>
 }
@@ -112,6 +113,22 @@ export class S3SiteObjectStore implements SiteObjectStore {
   constructor(config: AwsClientConfig, bucket: string) {
     this.#client = createS3Client(config)
     this.#bucket = bucket
+  }
+
+  async get(key: string): Promise<Uint8Array | null> {
+    try {
+      const response = await this.#client.send(
+        new GetObjectCommand({ Bucket: this.#bucket, Key: key }),
+      )
+
+      return response.Body ? await response.Body.transformToByteArray() : null
+    } catch (err) {
+      if (isNotFound(err)) {
+        return null
+      }
+
+      throw err
+    }
   }
 
   async put(key: string, object: SiteObject): Promise<void> {

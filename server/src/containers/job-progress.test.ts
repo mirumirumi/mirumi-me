@@ -7,7 +7,7 @@ describe("JobProgressReporter", () => {
   const createStore = () => {
     const put = vi.fn(async (_key: string, _object: SiteObject) => {})
 
-    return { store: { put, delete: vi.fn(async () => {}) }, put }
+    return { store: { put, get: vi.fn(async () => null), delete: vi.fn(async () => {}) }, put }
   }
   const createClock = (start: number) => {
     let current = start
@@ -95,7 +95,10 @@ describe("JobProgressReporter", () => {
       const put = vi.fn(async () => {
         throw Error("S3 unavailable")
       })
-      const reporter = new JobProgressReporter({ put, delete: vi.fn(async () => {}) }, "wf-1")
+      const reporter = new JobProgressReporter(
+        { put, get: vi.fn(async () => null), delete: vi.fn(async () => {}) },
+        "wf-1",
+      )
       await expect(reporter.report("generate", 0, 470)).resolves.toBeUndefined()
     })
   })

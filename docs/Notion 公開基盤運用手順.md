@@ -90,6 +90,18 @@ dev CloudFront distribution は常時有効で、CloudFront Function が閲覧�
 `deploy.yml` の trigger は `mode` を `full` で決め打ちしているため、CI から `bootstrap` は流れない。
 初回は CI を有効化する前に手元から 1 回 `bootstrap` を流し、それを見届けてから CI へ切り替える。
 
+### partial publish と Nuxt の app manifest
+
+Nuxt の client は `_nuxt/builds/meta/<buildId>.json` の `prerendered` に載っている route だけを
+prerender 済みとみなし、サイト内遷移で `_payload.json` を読む。載っていない route へ遷移すると
+API を直叩きして、静的サイトにはないため本文が空のまま描画される（直接開くと正常なので気づきにくい）。
+partial の generate はその回の route しか載せないため、Container が deploy 前に配信中の manifest と
+和集合を取っている（`app-manifest.ts`）。この仕組みは配信中の manifest を起点にするので、
+**Container のこの機能を初めて deploy したあとと、manifest が欠けた疑いがあるときは full build を 1 回通す。**
+
+`routeRules` の `prerender: true` で回避しようとしてはいけない。Nuxt の `prerender.server` plugin が
+静的ページを全部生成対象に足すため、partial の generate が manifest にないページで落ちる。
+
 ### full / bootstrap build の見かた
 
 - 470 記事で **40 分から 1 時間**かかる。大半は thumbnail を持たない記事の自動生成 Lambda で、
@@ -156,7 +168,7 @@ MIRUMI_BUILD_MANIFEST_DIR=/tmp/mirumi-build/JOB/manifest bun run dev
 - 本文静止画: 800 / 1200 / 1600 px、拡大なし、WebP quality 80
 - thumbnail: 412x216 / 600x315 / 1200x630、cover、WebP quality 80
 - 記事ヘッダー: mobile 600、desktop 1200
-- トップと内部ブログカード: 412
+- トップと内部ブログカード: 412。thumbnail がない記事は自動生成 OGP の 412 variant を使う（記事ヘッダーには出さない）
 - key: `{assetHash}-{cleanStem}-{size}.webp`
 - thumbnail の `cleanStem` は Notion Files property のファイル名を使う。名前を変えると URL も変わるが、旧 object は残す
 - 同じ画像セットは同じ `assetHash`、入力 bytes または変換契約が変われば hash も変わる

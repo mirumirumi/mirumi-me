@@ -59,6 +59,7 @@ describe("BuildManifestReader", () => {
             updatedAt: null,
             category: { name: "tech", slug: "tech" },
             thumbnailUrls: null,
+            cardImageUrl: null,
           },
         ],
       }),

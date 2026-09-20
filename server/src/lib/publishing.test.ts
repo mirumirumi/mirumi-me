@@ -106,6 +106,7 @@ describe("publishing lifecycle", () => {
             updatedAt: published.updatedAt,
             category: published.category,
             thumbnailUrls: null,
+            cardImageUrl: null,
           },
         ],
       })

@@ -12,7 +12,7 @@
       >
         <div class="thumbnail">
           <img
-            :src="index.thumbnailUrls?.card ?? '/assets/no-image.jpg'"
+            :src="index.cardImageUrl ?? '/assets/no-image.jpg'"
             :alt="index.title"
             loading="lazy"
             width="412"

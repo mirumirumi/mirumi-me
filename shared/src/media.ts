@@ -52,6 +52,15 @@ export const resolveResponsiveBodyImage = (value: string): ResponsiveBodyImage |
   return { fallbackUrl: url.href, fallbackWidth, srcset, sizes: BODY_IMAGE_SIZES }
 }
 
+// 著者が thumbnail を設定していない記事も、トップや一覧のカードでは自動生成した OGP 画像を出す。
+// 記事ヘッダーに出すかどうかは thumbnailUrls の有無で決めるため、そちらの判定はこれを使わない
+export const resolveCardImageUrl = (
+  thumbnailUrls: Pick<ResolvedThumbnailUrls, "card"> | null,
+  ogImageUrl: string,
+): string | null => {
+  return thumbnailUrls?.card ?? resolveThumbnailUrls(ogImageUrl)?.card ?? null
+}
+
 export const resolveThumbnailUrls = (value: string): ResolvedThumbnailUrls | null => {
   let url: URL
   try {

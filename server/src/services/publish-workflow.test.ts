@@ -376,7 +376,7 @@ describe("runPublishWorkflow", () => {
         internalState: "公開中",
         deployedAt: "2026-08-24T02:00:00.000Z",
         publishedAt: "2026-08-24T01:00:00.000Z",
-        error: "公開処理に失敗しました（Workflow: workflow-id）",
+        error: "公開処理に失敗しました: container unavailable（Workflow: workflow-id）",
       },
     ])
   })
@@ -429,7 +429,7 @@ describe("runPublishWorkflow", () => {
         internalState: null,
         deployedAt: null,
         publishedAt: null,
-        error: "公開処理に失敗しました（Workflow: workflow-id）",
+        error: "公開処理に失敗しました: container unavailable（Workflow: workflow-id）",
       },
     ])
   })

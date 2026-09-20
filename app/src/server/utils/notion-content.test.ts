@@ -122,6 +122,7 @@ describe("NotionDevelopmentContentReader", () => {
             mobile: index[0]!.thumbnailUrl,
             card: index[0]!.thumbnailUrl,
           },
+          cardImageUrl: index[0]!.thumbnailUrl,
         }),
       ],
     })

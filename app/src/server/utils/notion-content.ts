@@ -243,6 +243,9 @@ export class NotionDevelopmentContentReader {
         return []
       }
 
+      // ローカル開発は自動生成 Lambda を通らないため、thumbnail がない記事のカード画像はない
+      const thumbnailUrls = resolveDevelopmentThumbnailUrls(thumbnailUrl)
+
       return [
         {
           pageId: revision.pageId,
@@ -252,7 +255,8 @@ export class NotionDevelopmentContentReader {
           publishedAt: revision.publishedAt!,
           updatedAt: revision.updatedAt,
           category: revision.category,
-          thumbnailUrls: resolveDevelopmentThumbnailUrls(thumbnailUrl),
+          thumbnailUrls,
+          cardImageUrl: thumbnailUrls?.card ?? null,
         },
       ]
     })

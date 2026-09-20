@@ -152,6 +152,7 @@ describe("build manifest", () => {
             updatedAt: article.updatedAt,
             category: article.category!,
             thumbnailUrls: null,
+            cardImageUrl: null,
           },
         ],
       }
@@ -178,6 +179,7 @@ describe("build manifest", () => {
         updatedAt: page.updatedAt,
         category: page.category!,
         thumbnailUrls: page.thumbnailUrls,
+        cardImageUrl: null,
       }
       const newer = {
         ...summary,

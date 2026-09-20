@@ -44,6 +44,8 @@ export interface BuildPageSummary {
   updatedAt: string | null
   category: ArticleCategory
   thumbnailUrls: ThumbnailUrls | null
+  // カードに出す画像。thumbnail がなければ自動生成 OGP の card variant
+  cardImageUrl: string | null
 }
 
 export interface PageSummariesManifest {
@@ -127,6 +129,7 @@ const buildPageSummarySchema: z.ZodType<BuildPageSummary> = z.strictObject({
   updatedAt: dateSchema.nullable(),
   category: categorySchema,
   thumbnailUrls: thumbnailUrlsSchema.nullable(),
+  cardImageUrl: z.url().nullable(),
 })
 const pageSummariesManifestSchema: z.ZodType<PageSummariesManifest> = z.strictObject({
   schemaVersion: z.literal(1),

@@ -20,6 +20,7 @@ describe("createSiteBuildPlan", () => {
       updatedAt: null,
       category: { name: "技術", slug: "tech" },
       thumbnailUrls: null,
+      cardImageUrl: null,
     },
     ...Array.from({ length: 13 }, (_, index): BuildPageSummary => {
       return {
@@ -31,6 +32,7 @@ describe("createSiteBuildPlan", () => {
         updatedAt: null,
         category: { name: "日記", slug: "diary" },
         thumbnailUrls: null,
+        cardImageUrl: null,
       }
     }),
   ]

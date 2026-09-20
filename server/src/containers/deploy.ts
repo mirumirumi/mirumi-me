@@ -140,6 +140,8 @@ export const createInvalidationPaths = (
       paths.add(`/${filename}`)
     }
   }
+  // app manifest は immutable ではなく、古いものが CDN に残ると client が古い route 一覧で判定してしまう
+  paths.add("/_nuxt/builds/*")
 
   const result = dropCoveredWildcards([...paths])
   if (MAX_WILDCARD_INVALIDATIONS < result.filter((path) => path.endsWith("/*")).length) {

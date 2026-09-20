@@ -6,6 +6,7 @@ import {
   type ThumbnailUrls,
 } from "shared/build-manifest"
 import type { ArticleCategory } from "shared/content"
+import { resolveCardImageUrl } from "shared/media"
 import type { InternalState, PageKind, PageRevision } from "shared/notion"
 import {
   isIgnoredFixedPageSlug,
@@ -74,6 +75,7 @@ export const createPageSummariesManifestFromDeployment = (
         updatedAt: page.updatedAt,
         category: page.category,
         thumbnailUrls: page.thumbnailUrls,
+        cardImageUrl: resolveCardImageUrl(page.thumbnailUrls, page.ogImageUrl),
       },
     ]
   })

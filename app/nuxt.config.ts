@@ -126,13 +126,6 @@ export default defineNuxtConfig({
       },
     },
   },
-  // このサイトは全 route が prerender 済み。partial publish が書く app manifest にはその回に生成した
-  // route しか載らないため、manifest を根拠にすると他の記事へのサイト内遷移で payload を読まず
-  // API を直叩きして落ちる。ワイルドカードの rule は Nitro の生成対象には影響しない
-  routeRules: {
-    "/**": { prerender: true },
-    "/api/**": { prerender: false },
-  },
   nitro: {
     prerender: {
       // 1 route でも生成に失敗したらビルドごと落とす。exit 0 のまま欠けた HTML を deploy させない

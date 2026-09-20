@@ -23,6 +23,10 @@ describe("site deploy", () => {
     deleted: Array<string> = []
     failAt: string | null = null
 
+    async get(_key: string): Promise<Uint8Array | null> {
+      return null
+    }
+
     async put(key: string, _object: SiteObject) {
       this.calls.push(key)
       if (key === this.failAt) {
@@ -186,6 +190,7 @@ describe("site deploy", () => {
         "/sitemap-misc.xml",
         "/post-sitemap.xml",
         "/page-sitemap.xml",
+        "/_nuxt/builds/*",
       ])
       expect(createInvalidationPaths({ ...plan, mode: "full" }, [], true)).toEqual(["/*"])
     })
@@ -205,16 +210,17 @@ describe("site deploy", () => {
         "/article/*",
         "/entries/*",
         "/category/life/*",
+        "/_nuxt/builds/*",
       ])
       expect(paths).toContain("/entries/page/2")
       expect(paths).toContain("/category/life/page/1")
     })
 
-    test("wildcard が 15 件を超えるなら全体を無効化する", () => {
-      const routes = Array.from({ length: 16 }, (_, index) => `/article-${index}/`)
+    test("wildcard が 15 件を超えるなら全体を無効化する（app manifest の 1 件を含む）", () => {
+      const routes = Array.from({ length: 15 }, (_, index) => `/article-${index}/`)
       expect(createInvalidationPaths({ ...plan, routes }, [], false)).toEqual(["/*"])
       expect(
-        createInvalidationPaths({ ...plan, routes: routes.slice(0, 15) }, [], false),
+        createInvalidationPaths({ ...plan, routes: routes.slice(0, 14) }, [], false),
       ).not.toEqual(["/*"])
     })
   })

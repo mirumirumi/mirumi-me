@@ -1,6 +1,11 @@
 import { describe, expect, test } from "vitest"
 
-import { BODY_IMAGE_SIZES, resolveResponsiveBodyImage, resolveThumbnailUrls } from "./media"
+import {
+  BODY_IMAGE_SIZES,
+  resolveCardImageUrl,
+  resolveResponsiveBodyImage,
+  resolveThumbnailUrls,
+} from "./media"
 
 describe("body image media", () => {
   test("canonical fallback URL から存在する標準 variant を組み立てる", () => {
@@ -25,6 +30,27 @@ describe("body image media", () => {
     expect(resolveResponsiveBodyImage("https://mirumi.media/my-cats-1999x1124.png")).toEqual(null)
     expect(resolveResponsiveBodyImage("https://mirumi.media/hash-animation.gif")).toEqual(null)
     expect(resolveResponsiveBodyImage("https://example.com/hash-image-1600w.webp")).toEqual(null)
+  })
+})
+
+describe("card image", () => {
+  test("thumbnail があればその card を使う", () => {
+    expect(
+      resolveCardImageUrl(
+        { card: "https://mirumi.media/hash-cover-412x216.webp" },
+        "https://mirumi.media/0123456789abcdef-generated-1200x630.webp",
+      ),
+    ).toEqual("https://mirumi.media/hash-cover-412x216.webp")
+  })
+
+  test("thumbnail がなければ自動生成 OGP の card variant を使う", () => {
+    expect(
+      resolveCardImageUrl(null, "https://mirumi.media/0123456789abcdef-generated-1200x630.webp"),
+    ).toEqual("https://mirumi.media/0123456789abcdef-generated-412x216.webp")
+  })
+
+  test("OGP が canonical でなければ null", () => {
+    expect(resolveCardImageUrl(null, "https://mirumi.media/legacy.jpg")).toEqual(null)
   })
 })
 

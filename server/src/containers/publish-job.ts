@@ -4,6 +4,7 @@ import { collectAmazonAsins, createAmazonCardSignature } from "shared/amazon"
 import type { BuildPage } from "shared/build-manifest"
 import { createArticleExcerpt, createBuildPage } from "shared/build-manifest"
 import type { ArticleContent, ContentBlock } from "shared/content"
+import { resolveCardImageUrl } from "shared/media"
 import { createNotionClient, fetchNotionArticle, fetchNotionPageRevision } from "shared/notion"
 import { renderArticleContent } from "shared/render"
 
@@ -26,6 +27,7 @@ import {
   DeploymentIndexRepository,
   type LoadedDeploymentIndex,
 } from "../repositories/deployment-index"
+import { completeAppManifest } from "./app-manifest"
 import { S3DeploymentIndexStore, S3MediaObjectStore, S3SiteObjectStore } from "./aws"
 import { generateSite } from "./build"
 import type { ContainerConfig } from "./config"
@@ -332,7 +334,7 @@ const createInternalBookmarkSources = (
       route: page.route,
       title: page.title,
       description: page.excerpt,
-      imageUrl: page.thumbnailUrls?.card ?? null,
+      imageUrl: resolveCardImageUrl(page.thumbnailUrls, page.ogImageUrl),
       label: page.category?.name ?? "みるめも",
     })
   }
@@ -344,7 +346,7 @@ const createInternalBookmarkSources = (
       route: prepared.route,
       title: media.article.title,
       description: createArticleExcerpt(media.article),
-      imageUrl: media.thumbnailUrls?.card ?? null,
+      imageUrl: resolveCardImageUrl(media.thumbnailUrls, media.ogImageUrl),
       label: media.article.category?.name ?? "みるめも",
     })
   }
@@ -521,10 +523,16 @@ export const runContainerPublishJob = async (
       ...RETIRED_CONTENT_ROUTES,
     ]),
   ]
+  const siteStore = new S3SiteObjectStore(awsConfig, config.siteBucketName)
+  if (plan.mode === "partial") {
+    await completeAppManifest(generated.outputDirectory, siteStore, deletedRoutes)
+  }
   await progress.report("deploy", 0, plan.routes.length)
-  const updatedPaths = await new SiteDeployer(
-    new S3SiteObjectStore(awsConfig, config.siteBucketName),
-  ).deploy(generated.outputDirectory, plan, deletedRoutes)
+  const updatedPaths = await new SiteDeployer(siteStore).deploy(
+    generated.outputDirectory,
+    plan,
+    deletedRoutes,
+  )
   await repository.save(nextState, loaded.etag)
   await progress.report("done", results.length, prepared.pages.length)
 

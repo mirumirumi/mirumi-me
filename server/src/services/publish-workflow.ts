@@ -100,6 +100,22 @@ const toPublishFailure = (issue: PreparedPageRevision["issues"][number]): Publis
   }
 }
 
+const ERROR_SUMMARY_HEAD_CHARS = 160
+const ERROR_SUMMARY_TAIL_CHARS = 500
+
+// Container の例外は「何が失敗したか」の前置きに generate のログ末尾が続く形なので、
+// 長いときは前置きとログの最後だけを残す
+const summarizeError = (err: unknown): string => {
+  const message = (err instanceof Error ? err.message : String(err))
+    .replaceAll(/[ \t]+/g, " ")
+    .trim()
+  if (message.length <= ERROR_SUMMARY_HEAD_CHARS + ERROR_SUMMARY_TAIL_CHARS) {
+    return message
+  }
+
+  return `${message.slice(0, ERROR_SUMMARY_HEAD_CHARS)} … ${message.slice(-ERROR_SUMMARY_TAIL_CHARS)}`
+}
+
 const toFailedNotionResults = (
   failures: Array<PublishFailure>,
   workflowId: string,
@@ -282,10 +298,13 @@ export const runPublishWorkflow = async ({
     validateJobSummary(summary, workflowId, publishablePages)
   } catch (err) {
     if (params.mode === "partial") {
+      // Workflow の describe API は失敗 instance で 500 を返すことがあり、原因が Notion からしか追えない。
+      // Container が例外へ載せた generate のログ末尾もここを通るので、短く切って書き戻す
+      const message = `公開処理に失敗しました: ${summarizeError(err)}`
       const publishFailures: Array<PublishFailure> = publishablePages.map((page) => ({
         pageId: page.revision.pageId,
         code: "publish-failed",
-        message: "公開処理に失敗しました",
+        message,
       }))
       const failures = [...preflightFailures, ...publishFailures]
       const deploymentPages = await loadFailureDeploymentPages(failures, step, dependencies)
