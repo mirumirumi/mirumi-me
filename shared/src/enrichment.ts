@@ -6,7 +6,6 @@ export interface InternalBookmarkSource {
   route: string
   title: string
   description: string | null
-  imageUrl: string | null
   label: string
 }
 
@@ -31,7 +30,8 @@ export const createInternalBookmarkLookup = (
         url: new URL(page.route, "https://mirumi.me").href,
         title: page.title,
         description: page.description,
-        imageUrl: page.imageUrl,
+        // 内部ブログカードは thumbnail の有無にかかわらず画像を出さない（現行サイトの仕様）
+        imageUrl: null,
         label: page.label,
       },
     ]),

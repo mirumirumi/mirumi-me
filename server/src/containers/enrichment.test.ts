@@ -47,7 +47,6 @@ describe("article enrichment", () => {
         route: "/linked/",
         title: "リンク先",
         description: "概要",
-        imageUrl: null,
         label: "くらし",
       },
     ])

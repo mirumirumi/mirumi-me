@@ -168,7 +168,7 @@ MIRUMI_BUILD_MANIFEST_DIR=/tmp/mirumi-build/JOB/manifest bun run dev
 - 本文静止画: 800 / 1200 / 1600 px、拡大なし、WebP quality 80
 - thumbnail: 412x216 / 600x315 / 1200x630、cover、WebP quality 80
 - 記事ヘッダー: mobile 600、desktop 1200
-- トップと内部ブログカード: 412。thumbnail がない記事は自動生成 OGP の 412 variant を使う（記事ヘッダーには出さない）
+- トップと内部ブログカード: 412。トップと一覧のカードは thumbnail がない記事でも自動生成 OGP の 412 variant を使う（記事ヘッダーと内部ブログカードには出さない）
 - key: `{assetHash}-{cleanStem}-{size}.webp`
 - thumbnail の `cleanStem` は Notion Files property のファイル名を使う。名前を変えると URL も変わるが、旧 object は残す
 - 同じ画像セットは同じ `assetHash`、入力 bytes または変換契約が変われば hash も変わる

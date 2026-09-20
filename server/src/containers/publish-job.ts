@@ -4,7 +4,6 @@ import { collectAmazonAsins, createAmazonCardSignature } from "shared/amazon"
 import type { BuildPage } from "shared/build-manifest"
 import { createArticleExcerpt, createBuildPage } from "shared/build-manifest"
 import type { ArticleContent, ContentBlock } from "shared/content"
-import { resolveCardImageUrl } from "shared/media"
 import { createNotionClient, fetchNotionArticle, fetchNotionPageRevision } from "shared/notion"
 import { renderArticleContent } from "shared/render"
 
@@ -334,7 +333,6 @@ const createInternalBookmarkSources = (
       route: page.route,
       title: page.title,
       description: page.excerpt,
-      imageUrl: resolveCardImageUrl(page.thumbnailUrls, page.ogImageUrl),
       label: page.category?.name ?? "みるめも",
     })
   }
@@ -346,7 +344,6 @@ const createInternalBookmarkSources = (
       route: prepared.route,
       title: media.article.title,
       description: createArticleExcerpt(media.article),
-      imageUrl: resolveCardImageUrl(media.thumbnailUrls, media.ogImageUrl),
       label: media.article.category?.name ?? "みるめも",
     })
   }
