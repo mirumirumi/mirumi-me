@@ -5,7 +5,9 @@ import {
   createNotionClient,
   createNotionPublishUpdate,
   fetchNotionArticle,
+  fetchNotionBlockTree,
   fetchNotionPageIndex,
+  forEachNotionDataSourcePage,
   isNotionPublishResultApplied,
   parseNotionPageIndex,
   writeNotionPublishResult,
@@ -72,6 +74,61 @@ describe("parseNotionPageIndex", () => {
 
     expect(parseNotionPageIndex(value)).toEqual(value)
     expect(() => parseNotionPageIndex([{ ...value[0], extra: true }])).toThrowError()
+  })
+})
+
+describe("fetchNotionBlockTree", () => {
+  const listResponse = (results: Array<unknown>) => ({
+    object: "list",
+    results,
+    next_cursor: null,
+    has_more: false,
+    type: "block",
+    block: {},
+  })
+  const paragraph = (id: string, overrides: Record<string, unknown> = {}) => ({
+    object: "block",
+    id,
+    type: "paragraph",
+    has_children: false,
+    in_trash: false,
+    paragraph: { rich_text: [], color: "default" },
+    ...overrides,
+  })
+
+  test("応答をそのまま保持し、子を持つブロックは再帰して木にする", async () => {
+    const children: Record<string, Array<unknown>> = {
+      page: [paragraph("parent", { has_children: true }), paragraph("sibling")],
+      parent: [paragraph("child")],
+    }
+    const list = vi.fn(async ({ block_id }: { block_id: string }) =>
+      listResponse(children[block_id]!),
+    )
+    const client = { blocks: { children: { list } } } as unknown as Client
+
+    expect(await fetchNotionBlockTree(client, "page")).toEqual([
+      {
+        block: paragraph("parent", { has_children: true }),
+        children: [{ block: paragraph("child"), children: [] }],
+      },
+      { block: paragraph("sibling"), children: [] },
+    ])
+    expect(list).toHaveBeenCalledTimes(2)
+  })
+
+  test("ゴミ箱内のブロックは落として子も取りに行かず、partial block は葉として残す", async () => {
+    const list = vi.fn(async () =>
+      listResponse([
+        paragraph("trashed", { has_children: true, in_trash: true }),
+        { object: "block", id: "partial" },
+      ]),
+    )
+    const client = { blocks: { children: { list } } } as unknown as Client
+
+    expect(await fetchNotionBlockTree(client, "page")).toEqual([
+      { block: { object: "block", id: "partial" }, children: [] },
+    ])
+    expect(list).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -143,6 +200,43 @@ describe("fetchNotionPageIndex", () => {
     for (const [parameters] of query.mock.calls) {
       expect(parameters).not.toHaveProperty("in_trash")
     }
+  })
+})
+
+describe("forEachNotionDataSourcePage", () => {
+  test("ページングをたどりながら full page だけを順に渡す", async () => {
+    const page = (id: string) => ({
+      object: "page",
+      id,
+      properties: {},
+      url: `https://notion.so/${id}`,
+    })
+    const query = vi
+      .fn()
+      .mockResolvedValueOnce({
+        object: "list",
+        results: [page("first"), { object: "page", id: "partial" }],
+        next_cursor: "cursor-1",
+        has_more: true,
+      })
+      .mockResolvedValueOnce({
+        object: "list",
+        results: [page("second")],
+        next_cursor: null,
+        has_more: false,
+      })
+    const client = { dataSources: { query } } as unknown as Client
+    const visited: Array<string> = []
+
+    await forEachNotionDataSourcePage(client, "source", async ({ id }) => {
+      visited.push(id)
+    })
+
+    expect(visited).toEqual(["first", "second"])
+    expect(query).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ data_source_id: "source", start_cursor: "cursor-1" }),
+    )
   })
 })
 

@@ -95,6 +95,28 @@ Nuxt は Notion も Worker も読まない。Container が approved を取得し
   → `verify-comments`。state は `comments-import-state.json`、export はメールを含むので git に入れない。
   再実行は同じ row を作らず、hash が変わった row を更新し、承認済みから外れた row を `trash` にする
 
+## 定期バックアップ
+
+Cron（19:00 UTC = 04:00 JST）が `BackupWorkflow` を起動する。Worker だけで完結し、Container は使わない。
+手動は `bunx wrangler workflows trigger mirumi-me-backup-dev '{"source":"admin","requestedAt":"ISO_DATETIME"}' --env dev --id backup-manual-…`。
+
+- 保存先は R2 `mirumi-me-backup-{env}`（binding `BACKUP`）と S3 `mirumime-{env}-backup`（`BACKUP_BUCKET_NAME`）。
+  key は両方とも `v1/<requestedAt を YYYY-MM-DDTHH-mm-ssZ にした値>/` 配下で同じ
+- 3 段のうちの 2 段をここで取る。残りの 1 段は Notion 側の自動保存
+    - Notion の raw: `notion-data-sources.json`（posts / pages / categories / comments の schema）と
+      `notion-{posts,pages,categories,comments}.ndjson.gz`（1 行 = `{ page, blocks }`。`blocks` は Block API の応答の木で、
+      ゴミ箱内は含めない）。下書きも入る。comments はメールアドレスを含むので両バケットとも公開経路を持たない
+    - render 直前: `publish-index.json` と `published-pages.ndjson.gz`（index が指す `_internal/published-pages-v1` の
+      `BuildPage` をそのまま。再レンダリングはしない）。index が無い環境では書かない
+    - `manifest.json`: 各 file の bytes / sha256 / 件数と Notion の API version
+- R2 に置いてから file ごとに S3 へ複製する。S3 は `DEEP_ARCHIVE`（即時には読めない）で、manifest だけ `STANDARD`。
+  manifest を最後に書くので、manifest があればその回は完了している
+- 保持期間は決めていない。消すなら R2 / S3 の lifecycle で行い、コードでは消さない
+- 全体で 18 分ほどかかる。ほぼ全部が posts の step（467 記事 / 53,016 block で 17 分）で、他の step は
+  すべて 15 秒以内に終わる。Workflow instance の subrequest 上限（10,000）と Worker のメモリ
+  （gzip 済み bytes しか抱えない）の範囲に収まっている
+- 壊れたときの手順は `docs/バックアップからの復旧手順.md`
+
 ## Cloudflare Access
 
 - `mirumi-me-preview` は dev / prd の `/preview` と `/preview/*`、`mirumi-me-admin` は `/admin` と `/admin/*` を保護する
@@ -281,6 +303,7 @@ bun run upload
   property ID（`NOTION_COMMENT_*_PROPERTY_ID`。空だと comments の Webhook を無視する）、`SES_REGION`、
   `COMMENT_DIGEST_SENDER`。宛先の `COMMENT_DIGEST_RECIPIENT` は個人アドレスなので secret
 - AWS: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `THUMBNAIL_FUNCTION_URL`
+- バックアップ vars: `BACKUP_BUCKET_NAME`（S3）。R2 は `r2_buckets` の `BACKUP`
 - X: `XAI_API_KEY`
 - KV: dev / prd の `CONTENT_CACHE` namespace ID
 
@@ -290,6 +313,7 @@ Creators API の日本向け credential version `3.3` と media bucket 名は va
 - site bucket: object の `GetObject` / `PutObject` / `DeleteObject`（Worker も `POST /api/comments` の slug 検証で
   publish index を `GetObject` する）
 - media bucket: object の `GetObject`（`HeadObject` を含む）/ `PutObject`
+- backup bucket: object の `PutObject`（Worker の Cron backup だけが書く。読み戻しは R2 から行う）
 - CloudFront: 対象 distribution の `CreateInvalidation`
 
 空の site bucket への bootstrap は publish index の `GetObject` 権限がなくても成功しうる。

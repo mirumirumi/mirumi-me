@@ -31,7 +31,7 @@ const toArrayBuffer = (bytes: Uint8Array): ArrayBuffer => {
   return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer
 }
 
-const sha256Hex = async (value: string | Uint8Array): Promise<string> => {
+export const sha256Hex = async (value: string | Uint8Array): Promise<string> => {
   const data = typeof value === "string" ? encoder.encode(value) : value
 
   return toHex(await crypto.subtle.digest("SHA-256", toArrayBuffer(data)))

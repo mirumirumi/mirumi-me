@@ -11,10 +11,10 @@ dev / prd のリソースと、共通にしているものの理由をまとめ�
 | リソース | prd | dev | 区分 | メモ |
 | --- | --- | --- | --- | --- |
 | Worker | `mirumi-me-prd` | `mirumi-me-dev` | 分離 | |
-| Workflow | `mirumi-me-publish-prd` | `mirumi-me-publish-dev` | 分離 | |
+| Workflow | `mirumi-me-publish-prd` | `mirumi-me-publish-dev` | 分離 | comment-refresh、backup も同じ命名で分離 |
 | Container | `mirumi-me-build-prd` | `mirumi-me-build-dev` | 分離 | 同じ Dockerfile |
 | KV `CONTENT_CACHE` | 未作成 | `ab630ddb…` | 分離 | prd の namespace ID 未設定のままだと deploy が通らない |
-| R2 `BACKUP` | `mirumi-me-backup-prd` | `mirumi-me-backup-dev` | 分離 | Cron 実装はこれから |
+| R2 `BACKUP` | `mirumi-me-backup-prd` | `mirumi-me-backup-dev` | 分離 | 定期バックアップの staging 兼 1 つ目の保管先 |
 | Analytics Engine | `mirumi_me_pv_prd` | `mirumi_me_pv_dev` | 分離 | write / read 実装はこれから |
 | Rate limit namespace | `913240002` | `913240001` | 分離 | |
 | Access `mirumi-me-preview` | 共通 AUD | 共通 AUD | 共通 | 同一人物・同一ポリシーのため 1 アプリで dev / prd 両方の `/preview` を保護 |
@@ -29,6 +29,7 @@ dev / prd のリソースと、共通にしているものの理由をまとめ�
 | --- | --- | --- | --- | --- |
 | site S3 bucket | `mirumime-prd-mirumi-me` | `mirumime-dev-mirumi-me` | 分離 | |
 | media S3 bucket | `mirumime-prd-mirumi-media` | prd と同じ | 共通 | key が content hash ベースで衝突が無害。dev の画像も prd に残る点は許容する |
+| backup S3 bucket | `mirumime-prd-backup` | `mirumime-dev-backup` | 分離 | 定期バックアップの Deep Archive。comments のメールを含むため private |
 | site CloudFront | `E1UPWIMHFP5TEC`（mirumi.me） | `E16GU2ZPNLT91U`（`d3694gpnjd4x49`） | 分離 | dev は通常無効 |
 | CloudFront origin 方式 | S3 ウェブサイトエンドポイント | prd と同じ | 共通 | カスタムオリジン（http-only）。OAI / OAC ではない。index document とルーティングルールを S3 側が処理するため CloudFront Function が不要 |
 | origin アクセス制御 | `Referer` カスタムヘッダ | prd と同じ方式 | 共通 | bucket policy が `aws:Referer` 一致時だけ `GetObject` を許可。現在の値はバケット名そのもので推測可能 |

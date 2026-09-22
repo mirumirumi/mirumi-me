@@ -7,7 +7,9 @@ import {
   isFullBlock,
   isFullPage,
   isNotionClientError,
+  iteratePaginatedAPI,
   type PageObjectResponse,
+  type PartialBlockObjectResponse,
   type RichTextItemResponse,
   type UpdatePageParameters,
 } from "@notionhq/client"
@@ -15,7 +17,7 @@ import { z } from "zod"
 
 import type { ArticleCategory, ArticleContent, ContentBlock, RichText } from "./content"
 
-const NOTION_API_VERSION = "2026-03-11"
+export const NOTION_API_VERSION = "2026-03-11"
 const NOTION_MAX_RETRIES = 5
 
 type PageProperty = PageObjectResponse["properties"][string]
@@ -376,25 +378,27 @@ const normalizeBlock = (
   }
 }
 
-const fetchBlockChildren = async (
+// Block API の応答をそのまま保持した木。正規化前の姿が要る定期バックアップと、
+// 描画用に正規化する記事取得で同じ取得経路（ページング、ネスト、rate limit）を共有する
+export interface NotionBlockNode {
+  block: BlockObjectResponse | PartialBlockObjectResponse
+  children: Array<NotionBlockNode>
+}
+
+// ゴミ箱内のブロックは描画対象外なので取得の時点で落とし、子も取りに行かない
+export const fetchNotionBlockTree = async (
   client: Client,
   blockId: string,
-): Promise<Array<ContentBlock>> => {
+): Promise<Array<NotionBlockNode>> => {
   const response = await collectPaginatedAPI(client.blocks.children.list, {
     block_id: blockId,
     page_size: 100,
   })
-  const blocks: Array<ContentBlock> = []
+  const nodes: Array<NotionBlockNode> = []
 
   for (const block of response) {
     if (!isFullBlock(block)) {
-      blocks.push({
-        id: block.id,
-        type: "unsupported",
-        originalType: "partial",
-        richText: [],
-        children: [],
-      })
+      nodes.push({ block, children: [] })
       continue
     }
 
@@ -402,11 +406,34 @@ const fetchBlockChildren = async (
       continue
     }
 
-    const children = block.has_children ? await fetchBlockChildren(client, block.id) : []
-    blocks.push(normalizeBlock(block, children))
+    const children = block.has_children ? await fetchNotionBlockTree(client, block.id) : []
+    nodes.push({ block, children })
   }
 
-  return blocks
+  return nodes
+}
+
+const normalizeBlockTree = (nodes: Array<NotionBlockNode>): Array<ContentBlock> => {
+  return nodes.map(({ block, children }) => {
+    if (!isFullBlock(block)) {
+      return {
+        id: block.id,
+        type: "unsupported",
+        originalType: "partial",
+        richText: [],
+        children: [],
+      }
+    }
+
+    return normalizeBlock(block, normalizeBlockTree(children))
+  })
+}
+
+const fetchBlockChildren = async (
+  client: Client,
+  blockId: string,
+): Promise<Array<ContentBlock>> => {
+  return normalizeBlockTree(await fetchNotionBlockTree(client, blockId))
 }
 
 const fetchCategory = async (
@@ -576,6 +603,24 @@ export const fetchNotionPageRevisions = async (
   dataSources: NotionDataSourceIds,
 ): Promise<Array<PageRevision>> => {
   return (await fetchNotionPageIndex(client, dataSources)).map(({ revision }) => revision)
+}
+
+// data source の row を API 応答のまま 1 件ずつ visit に渡す。全件を配列に溜めないので、
+// 数千 row の comments を Worker のメモリに載せずに流せる。partial object は properties を持たないため飛ばす
+export const forEachNotionDataSourcePage = async (
+  client: Client,
+  dataSourceId: string,
+  visit: (page: PageObjectResponse) => Promise<void>,
+): Promise<void> => {
+  for await (const response of iteratePaginatedAPI(client.dataSources.query, {
+    data_source_id: dataSourceId,
+    page_size: 100,
+    result_type: "page",
+  })) {
+    if (isFullPage(response)) {
+      await visit(response)
+    }
+  }
 }
 
 export type NotionPublishResult =

@@ -3,25 +3,18 @@ import { createHash } from "node:crypto"
 import type { BuildPage } from "shared/build-manifest"
 import { parseBuildPage } from "shared/build-manifest"
 
+import { PUBLISHED_PAGES_PREFIX, publishedPageSnapshotKey } from "../lib/published-pages"
 import type { SiteObjectStore } from "./aws"
+
+export { PUBLISHED_PAGES_PREFIX, publishedPageSnapshotKey }
 
 // 公開済み BuildPage の content-addressed snapshot。comment-refresh が Notion の未公開編集を混ぜずに
 // 「いま配信中の記事」を再 build するための派生物で、Notion の代替正本ではない。
 // `_internal/*` は CloudFront から取得できないため、古い snapshot は削除しない
-export const PUBLISHED_PAGES_PREFIX = "_internal/published-pages-v1"
-
 const MAX_SNAPSHOT_BYTES = 4 * 1_024 * 1_024
 
 export const createBuildPageContentHash = (page: BuildPage): string => {
   return createHash("sha256").update(JSON.stringify(page)).digest("hex")
-}
-
-export const publishedPageSnapshotKey = (pageId: string, contentHash: string): string => {
-  if (!/^[0-9a-f-]+$/i.test(pageId) || !/^[0-9a-f]+$/i.test(contentHash)) {
-    throw Error(`snapshot key に使えない値です: ${pageId} / ${contentHash}`)
-  }
-
-  return `${PUBLISHED_PAGES_PREFIX}/${pageId}/${contentHash}.json`
 }
 
 export class PublishedPageSnapshotStore {

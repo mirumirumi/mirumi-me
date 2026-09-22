@@ -55,6 +55,15 @@ const deploymentStateSchema: z.ZodType<SiteDeploymentState> = z
     }
   })
 
+export const parseDeploymentState = (value: unknown): SiteDeploymentState => {
+  const result = deploymentStateSchema.safeParse(value)
+  if (!result.success) {
+    throw Error("publish index の schema が不正です", { cause: result.error })
+  }
+
+  return result.data
+}
+
 export interface DeploymentIndexStoredObject {
   body: string
   etag: string
@@ -99,12 +108,7 @@ export class DeploymentIndexRepository {
       throw Error("publish index の JSON が壊れています")
     }
 
-    const result = deploymentStateSchema.safeParse(parsed)
-    if (!result.success) {
-      throw Error("publish index の schema が不正です", { cause: result.error })
-    }
-
-    return { state: result.data, etag: stored.etag }
+    return { state: parseDeploymentState(parsed), etag: stored.etag }
   }
 
   async save(state: SiteDeploymentState, etag: string | null): Promise<string> {

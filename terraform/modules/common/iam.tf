@@ -1,4 +1,4 @@
-# Worker / Container が publish で使う IAM ユーザー。
+# Worker / Container が publish と定期バックアップで使う IAM ユーザー。
 # Cloudflare 側から AWS のロールを引き受ける手段がないため静的キーになるが、
 # 環境ごとにユーザーを分けて dev のキーから prd の site bucket と distribution へ届かないようにする。
 # アクセスキーは state に秘密を残さないよう Terraform では作らない（README 参照）
@@ -40,6 +40,12 @@ resource "aws_iam_user_policy" "publisher" {
         "s3:PutObject"
       ],
       "Resource": "arn:aws:s3:::mirumime-prd-mirumi-media/*"
+    },
+    {
+      "Sid": "BackupBucket",
+      "Effect": "Allow",
+      "Action": "s3:PutObject",
+      "Resource": "${aws_s3_bucket.backup.arn}/*"
     },
     {
       "Sid": "ListBuckets",

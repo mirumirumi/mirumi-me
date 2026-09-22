@@ -6,13 +6,14 @@ import {
   resolveCommentDataSourceSchema,
 } from "shared/notion-comments"
 
+import { startScheduledBackup } from "./services/backup"
 import { runCommentDigest } from "./services/comment-digest"
 import { createSesEmailSender } from "./services/ses"
 
 // wrangler.jsonc の triggers.crons と対応させる（UTC で書く）
 // 09:00 JST。コメント digest
 export const COMMENT_DIGEST_CRON = "0 0 * * *"
-// 04:00 JST。Notion の定期バックアップ（頻度は仮決定、本体は未実装🔴）
+// 04:00 JST。Notion の定期バックアップ（頻度は仮決定）
 export const NOTION_BACKUP_CRON = "0 19 * * *"
 
 export const runScheduledCommentDigest = async (env: CloudflareBindings): Promise<void> => {
@@ -63,6 +64,21 @@ export const runScheduledCommentDigest = async (env: CloudflareBindings): Promis
   console.info(JSON.stringify({ event: "comment_digest_finished", ...result }))
 }
 
+// scheduled handler は wall time 15 分が上限で全記事の取得が収まらないため、Workflow を起動するだけにする
+export const runScheduledNotionBackup = async (
+  event: ScheduledController,
+  env: CloudflareBindings,
+): Promise<void> => {
+  const workflow = env.BACKUP_WORKFLOW
+  if (!workflow) {
+    console.error(JSON.stringify({ event: "backup_workflow_binding_missing" }))
+
+    return
+  }
+  const started = await startScheduledBackup(workflow, event.scheduledTime)
+  console.info(JSON.stringify({ event: "notion_backup_workflow_started", ...started }))
+}
+
 export const handleScheduled = async (
   event: ScheduledController,
   env: CloudflareBindings,
@@ -73,8 +89,7 @@ export const handleScheduled = async (
     return
   }
   if (event.cron === NOTION_BACKUP_CRON) {
-    // 実装までは枠だけ。cron が発火していることを log で確認できるようにしておく
-    console.info(JSON.stringify({ event: "notion_backup_not_implemented", cron: event.cron }))
+    await runScheduledNotionBackup(event, env)
 
     return
   }
