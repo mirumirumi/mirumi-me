@@ -3,6 +3,7 @@ import { createHash } from "node:crypto"
 import { collectAmazonAsins, createAmazonCardSignature } from "shared/amazon"
 import type { BuildPage } from "shared/build-manifest"
 import { createArticleExcerpt, createBuildPage } from "shared/build-manifest"
+import type { BuildComment } from "shared/comments"
 import type { ArticleContent, ContentBlock } from "shared/content"
 import { createNotionClient, fetchNotionArticle, fetchNotionPageRevision } from "shared/notion"
 import { renderArticleContent } from "shared/render"
@@ -29,6 +30,7 @@ import {
 import { completeAppManifest } from "./app-manifest"
 import { S3DeploymentIndexStore, S3MediaObjectStore, S3SiteObjectStore } from "./aws"
 import { generateSite } from "./build"
+import { NotionPublishCommentSource, type PublishCommentSource } from "./comments"
 import type { ContainerConfig } from "./config"
 import { SiteDeployer } from "./deploy"
 import {
@@ -45,6 +47,7 @@ import {
   isNotionHostedImage,
   syncArticleMedia,
 } from "./media-sync"
+import { createBuildPageContentHash, PublishedPageSnapshotStore } from "./published-pages"
 import {
   createSiteBuildPlan,
   findRemovedAggregateRoutes,
@@ -52,10 +55,6 @@ import {
 } from "./site-build"
 
 const RETIRED_CONTENT_ROUTES = ["/what-is-this-blog/"]
-
-const contentHash = (page: BuildPage): string => {
-  return createHash("sha256").update(JSON.stringify(page)).digest("hex")
-}
 
 // Notion ホストのファイル URL は取得のたびに署名が変わるため、比較には path だけを使う。
 // 外部 URL のクエリ（YouTube の v= など）は内容そのものなので残す
@@ -232,6 +231,8 @@ interface PreparedPublishArticle {
   sourceHash: string
   // 内容が変わった再公開で決めた新しい 更新日。HTML、index、Notion 書き戻しが同じ値を使う
   updatedAt: string | null
+  // その時点の approved comments。sourceHash には含めない（コメントの増減で 更新日 を動かさない）
+  comments: Array<BuildComment>
 }
 
 const loadPublishArticle = async (
@@ -240,6 +241,7 @@ const loadPublishArticle = async (
   config: ContainerConfig,
   mediaNormalizer: MediaNormalizer,
   params: PublishJobRequest["params"],
+  commentSource: PublishCommentSource,
 ): Promise<PreparedPublishArticle> => {
   const notion = createNotionClient(config.notionToken)
   const fetched = await fetchNotionArticle(notion, prepared.revision.pageId)
@@ -272,11 +274,16 @@ const loadPublishArticle = async (
     params.requestedAt,
   )
 
+  // コメントを持つのは記事だけ。固定ページは comments データソースを読まない
+  const comments =
+    prepared.revision.kind === "post" ? await commentSource.loadForSlug(article.slug) : []
+
   return {
     prepared,
     media: updatedAt ? { ...media, article: { ...media.article, updatedAt } } : media,
     sourceHash,
     updatedAt,
+    comments,
   }
 }
 
@@ -311,6 +318,7 @@ const createBuildPageForPublish = async (
     rendered,
     thumbnailUrls: media.thumbnailUrls,
     ogImageUrl: media.ogImageUrl,
+    comments: source.comments,
   })
 }
 
@@ -405,6 +413,14 @@ export const runContainerPublishJob = async (
   const mediaNormalizer = new MediaNormalizer(
     new S3MediaObjectStore(awsConfig, config.mediaBucketName),
   )
+  // schema 違いや取り切れない query はここで job ごと落とす。コメント 0 件で公開してはいけない
+  const commentSource = await NotionPublishCommentSource.create(
+    createNotionClient(config.notionToken),
+    config.notionCommentsDataSourceId,
+  )
+  if (request.params.mode !== "partial") {
+    await commentSource.preloadAll()
+  }
   const failed = [...prepared.failed]
   const publishArticles: Array<PreparedPublishArticle> = []
   const loadedPages: Array<PreparedPageRevision> = []
@@ -417,7 +433,14 @@ export const runContainerPublishJob = async (
     }
     try {
       publishArticles.push(
-        await loadPublishArticle(page, deploymentState, config, mediaNormalizer, request.params),
+        await loadPublishArticle(
+          page,
+          deploymentState,
+          config,
+          mediaNormalizer,
+          request.params,
+          commentSource,
+        ),
       )
       loadedPages.push(page)
     } catch (err) {
@@ -429,6 +452,7 @@ export const runContainerPublishJob = async (
   )
   const buildPages: Array<BuildPage> = []
   const snapshots: Array<DeployedPage> = []
+  const publishedSnapshots: Array<{ page: BuildPage; contentHash: string }> = []
   const results: Array<PublishJobPageResult> = []
   const builtPages: Array<PreparedPageRevision> = []
   const publishArticleById = new Map(
@@ -443,8 +467,9 @@ export const runContainerPublishJob = async (
           throw Error(`build 対象の記事本文がありません: ${page.revision.pageId}`)
         }
         const buildPage = await createBuildPageForPublish(source, internalBookmarks, config)
-        const hash = contentHash(buildPage)
+        const hash = createBuildPageContentHash(buildPage)
         buildPages.push(buildPage)
+        publishedSnapshots.push({ page: buildPage, contentHash: hash })
         snapshots.push(
           createPublishedPageSnapshot(
             page,
@@ -525,6 +550,11 @@ export const runContainerPublishJob = async (
     await completeAppManifest(generated.outputDirectory, siteStore, deletedRoutes)
   }
   await progress.report("deploy", 0, plan.routes.length)
+  // comment-refresh が index の contentHash から現在版を引けるよう、配信物より先に snapshot を置く
+  const snapshotStore = new PublishedPageSnapshotStore(siteStore)
+  for (const { page, contentHash } of publishedSnapshots) {
+    await snapshotStore.save(page, contentHash)
+  }
   const updatedPaths = await new SiteDeployer(siteStore).deploy(
     generated.outputDirectory,
     plan,

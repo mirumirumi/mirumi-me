@@ -54,6 +54,7 @@ describe("publish job snapshots", () => {
     category: { name: "技術", slug: "tech" },
     customCss: "",
     warnings: [],
+    comments: [],
   }
 
   test("公開 snapshot に build 済み metadata と開始 revision を固定する", () => {

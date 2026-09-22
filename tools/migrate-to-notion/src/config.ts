@@ -3,16 +3,19 @@ export type MigrationTarget = "dev" | "prd"
 interface MigrationDataSourceIds {
   posts: string
   pages: string
+  comments: string
 }
 
 const MIGRATION_DATA_SOURCE_IDS: Readonly<Record<MigrationTarget, MigrationDataSourceIds>> = {
   dev: {
     posts: "3c065425-ad40-811a-b50b-000b9271df2c",
     pages: "dc065425-ad40-8391-8e64-87fc27e80a3a",
+    comments: "3d365425-ad40-8100-9705-000ba2e7afec",
   },
   prd: {
     posts: "399e5acd-5762-442b-a3f5-be983498d926",
     pages: "53765425-ad40-828e-976a-0789d64d4dee",
+    comments: "201f8de6-3bca-4731-b19e-592fc87af528",
   },
 }
 
@@ -33,6 +36,8 @@ export const MIGRATION_TARGET = resolveMigrationTarget()
 export const POSTS_DATA_SOURCE_ID = MIGRATION_DATA_SOURCE_IDS[MIGRATION_TARGET].posts
 
 export const PAGES_DATA_SOURCE_ID = MIGRATION_DATA_SOURCE_IDS[MIGRATION_TARGET].pages
+
+export const COMMENTS_DATA_SOURCE_ID = MIGRATION_DATA_SOURCE_IDS[MIGRATION_TARGET].comments
 
 export const CATEGORY_PAGE_IDS: Readonly<Record<string, string>> = {
   pc: "39765425-ad40-80c9-a3a0-ed4de6084a42",

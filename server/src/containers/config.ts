@@ -5,6 +5,7 @@ const containerConfigSchema = z.strictObject({
   NOTION_TOKEN: z.string().min(1),
   NOTION_POSTS_DATA_SOURCE_ID: z.guid(),
   NOTION_PAGES_DATA_SOURCE_ID: z.guid(),
+  NOTION_COMMENTS_DATA_SOURCE_ID: z.guid(),
   AMAZON_CARD_SIGNING_SECRET: z.string().min(16),
   AWS_REGION: z.string().min(1),
   AWS_ACCESS_KEY_ID: z.string().min(1),
@@ -21,6 +22,7 @@ export interface ContainerConfig {
   notionToken: string
   notionPostsDataSourceId: string
   notionPagesDataSourceId: string
+  notionCommentsDataSourceId: string
   amazonCardSigningSecret: string
   awsRegion: string
   awsAccessKeyId: string
@@ -40,6 +42,7 @@ export const readContainerConfig = (
     NOTION_TOKEN: environment.NOTION_TOKEN,
     NOTION_POSTS_DATA_SOURCE_ID: environment.NOTION_POSTS_DATA_SOURCE_ID,
     NOTION_PAGES_DATA_SOURCE_ID: environment.NOTION_PAGES_DATA_SOURCE_ID,
+    NOTION_COMMENTS_DATA_SOURCE_ID: environment.NOTION_COMMENTS_DATA_SOURCE_ID,
     AMAZON_CARD_SIGNING_SECRET: environment.AMAZON_CARD_SIGNING_SECRET,
     AWS_REGION: environment.AWS_REGION,
     AWS_ACCESS_KEY_ID: environment.AWS_ACCESS_KEY_ID,
@@ -56,6 +59,7 @@ export const readContainerConfig = (
     notionToken: parsed.NOTION_TOKEN,
     notionPostsDataSourceId: parsed.NOTION_POSTS_DATA_SOURCE_ID,
     notionPagesDataSourceId: parsed.NOTION_PAGES_DATA_SOURCE_ID,
+    notionCommentsDataSourceId: parsed.NOTION_COMMENTS_DATA_SOURCE_ID,
     amazonCardSigningSecret: parsed.AMAZON_CARD_SIGNING_SECRET,
     awsRegion: parsed.AWS_REGION,
     awsAccessKeyId: parsed.AWS_ACCESS_KEY_ID,

@@ -1,3 +1,4 @@
+import type { CommentRefreshWorkflowParams } from "../lib/comment-refresh"
 import type { PublishWorkflowParams } from "../lib/publishing"
 
 interface PublishWorkflowInstance {
@@ -30,6 +31,23 @@ interface AdminPublishRequest {
 export interface StartedPublishWorkflow {
   workflowId: string
   created: boolean
+}
+
+interface CommentRefreshWorkflowCreateOptions {
+  id: string
+  params: CommentRefreshWorkflowParams
+}
+
+export interface CommentRefreshWorkflowBinding {
+  createBatch(
+    options: Array<CommentRefreshWorkflowCreateOptions>,
+  ): Promise<Array<PublishWorkflowInstance>>
+}
+
+interface WebhookCommentRefreshRequest {
+  eventId: string
+  commentPageId: string
+  requestedAt: string
 }
 
 export const startWebhookPublish = async (
@@ -68,4 +86,24 @@ export const startAdminPublish = async (
   })
 
   return { workflowId: instance.id, created: true }
+}
+
+// 記事公開と同じく Notion の event ID を instance ID にして、重複配送を idempotent に捨てる
+export const startWebhookCommentRefresh = async (
+  workflow: CommentRefreshWorkflowBinding,
+  request: WebhookCommentRefreshRequest,
+): Promise<StartedPublishWorkflow> => {
+  const instances = await workflow.createBatch([
+    {
+      id: request.eventId,
+      params: {
+        source: "notion-webhook",
+        requestId: request.eventId,
+        requestedAt: request.requestedAt,
+        commentPageId: request.commentPageId,
+      },
+    },
+  ])
+
+  return { workflowId: request.eventId, created: 0 < instances.length }
 }

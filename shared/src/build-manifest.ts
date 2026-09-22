@@ -1,5 +1,6 @@
 import { z } from "zod"
 
+import { type BuildComment, isCommentPublicId } from "./comments"
 import type { ArticleCategory, ArticleContent, RenderedContent } from "./content"
 
 export type PageKind = "post" | "page"
@@ -33,6 +34,8 @@ export interface BuildPage {
   category: ArticleCategory | null
   customCss: string
   warnings: Array<string>
+  // 公開時点の承認済みコメント。静的 HTML と payload に焼き込む
+  comments: Array<BuildComment>
 }
 
 export interface BuildPageSummary {
@@ -73,6 +76,7 @@ interface CreateBuildPageInput {
   rendered: RenderedContent
   thumbnailUrls: ThumbnailUrls | null
   ogImageUrl: string
+  comments: Array<BuildComment>
 }
 
 const pageIdSchema = z.string().regex(/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i)
@@ -95,6 +99,15 @@ const thumbnailUrlsSchema = z.strictObject({
   mobile: z.string().url(),
   card: z.string().url(),
 })
+const commentPublicIdSchema = z.string().refine(isCommentPublicId)
+const buildCommentSchema: z.ZodType<BuildComment> = z.strictObject({
+  id: commentPublicIdSchema,
+  parentId: commentPublicIdSchema.nullable(),
+  authorName: z.string().min(1),
+  createdAt: dateSchema,
+  contentHtml: z.string(),
+  isOwner: z.boolean(),
+})
 const buildPageSchema: z.ZodType<BuildPage> = z
   .strictObject({
     schemaVersion: z.literal(1),
@@ -111,6 +124,7 @@ const buildPageSchema: z.ZodType<BuildPage> = z
     category: categorySchema.nullable(),
     customCss: z.string(),
     warnings: z.array(z.string()),
+    comments: z.array(buildCommentSchema),
   })
   .superRefine((page, context) => {
     if (page.kind === "post" && !page.category) {
@@ -118,6 +132,13 @@ const buildPageSchema: z.ZodType<BuildPage> = z
     }
     if (page.kind === "page" && page.category) {
       context.addIssue({ code: "custom", message: "固定ページに category は指定できません" })
+    }
+    const commentIds = new Set(page.comments.map(({ id }) => id))
+    if (commentIds.size !== page.comments.length) {
+      context.addIssue({ code: "custom", message: "コメント ID が重複しています" })
+    }
+    if (page.comments.some(({ parentId }) => parentId !== null && !commentIds.has(parentId))) {
+      context.addIssue({ code: "custom", message: "親コメントが一覧にありません" })
     }
   })
 const buildPageSummarySchema: z.ZodType<BuildPageSummary> = z.strictObject({
@@ -180,6 +201,7 @@ export const createBuildPage = (input: CreateBuildPageInput): BuildPage => {
     category: input.article.category,
     customCss: input.article.customCss,
     warnings: input.rendered.warnings,
+    comments: input.comments,
   })
 }
 

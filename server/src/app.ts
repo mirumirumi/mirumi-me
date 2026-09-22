@@ -1,6 +1,7 @@
 import { Hono } from "hono"
 
 import { getAmazonItems, handleAmazonItemsOptions } from "./handlers/amazon-items"
+import { handleCommentsOptions, postComment } from "./handlers/comments"
 import { postDevXPost } from "./handlers/dev-x-post"
 import { postNotionWebhook } from "./handlers/notion-webhook"
 import { getNotionWebhookVerification } from "./handlers/notion-webhook-verification"
@@ -24,6 +25,8 @@ export const app = new Hono<HonoEnv>()
   })
   .options("/api/amazon/items", (c) => handleAmazonItemsOptions(c))
   .get("/api/amazon/items", (c) => getAmazonItems(c))
+  .options("/api/comments", (c) => handleCommentsOptions(c))
+  .post("/api/comments", (c) => postComment(c))
   .post("/_dev/x-post", (c) => postDevXPost(c))
   .post("/webhooks/notion", (c) => postNotionWebhook(c))
   .post("/admin/publish", (c) => postAdminPublish(c))

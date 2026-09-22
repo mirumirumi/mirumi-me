@@ -63,7 +63,7 @@ dev / prd のリソースと、共通にしているものの理由をまとめ�
 | Turnstile | site key ハードコード | prd と同じ | 共通（要対応） | ウィジェットはホスト名制限があるため dev ホスト名の登録が必要 |
 | GA4 | `G-Y7HSDMHBW5` | 読み込まない | 実質分離 | `APP_ENV=prd` の build でだけ計測タグを差し込む |
 | AdSense | `ca-pub-2873410957106428` | `ca-google`（テスト ID） | 実質分離 | 枠は prd と同じだけ出してレイアウトを揃え、本番アカウントへは記録させない |
-| 通知メール | `marumorumirumeri@outlook.com` | 未定 | 未定 | コメント実装時に決める |
+| コメント digest の宛先 | mmmm の outlook（`COMMENT_DIGEST_RECIPIENT` secret） | prd と同じ | 共通 | 送信元は `mail@mirumi.me`。SES は `us-east-1` の sandbox のまま |
 
 ## CI / ローカル
 

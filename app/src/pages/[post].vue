@@ -87,7 +87,7 @@
         </div>
       </footer>
       <PartsAdSenseBase :kind="'記事下ディスプレイ'" />
-      <ModulesCommentList class="page_transition_target" />
+      <ModulesCommentList class="page_transition_target" :comments="post.comments" />
       <ModulesCommentForm class="page_transition_target" />
       <PartsAdSenseBase :kind="'Multiplex'" />
     </main>

@@ -72,20 +72,24 @@ describe("notion-webhook", () => {
         parseNotionWebhookBody(
           JSON.stringify({ type: "page.content_updated", secret_like_value: "discard" }),
         ),
-      ).toEqual({ kind: "ignored", type: "page.content_updated" })
+      ).toEqual({ kind: "ignored", type: "page.content_updated", reason: null })
     })
 
-    test("壊れた JSON と対象 event の不正 schema を拒否する", () => {
+    test("壊れた JSON は拒否し、対象 event の不正 schema は理由付きで ignored にする", () => {
       expect(() => parseNotionWebhookBody("{")).toThrow("Webhook body が JSON ではありません")
-      expect(() =>
-        parseNotionWebhookBody(
-          JSON.stringify({
-            type: "page.properties_updated",
-            entity: { id: "page-id", type: "page" },
-            data: { updated_properties: [] },
-          }),
-        ),
-      ).toThrow("Webhook event の schema が不正です")
+      expect(() => parseNotionWebhookBody(JSON.stringify({ no: "type" }))).toThrow(
+        "Webhook event の schema が不正です",
+      )
+      // 4xx を返し続けると Notion が配信を止めるので、署名済みの event は schema 違いでも 200 で捨てる
+      const ignored = parseNotionWebhookBody(
+        JSON.stringify({
+          type: "page.properties_updated",
+          entity: { id: "page-id", type: "page" },
+          data: { updated_properties: [] },
+        }),
+      )
+      expect(ignored.kind).toEqual("ignored")
+      expect(ignored.kind === "ignored" && ignored.reason).toContain("id")
     })
   })
 

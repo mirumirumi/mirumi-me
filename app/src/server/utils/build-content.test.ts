@@ -43,6 +43,7 @@ describe("BuildManifestReader", () => {
         category: { name: "tech", slug: "tech" },
         customCss: "",
         warnings: [],
+        comments: [],
       }),
     )
     await writeFile(

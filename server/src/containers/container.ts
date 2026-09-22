@@ -4,6 +4,7 @@ import { z } from "zod"
 import { resolveExternalBookmark } from "shared/bookmark"
 import { resolveXPost } from "shared/x-post"
 
+import type { CommentRefreshJobRequest, CommentRefreshJobSummary } from "../lib/comment-refresh"
 import type { DeploymentPageState, PublishJobRequest, PublishJobSummary } from "../lib/publishing"
 import { PUBLISH_FAILURE_CODES } from "../lib/publishing"
 import { createXaiPostFetcher } from "../services/x-post"
@@ -61,6 +62,37 @@ const deploymentPageStateSchema = z.discriminatedUnion("status", [
 ])
 const deploymentPageStatesSchema = z.object({ pages: z.array(deploymentPageStateSchema) }).strict()
 
+const commentRefreshJobSummarySchema: z.ZodType<CommentRefreshJobSummary> = z
+  .object({
+    workflowId: z.string().min(1).max(200),
+    slug: z.string().min(1).max(200),
+    status: z.enum(["refreshed", "unchanged", "skipped"]),
+    reason: z.string().max(500).nullable(),
+    pageId: z.guid().nullable(),
+    contentHash: z.string().min(1).max(200).nullable(),
+    buildHash: z.string().min(1).max(200),
+    updatedPaths: z.array(z.string().startsWith("/").max(1_000)),
+  })
+  .strict()
+
+const readErrorDetail = async (response: Response): Promise<string | null> => {
+  try {
+    const body: unknown = await response.json()
+    if (
+      typeof body === "object" &&
+      body !== null &&
+      "detail" in body &&
+      typeof body.detail === "string"
+    ) {
+      return body.detail
+    }
+  } catch {
+    // body が JSON でなければ status だけを伝える
+  }
+
+  return null
+}
+
 const getRequiredEnv = (env: CloudflareBindings, name: keyof CloudflareBindings): string => {
   const value = env[name]
   if (typeof value !== "string" || !value) {
@@ -83,6 +115,7 @@ export class BuildContainer extends Container<CloudflareBindings> {
       NOTION_TOKEN: getRequiredEnv(this.env, "NOTION_TOKEN"),
       NOTION_POSTS_DATA_SOURCE_ID: getRequiredEnv(this.env, "NOTION_POSTS_DATA_SOURCE_ID"),
       NOTION_PAGES_DATA_SOURCE_ID: getRequiredEnv(this.env, "NOTION_PAGES_DATA_SOURCE_ID"),
+      NOTION_COMMENTS_DATA_SOURCE_ID: getRequiredEnv(this.env, "NOTION_COMMENTS_DATA_SOURCE_ID"),
       AMAZON_CARD_SIGNING_SECRET: getRequiredEnv(this.env, "AMAZON_CARD_SIGNING_SECRET"),
       AWS_REGION: getRequiredEnv(this.env, "AWS_REGION"),
       AWS_ACCESS_KEY_ID: getRequiredEnv(this.env, "AWS_ACCESS_KEY_ID"),
@@ -105,20 +138,7 @@ export class BuildContainer extends Container<CloudflareBindings> {
       body: JSON.stringify(request),
     })
     if (!response.ok) {
-      let detail: string | null = null
-      try {
-        const body: unknown = await response.json()
-        if (
-          typeof body === "object" &&
-          body !== null &&
-          "detail" in body &&
-          typeof body.detail === "string"
-        ) {
-          detail = body.detail
-        }
-      } catch {
-        detail = null
-      }
+      const detail = await readErrorDetail(response)
       throw Error(
         `Container の publish job が失敗しました: ${response.status}${detail ? ` (${detail})` : ""}`,
       )
@@ -127,8 +147,37 @@ export class BuildContainer extends Container<CloudflareBindings> {
     return publishJobSummarySchema.parse(await response.json())
   }
 
+  private async executeCommentRefreshJob(
+    request: CommentRefreshJobRequest,
+  ): Promise<CommentRefreshJobSummary> {
+    await this.destroy()
+    this.envVars = this.createEnvVars()
+    const response = await this.containerFetch("http://container.internal/comment-refresh", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    })
+    if (!response.ok) {
+      const detail = await readErrorDetail(response)
+      throw Error(
+        `Container の comment refresh job が失敗しました: ${response.status}${detail ? ` (${detail})` : ""}`,
+      )
+    }
+
+    return commentRefreshJobSummarySchema.parse(await response.json())
+  }
+
   async runPublishJob(request: PublishJobRequest): Promise<PublishJobSummary> {
-    const job = this.jobQueue.then(() => this.executePublishJob(request))
+    return this.enqueue(() => this.executePublishJob(request))
+  }
+
+  // publish index を書くのは publish と comment refresh の両方なので、同じ queue で直列にする
+  async runCommentRefreshJob(request: CommentRefreshJobRequest): Promise<CommentRefreshJobSummary> {
+    return this.enqueue(() => this.executeCommentRefreshJob(request))
+  }
+
+  private enqueue<T>(execute: () => Promise<T>): Promise<T> {
+    const job = this.jobQueue.then(execute)
     this.jobQueue = job.then(
       () => undefined,
       () => undefined,

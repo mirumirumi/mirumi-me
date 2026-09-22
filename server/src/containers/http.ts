@@ -1,9 +1,13 @@
 import { createHash } from "node:crypto"
 import { z } from "zod"
 
+import { isValidSlug } from "shared/site-routes"
+
+import type { CommentRefreshJobRequest } from "../lib/comment-refresh"
 import type { PublishJobRequest } from "../lib/publishing"
 import { PUBLISH_VALIDATION_CODES } from "../lib/publishing"
 import { CloudFrontInvalidator } from "./aws"
+import { runContainerCommentRefreshJob } from "./comment-refresh-job"
 import { readContainerConfig } from "./config"
 import { loadDeploymentPageStates } from "./deployment-state"
 import { runContainerPublishJob } from "./publish-job"
@@ -61,6 +65,11 @@ const invalidationRequestSchema = z.strictObject({
 const deploymentStateRequestSchema = z.strictObject({
   pageIds: z.array(z.guid()).min(1).max(100),
 })
+const commentRefreshRequestSchema: z.ZodType<CommentRefreshJobRequest> = z.strictObject({
+  workflowId: z.string().min(1).max(200),
+  requestedAt: dateSchema,
+  slug: z.string().refine(isValidSlug),
+})
 
 const jsonResponse = (value: unknown, status = 200): Response => {
   return Response.json(value, { status })
@@ -91,6 +100,14 @@ const handleRequest = async (request: Request): Promise<Response> => {
     }
 
     return jsonResponse(await runContainerPublishJob(parsed.data, readContainerConfig()))
+  }
+  if (request.method === "POST" && url.pathname === "/comment-refresh") {
+    const parsed = commentRefreshRequestSchema.safeParse(await readJson(request))
+    if (!parsed.success) {
+      return jsonResponse({ error: "Invalid comment refresh request" }, 400)
+    }
+
+    return jsonResponse(await runContainerCommentRefreshJob(parsed.data, readContainerConfig()))
   }
   if (request.method === "POST" && url.pathname === "/invalidate") {
     const parsed = invalidationRequestSchema.safeParse(await readJson(request))

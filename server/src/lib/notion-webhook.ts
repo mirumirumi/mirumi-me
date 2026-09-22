@@ -5,16 +5,33 @@ const verificationSchema = z.strictObject({
 })
 
 const timestampSchema = z.string().refine((value) => !Number.isNaN(Date.parse(value)))
+// event を起こした user / bot。integration 自身（import や公開フォームの create）による event は
+// authors が bot だけになる。type は person / bot 以外（agent など）が増えても event を捨てないよう string で受ける
+const authorsSchema = z
+  .array(z.object({ id: z.string().min(1), type: z.string().min(1) }))
+  .optional()
 const pagePropertiesUpdatedSchema = z.object({
   id: z.string().min(1).max(100),
   timestamp: timestampSchema,
   type: z.literal("page.properties_updated"),
+  authors: authorsSchema,
   entity: z.object({
     id: z.string().min(1),
     type: z.literal("page"),
   }),
   data: z.object({
     updated_properties: z.array(z.string().min(1)),
+  }),
+})
+// page.created には updated_properties が無い。comments の row かどうかは page を取得して判定する
+const pageCreatedSchema = z.object({
+  id: z.string().min(1).max(100),
+  timestamp: timestampSchema,
+  type: z.literal("page.created"),
+  authors: authorsSchema,
+  entity: z.object({
+    id: z.string().min(1),
+    type: z.literal("page"),
   }),
 })
 
@@ -28,14 +45,23 @@ export interface NotionWebhookEvent {
   event: z.infer<typeof pagePropertiesUpdatedSchema>
 }
 
+export interface NotionPageCreatedWebhookEvent {
+  kind: "page-created"
+  event: z.infer<typeof pageCreatedSchema>
+}
+
 export interface IgnoredNotionWebhookEvent {
   kind: "ignored"
   type: string
+  // 既知の型なのに schema に合わなかったとき。署名が正しければ 200 で捨てて log に残す
+  // （4xx を返し続けると Notion が配信を止めてしまう）
+  reason: string | null
 }
 
 export type ParsedNotionWebhook =
   | NotionWebhookVerification
   | NotionWebhookEvent
+  | NotionPageCreatedWebhookEvent
   | IgnoredNotionWebhookEvent
 
 interface TimingSafeSubtleCrypto extends SubtleCrypto {
@@ -122,16 +148,29 @@ export const parseNotionWebhookBody = (rawBody: string): ParsedNotionWebhook => 
   if (!envelope.success) {
     throw Error("Webhook event の schema が不正です", { cause: envelope.error })
   }
+  if (envelope.data.type === "page.created") {
+    const created = pageCreatedSchema.safeParse(parsed)
+    if (!created.success) {
+      return { kind: "ignored", type: envelope.data.type, reason: created.error.message }
+    }
+
+    return { kind: "page-created", event: created.data }
+  }
   if (envelope.data.type !== "page.properties_updated") {
-    return { kind: "ignored", type: envelope.data.type }
+    return { kind: "ignored", type: envelope.data.type, reason: null }
   }
 
   const event = pagePropertiesUpdatedSchema.safeParse(parsed)
   if (!event.success) {
-    throw Error("Webhook event の schema が不正です", { cause: event.error })
+    return { kind: "ignored", type: envelope.data.type, reason: event.error.message }
   }
 
   return { kind: "event", event: event.data }
+}
+
+// bot（integration）だけが起こした event か。person が 1 人でも混ざっていれば false
+export const isBotOnlyEvent = (authors: z.infer<typeof authorsSchema>): boolean => {
+  return authors !== undefined && 0 < authors.length && authors.every((a) => a.type === "bot")
 }
 
 export const normalizeNotionPropertyId = (value: string): string | null => {

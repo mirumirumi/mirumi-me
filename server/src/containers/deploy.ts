@@ -24,7 +24,16 @@ export const routeOutputKeys = (route: string): Array<string> => {
   return [`${prefix}index.html`, `${prefix}_payload.json`]
 }
 
-export const selectDeployKeys = (keys: Array<string>, plan: BuildPlan): Array<string> => {
+export interface DeployOptions {
+  // comment-refresh は集約 route も XML も更新しないため、生成物に XML があっても置かない
+  xml: boolean
+}
+
+export const selectDeployKeys = (
+  keys: Array<string>,
+  plan: BuildPlan,
+  options: DeployOptions = { xml: true },
+): Array<string> => {
   if (plan.mode !== "partial") {
     return keys
   }
@@ -32,7 +41,8 @@ export const selectDeployKeys = (keys: Array<string>, plan: BuildPlan): Array<st
   const allowed = new Set(plan.routes.flatMap(routeOutputKeys))
 
   return keys.filter(
-    (key) => key.startsWith("_nuxt/") || XML_FILES.includes(key) || allowed.has(key),
+    (key) =>
+      key.startsWith("_nuxt/") || (options.xml && XML_FILES.includes(key)) || allowed.has(key),
   )
 }
 
@@ -162,8 +172,9 @@ export class SiteDeployer {
     outputDirectory: string,
     plan: BuildPlan,
     deletedRoutes: Array<string>,
+    options: DeployOptions = { xml: true },
   ): Promise<Array<string>> {
-    const keys = selectDeployKeys(await listFiles(outputDirectory), plan)
+    const keys = selectDeployKeys(await listFiles(outputDirectory), plan, options)
     const contentKeys = new Set(Object.keys(plan.pageIdsByRoute).flatMap(routeOutputKeys))
     const orderedKeys = keys.toSorted((left, right) => {
       return (

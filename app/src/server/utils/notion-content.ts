@@ -355,6 +355,8 @@ export class NotionDevelopmentContentReader {
         }),
         thumbnailUrls,
         ogImageUrl: thumbnailUrls?.article ?? DEFAULT_OG_IMAGE_URL,
+        // ローカル dev はコメントを扱わない。Notion の comments を読む実装は作らず常に 0 件にする
+        comments: [],
       })
       await this.#cache.put(
         key,
@@ -389,7 +391,6 @@ export class NotionDevelopmentContentReader {
           route,
           title: revision.title,
           description: null,
-          imageUrl: resolveDevelopmentThumbnailUrls(thumbnailUrl)?.card ?? null,
           label: revision.category?.name ?? "みるめも",
         },
       ]

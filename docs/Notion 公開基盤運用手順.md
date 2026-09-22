@@ -16,9 +16,9 @@
 production bootstrap だけでは移行完了ではない。コメント、検索、PV、管理拡張、バックアップなど
 `tools/migrate-to-notion/やること.md` の必須項目を完了し、runtime の WordPress 依存をすべて撤去したあとに WordPress を完全廃止する。
 
-移行期間中はコメント、検索、PV、いいねが WordPress に依存する。
+移行期間中は検索、PV、いいねが WordPress に依存する。
+コメントはコードとしては新基盤へ切り替え済みで、Notion の comments schema 作成と既存コメントの import が残る。
 コメント feed は移行せず廃止する。
-Notion だけに存在する新規記事では現行コメント処理が WordPress post ID を解決できないため、コメント基盤の切り替え前に運用を開始しない。
 
 ## 記事の公開と非公開
 
@@ -44,13 +44,56 @@ publish index の保存は S3 配信のあとに行うため、最後の index �
 
 ### Webhook subscription の初回設定
 
-購読するイベントは `page.properties_updated` だけでよい。
-Worker が処理するのはこの型のみで、他の型は署名検証後に `ignored` として 200 を返すだけになる。
+購読するイベントは `page.properties_updated` と `page.created` の 2 つ。
+`page.created` はコメントの承認・返信（Notion UI でテンプレートから一度にプロパティを埋めて作った row）を
+取りこぼさないためのもので、Worker は page を 1 回取得して comments の承認済み row のときだけ動く。
+他の型は署名検証後に `ignored` として 200 を返すだけになる。
 
 Notion が送った `verification_token` は通常ログへ出さず、`CONTENT_CACHE` に 10 分だけ保存する。
 subscription 作成直後に Access 配下の `GET /admin/notion-webhook-verification` で 1 回だけ取得し、
 Notion の確認画面へ貼り付けたあと、同じ値を `NOTION_WEBHOOK_SECRET` へ登録する。
 endpoint は取得時に一時保存値を削除する。期限切れの場合は Notion 側から token を再送する。
+
+## コメント
+
+設計の経緯は `.contexts/コメント基盤の移行設計.md`。保存先は private な Notion `comments` データソースで、
+Nuxt は Notion も Worker も読まない。Container が approved を取得して `BuildPage.comments` に入れ、
+コメント本文は静的 HTML と payload に焼き込まれる。ローカル dev は常に 0 件。
+
+- 公開フォームは `POST /api/comments` だけ。Origin は `FRONTEND_ORIGIN` のみ、IP 単位の rate limit のあと
+  publish index の公開中 slug、同じ slug の承認済み親、Turnstile（hostname と action `comment`）を順に検証し、
+  `status=承認待ち` / `from=公開フォーム` の row を作る。同じ `request-id` の再送は作り直さず 202
+- Notion で `status` / `本文` / `投稿者名` / `親コメント` が変わるか、承認済み row が作られると
+  `CommentRefreshWorkflow` が動く。publish index の `contentHash` が指す
+  `_internal/published-pages-v1/{pageId}/{contentHash}.json` の snapshot から comments だけを差し替え、
+  記事 1 本の HTML / payload（と hash 付き `_nuxt`）だけを置いて invalidation する。集約 route、XML、
+  `deployedNotionEdit`、posts の row には触れない
+- 失敗は row の `公開エラー` に残り、`status` は desired state として残る。次の承認操作か full build で収束する
+- **この Container を初めて deploy したあとは full build を 1 回通す。** snapshot が無い記事は
+  comment-refresh が「公開済み snapshot がありません」で失敗する
+- 非表示にするときは `status` を `承認待ち` か `スパム` に変える。返信が付いた親だけを非表示にしても
+  子は消えず、最も近い表示中の先祖（無ければ root）につなぎ直して描画する。row を削除した場合も
+  子は root へ繰り上がるが、slug を追えず refresh は動かないので、削除ではなく `ゴミ箱` にする
+- owner reply は親 row のボタン `返信` で作る（「ページを追加」がテンプレート「管理者の返信」で `投稿者名` /
+  `管理者コメント=true` / `from=管理者` / `本文形式=プレーンテキスト` / `status=承認待ち` を埋め、`親コメント=このページ`
+  を足して開く）。書き終えたら `status=承認済み` にする。テンプレートとボタンは API で作れないので prd でも UI で作る。
+  `slug` が空なら comment-refresh が `親コメント` を 5 段までたどって決め、row に書き戻す。full build も
+  親から補う。`本文形式` と `投稿日` が空なら `プレーンテキスト` と作成時刻に倒し、本文が空の承認済み row は描画しない
+- digest は 09:00 JST の Cron が `from=公開フォーム AND 通知日 is empty` を集めて SES で
+  `COMMENT_DIGEST_RECIPIENT` に送る。0 件なら送らない。送信後に `通知日` を書く
+- Notion の property 名は `shared/src/notion-comments.ts` の `COMMENT_PROPERTIES`、select の option 名は
+  同ファイルの `*_LABELS` が正。Notion 側で名前を変えたらここを合わせる（property ID は変わらない）
+- `親コメント` は自分自身への relation だが、Notion の片方向（single property）の self relation は対称に
+  なって親子の向きが消えるため、`子コメント` を逆側に持つ双方向（dual property）にする。コードは `親コメント` しか読まない
+- Notion の date property は秒を切り捨てる。`投稿日` が同じ分のコメントは public ID の順で並び、
+  移行の hash 照合も分の精度で行う
+- `投稿者名` の property ID は `title` で posts / pages とも共通のため、記事タイトルの編集でも Webhook が
+  comments の row かどうかを 1 回 `pages.retrieve` で確かめてから無視する（許容している）
+- Notion の page / query 応答は rich_text を 25 object までしか返さない。公開フォームは最大 3 object だが、
+  Notion UI で装飾やリンクを多用した owner reply は 25 を超えると本文が途中で切れる
+- 既存コメントの移行は `tools/migrate-to-notion` の `fetch-comments` → `import-comments`（`--dry-run` で計画だけ）
+  → `verify-comments`。state は `comments-import-state.json`、export はメールを含むので git に入れない。
+  再実行は同じ row を作らず、hash が変わった row を更新し、承認済みから外れた row を `trash` にする
 
 ## Cloudflare Access
 
@@ -228,7 +271,15 @@ bun run upload
 
 - Notion: `NOTION_TOKEN`, `NOTION_WEBHOOK_SECRET`
 - Amazon: `AMAZON_CARD_SIGNING_SECRET`, `AMAZON_CREATORS_CREDENTIAL_ID`, `AMAZON_CREATORS_CREDENTIAL_SECRET`
-- コメント: `TURNSTILE_SECRET`。コメント API 実装までは設定だけで未使用
+- コメント: `TURNSTILE_SECRET`、`SES_ACCESS_KEY_ID`、`SES_SECRET_ACCESS_KEY`
+  （`ses:SendEmail` だけを許した専用 credential。SES は sandbox のまま使うので、送信元 `mirumi.me` の
+  domain identity がある `us-east-1` で宛先アドレスも verified identity にする。production access の申請は不要）
+- Turnstile の widget は `mirumi-me-comments-prd`（site key は `nuxt.config.ts` に直書き、dev / prd 共通）。
+  hostname は `mirumi.me`、dev の CloudFront domain、`localhost` の 3 つで、widget の描画はどこでも同じになる。
+  siteverify の hostname は `FRONTEND_ORIGIN` と照合するので、token を使えるのは dev / prd のサイトからだけ
+- コメント vars: `NOTION_COMMENTS_DATA_SOURCE_ID`、comments の `status` / `本文` / `投稿者名` / `親コメント` の
+  property ID（`NOTION_COMMENT_*_PROPERTY_ID`。空だと comments の Webhook を無視する）、`SES_REGION`、
+  `COMMENT_DIGEST_SENDER`。宛先の `COMMENT_DIGEST_RECIPIENT` は個人アドレスなので secret
 - AWS: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `THUMBNAIL_FUNCTION_URL`
 - X: `XAI_API_KEY`
 - KV: dev / prd の `CONTENT_CACHE` namespace ID
@@ -236,7 +287,8 @@ bun run upload
 AWS credential は site / media bucket と対象 CloudFront distribution だけへ絞る。
 Creators API の日本向け credential version `3.3` と media bucket 名は vars で管理する。
 
-- site bucket: object の `GetObject` / `PutObject` / `DeleteObject`
+- site bucket: object の `GetObject` / `PutObject` / `DeleteObject`（Worker も `POST /api/comments` の slug 検証で
+  publish index を `GetObject` する）
 - media bucket: object の `GetObject`（`HeadObject` を含む）/ `PutObject`
 - CloudFront: 対象 distribution の `CreateInvalidation`
 
@@ -251,7 +303,7 @@ Creators API の日本向け credential version `3.3` と media bucket 名は va
 - publish index 更新後に response を失っても、同じ revision の publish / unpublish を再実行できる
 - Notion update の response を失った場合は page を再取得し、期待値が反映済みなら成功扱いにする
 - 失敗時の Notion state は publish index の実配信状態から復元し、index を読めない場合は state を推測しない
-- rollback は旧 GitHub deploy workflow または S3 versioning 上の直前 object を使う
+- rollback は Notion の内容を戻して再公開するか、full build を回す。site bucket に S3 versioning は入れていない
 
 ## production bootstrap 前
 
@@ -263,6 +315,7 @@ Creators API の日本向け credential version `3.3` と media bucket 名は va
 - dev Notion data source へ external WebP canary を投入する
 - 470 page の route uniqueness と full generate を通す
 - production bootstrap、Webhook subscription 有効化、GitHub release 切り替えは別の明示 GO 後に行う
+- けいが記述：本当は Notion の dev 系データソースでカラム幅みたいに見た目レベルで調整したものをそのまま本番でも使いたいから、すべての作業が終わって WP データ移行する直前に dev のデータソース丸ごと複製するようにしたいけど、いろんな id とか変わっちゃったりしないかという点で悩ましい
 
 ## WordPress 廃止前
 

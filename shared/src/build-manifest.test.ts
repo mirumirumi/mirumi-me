@@ -8,6 +8,7 @@ import {
   parseBuildPlan,
   parsePageSummariesManifest,
 } from "./build-manifest"
+import type { BuildComment } from "./comments"
 import type { ArticleContent, RenderedContent } from "./content"
 
 describe("build manifest", () => {
@@ -42,6 +43,16 @@ describe("build manifest", () => {
             card: "https://mirumi.media/hash-thumbnail-412x216.webp",
           },
           ogImageUrl: "https://mirumi.media/hash-thumbnail-1200x630.webp",
+          comments: [
+            {
+              id: "123",
+              parentId: null,
+              authorName: "読者",
+              createdAt: "2026-08-24T02:00:00.000Z",
+              contentHtml: "<p>コメント</p>",
+              isOwner: false,
+            },
+          ],
         }),
       ).toEqual({
         schemaVersion: 1,
@@ -62,7 +73,46 @@ describe("build manifest", () => {
         category: { name: "tech", slug: "tech" },
         customCss: ".sample {}",
         warnings: ["warning"],
+        comments: [
+          {
+            id: "123",
+            parentId: null,
+            authorName: "読者",
+            createdAt: "2026-08-24T02:00:00.000Z",
+            contentHtml: "<p>コメント</p>",
+            isOwner: false,
+          },
+        ],
       })
+    })
+
+    test("コメントの ID 重複と親欠損を拒否する", () => {
+      const comment: BuildComment = {
+        id: "123",
+        parentId: null,
+        authorName: "読者",
+        createdAt: "2026-08-24T02:00:00.000Z",
+        contentHtml: "<p>コメント</p>",
+        isOwner: false,
+      }
+      const create = (comments: Array<BuildComment>) => {
+        return createBuildPage({
+          kind: "post",
+          article,
+          rendered,
+          thumbnailUrls: null,
+          ogImageUrl: "https://mirumi.media/og.webp",
+          comments,
+        })
+      }
+
+      expect(() => create([comment, comment])).toThrowError("コメント ID が重複")
+      expect(() => create([{ ...comment, parentId: "999" }])).toThrowError(
+        "親コメントが一覧にありません",
+      )
+      expect(() => create([{ ...comment, id: "notion-page-id" }])).toThrowError()
+      expect(() => create([{ ...comment, authorName: "" }])).toThrowError()
+      expect(create([comment, { ...comment, id: "c-1", parentId: "123" }]).comments).toHaveLength(2)
     })
 
     test("公開日なしと post の category なしを拒否する", () => {
@@ -73,6 +123,7 @@ describe("build manifest", () => {
           rendered,
           thumbnailUrls: null,
           ogImageUrl: "https://mirumi.media/og.webp",
+          comments: [],
         }),
       ).toThrowError("公開日")
       expect(() =>
@@ -82,6 +133,7 @@ describe("build manifest", () => {
           rendered,
           thumbnailUrls: null,
           ogImageUrl: "https://mirumi.media/og.webp",
+          comments: [],
         }),
       ).toThrowError("category")
     })
@@ -95,6 +147,7 @@ describe("build manifest", () => {
         rendered,
         thumbnailUrls: null,
         ogImageUrl: "https://mirumi.media/generated-og.webp",
+        comments: [],
       })
 
       expect(parseBuildPage(page)).toEqual(page)
@@ -169,6 +222,7 @@ describe("build manifest", () => {
         rendered,
         thumbnailUrls: null,
         ogImageUrl: "https://mirumi.media/og.webp",
+        comments: [],
       })
       const summary = {
         pageId: page.pageId,

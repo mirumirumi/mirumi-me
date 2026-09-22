@@ -1,13 +1,13 @@
 <template>
   <div class="comment_list">
     <div class="title">この記事へのコメント</div>
-    <div v-if="allComments.length === 0" class="no_contents">
+    <div v-if="rootComments.length === 0" class="no_contents">
       コメントはまだひとつもありません :)
     </div>
     <div v-else class="comments_wrap">
       <ModulesCommentBase
         v-for="entry in leadingComments"
-        :key="entry.comment.comment_ID"
+        :key="entry.comment.id"
         :c="entry.comment"
         :depth="entry.depth"
       />
@@ -24,7 +24,7 @@
       <div v-show="loadMoreStatus === 'completed'">
         <ModulesCommentBase
           v-for="entry in remainingComments"
-          :key="entry.comment.comment_ID"
+          :key="entry.comment.id"
           :c="entry.comment"
           :depth="entry.depth"
         />
@@ -34,16 +34,9 @@
 </template>
 
 <script setup lang="ts">
-interface CommentData {
-  comment_ID: string
-  comment_parent: string
-  user_id: string
-  comment_author: string
-  comment_date: string
-  comment_content: string
-}
+import type { BuildComment } from "shared/comments"
 
-interface StructuredComment extends CommentData {
+interface StructuredComment extends BuildComment {
   children: Array<StructuredComment>
 }
 
@@ -52,62 +45,39 @@ interface CommentEntry {
   depth: number
 }
 
-const route = useRoute()
-const appConfig = useAppConfig()
+// コメントは build manifest 経由で BuildPage に焼き込まれている。generate 中も browser でも取得通信はしない
+const p = defineProps<{
+  comments: Array<BuildComment>
+}>()
 
-const slug = route.params.post as string
 const loadMoreStatus = ref<"none" | "loading" | "completed">("none")
 
-const selectPublicCommentFields = (comment: CommentData): CommentData => {
-  return {
-    comment_ID: comment.comment_ID,
-    comment_parent: comment.comment_parent,
-    user_id: comment.user_id,
-    comment_author: comment.comment_author,
-    comment_date: comment.comment_date,
-    comment_content: comment.comment_content,
-  }
-}
-
-const { data } = await useFetch<Array<CommentData>>(`/mirumi/comments_per_post/${slug}`, {
-  baseURL: appConfig.baseURL,
-  transform: (comments) => {
-    return comments.map(selectPublicCommentFields)
-  },
-})
-
-// Hack for JSON parse error (unexpected token)
-// WordPress が JSON 以外（存在しない slug に対する PHP の警告 HTML など）を返すと data.value が
-// undefined になる。記事 1 本のコメント取得の失敗で generate 全体を落とさない
-const res = Array.isArray(data.value)
-  ? (JSON.parse(JSON.stringify(data.value)) as Array<CommentData>)
-  : []
 const commentsById = new Map<string, StructuredComment>()
-
-for (const comment of res) {
-  if (commentsById.has(comment.comment_ID)) {
-    throw Error(`Duplicate comment ID: ${comment.comment_ID}`)
+for (const comment of p.comments) {
+  if (commentsById.has(comment.id)) {
+    throw Error(`Duplicate comment ID: ${comment.id}`)
   }
-  commentsById.set(comment.comment_ID, { ...comment, children: [] })
+  commentsById.set(comment.id, { ...comment, children: [] })
 }
 
-const allComments: Array<StructuredComment> = []
-for (const comment of res) {
-  const structuredComment = commentsById.get(comment.comment_ID)
+const rootComments: Array<StructuredComment> = []
+for (const comment of p.comments) {
+  const structuredComment = commentsById.get(comment.id)
   if (!structuredComment) {
-    throw Error(`Comment not found: ${comment.comment_ID}`)
+    throw Error(`Comment not found: ${comment.id}`)
   }
-  if (comment.comment_parent === "0") {
-    allComments.push(structuredComment)
+  if (comment.parentId === null) {
+    rootComments.push(structuredComment)
     continue
   }
-  const parent = commentsById.get(comment.comment_parent)
+  const parent = commentsById.get(comment.parentId)
   if (!parent) {
-    throw Error(`Parent comment not found: ${comment.comment_parent}`)
+    throw Error(`Parent comment not found: ${comment.parentId}`)
   }
   parent.children.push(structuredComment)
 }
 
+// 全件を描画し、インデントだけ depth 4 で止める（実データには depth 6 まである）
 const flattenComments = (
   comments: Array<StructuredComment>,
   depth: number,
@@ -120,16 +90,16 @@ const flattenComments = (
   return entries
 }
 
-const leadingComments = flattenComments(allComments.slice(0, 5), 1)
-const remainingConversationCount = Math.max(allComments.length - 5, 0)
-const remainingComments = flattenComments(allComments.slice(5), 1)
+const leadingComments = flattenComments(rootComments.slice(0, 5), 1)
+const remainingConversationCount = Math.max(rootComments.length - 5, 0)
+const remainingComments = flattenComments(rootComments.slice(5), 1)
 const loadMore = async () => {
   loadMoreStatus.value = "loading"
   await delay(Math.floor(Math.random() * 600) + 100) // 0.1s ~ 0.7s
   loadMoreStatus.value = "completed"
 }
 
-if (res.length !== leadingComments.length + remainingComments.length) {
+if (p.comments.length !== leadingComments.length + remainingComments.length) {
   throw Error("Comments could not be structured correctly")
 }
 </script>

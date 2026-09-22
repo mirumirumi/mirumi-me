@@ -112,6 +112,16 @@ describe("site deploy", () => {
         selectDeployKeys(["index.html", "assets/favicon.png"], { ...plan, mode: "full" }),
       ).toEqual(["index.html", "assets/favicon.png"])
     })
+
+    test("comment refresh は XML を置かない", () => {
+      expect(
+        selectDeployKeys(
+          ["article/index.html", "article/_payload.json", "feed.xml", "sitemap.xml", "_nuxt/a.js"],
+          { ...plan, routes: ["/article/"] },
+          { xml: false },
+        ),
+      ).toEqual(["article/index.html", "article/_payload.json", "_nuxt/a.js"])
+    })
   })
 
   describe("object metadata", () => {

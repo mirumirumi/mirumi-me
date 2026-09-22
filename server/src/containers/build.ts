@@ -25,6 +25,8 @@ interface GenerateSiteInput {
   deploymentState: SiteDeploymentState
   workersApiOrigin: string
   appEnv: "dev" | "prd"
+  // comment-refresh は記事 1 本しか変わらないため sitemap / feed を出さない
+  xml?: boolean
 }
 
 export interface GeneratedSite {
@@ -103,6 +105,7 @@ export const generateSite = async ({
   deploymentState,
   workersApiOrigin,
   appEnv,
+  xml = true,
 }: GenerateSiteInput): Promise<GeneratedSite> => {
   const jobDirectory = join(BUILD_ROOT, safeJobName(workflowId))
   const manifestDirectory = join(jobDirectory, "manifest")
@@ -144,6 +147,9 @@ export const generateSite = async ({
     await mkdir(outputDirectory, { recursive: true })
   }
 
+  if (!xml) {
+    return { outputDirectory, manifestDirectory }
+  }
   const deployedPages = Object.values(deploymentState.pages)
   const xmlFiles = {
     ...generateSiteSitemaps(deployedPages),
