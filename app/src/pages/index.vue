@@ -53,6 +53,11 @@
 <script setup lang="ts">
 import type { BuildPageSummary, PageSummariesManifest } from "shared/build-manifest"
 
+import goodGoodsCardImage from "@/assets/images/top-thumbnails/good-goods.webp"
+import indiesGameRecommendCardImage from "@/assets/images/top-thumbnails/indies-game-recommend.webp"
+import outOfBodyCardImage from "@/assets/images/top-thumbnails/out-of-body.webp"
+import pcFreesoftCardImage from "@/assets/images/top-thumbnails/pc-freesoft.webp"
+
 const appConfig = useAppConfig()
 
 onMounted(async () => {
@@ -62,11 +67,33 @@ onMounted(async () => {
 const { data } = await useFetch<PageSummariesManifest>("/api/_build/page-summaries")
 const summaries = data.value?.pages ?? []
 const summaryBySlug = new Map(summaries.map((summary) => [summary.slug, summary]))
-const featuredSlugs = ["pc-freesoft", "good-goods", "indies-game-recommend", "out-of-body"]
-const featured = featuredSlugs.flatMap((slug) => {
-  const summary = summaryBySlug.get(slug)
+// 冒頭の 4 件だけは記事の title / thumbnail ではなく、トップ専用に用意した文言と画像を出す
+const featuredEntries: Array<Pick<BuildPageSummary, "slug" | "title" | "cardImageUrl">> = [
+  {
+    slug: "pc-freesoft",
+    title: "Windows にまず入れたいおすすめフリーソフト/便利アプリ 40 選",
+    cardImageUrl: pcFreesoftCardImage,
+  },
+  {
+    slug: "good-goods",
+    title: "これまでの人生で「本当に買ってよかった」と思えるもの 40 選",
+    cardImageUrl: goodGoodsCardImage,
+  },
+  {
+    slug: "indies-game-recommend",
+    title: "個人的インディーズゲームおすすめ 30 本くらいを紹介する！",
+    cardImageUrl: indiesGameRecommendCardImage,
+  },
+  {
+    slug: "out-of-body",
+    title: "この記事で人生変わるかも？体外離脱 (幽体離脱) 総まとめ",
+    cardImageUrl: outOfBodyCardImage,
+  },
+]
+const featured = featuredEntries.flatMap((entry) => {
+  const summary = summaryBySlug.get(entry.slug)
 
-  return summary ? [summary] : []
+  return summary ? [{ ...summary, ...entry }] : []
 })
 const categoryEntries = (categorySlug: string): Array<BuildPageSummary> => {
   return summaries.filter(({ category }) => category.slug === categorySlug).slice(0, 4)

@@ -451,7 +451,9 @@ bun run upload
 - Amazon: `AMAZON_CARD_SIGNING_SECRET`, `AMAZON_CREATORS_CREDENTIAL_ID`, `AMAZON_CREATORS_CREDENTIAL_SECRET`
 - コメント: `TURNSTILE_SECRET`、`SES_ACCESS_KEY_ID`、`SES_SECRET_ACCESS_KEY`
   （`ses:SendEmail` だけを許した専用 credential。SES は sandbox のまま使うので、送信元 `mirumi.me` の
-  domain identity がある `us-east-1` で宛先アドレスも verified identity にする。production access の申請は不要）
+  domain identity がある `us-east-1` で宛先アドレスも verified identity にする。production access の申請は不要。
+  sandbox では宛先 identity にも `ses:SendEmail` の認可がかかるので、IAM の `Resource` には送信元と宛先の
+  両方の identity ARN を入れる。送信元だけだと 403 になる。IAM user `mirumime-comment-digest` は Terraform 管理外）
 - Turnstile の widget は `mirumi-me-comments-prd`（site key は `nuxt.config.ts` に直書き、dev / prd 共通）。
   hostname は `mirumi.me`、dev の CloudFront domain、`localhost` の 3 つで、widget の描画はどこでも同じになる。
   siteverify の hostname は `FRONTEND_ORIGIN` と照合するので、token を使えるのは dev / prd のサイトからだけ
