@@ -573,6 +573,7 @@ describe("renderArticleContent", () => {
           title: "外部記事",
           description: "説明",
           imageUrl: "https://example.com/image.png",
+          faviconUrl: "https://example.com/favicon.ico",
           label: "example.com",
         },
       },
@@ -583,13 +584,219 @@ describe("renderArticleContent", () => {
           text: "投稿本文",
           authorName: "みるみ",
           authorHandle: "__mirumi__",
+          avatarUrl: null,
+          mediaUrls: [],
+          replyCount: null,
+          repostCount: null,
+          likeCount: null,
+          linkCard: null,
           createdAt: "2026-08-24T00:00:00.000Z",
         },
       },
     })
 
     expect(result.html).toContain('<a class="blogcard external"')
+    expect(result.html).toContain(
+      '<div class="footer"><div class="favicon"><img src="https://example.com/favicon.ico" alt="example.com" loading="lazy"></div><div class="domain">example.com</div></div>',
+    )
     expect(result.html).toContain('<div class="static_tweet">')
+    expect(result.warnings).toEqual([])
+  })
+
+  test("X ポストのアイコン・添付画像・カウント・リンクカードを出す", () => {
+    const result = renderArticleContent(
+      article([
+        {
+          id: "x-post",
+          type: "embed" as const,
+          url: "https://x.com/__mirumi__/status/123",
+          caption: [],
+          children: [],
+        },
+      ]),
+      {
+        amazonCardSignatures: {},
+        xPosts: {
+          "x-post": {
+            postId: "123",
+            url: "https://x.com/__mirumi__/status/123",
+            text: "投稿本文",
+            authorName: "みるみ",
+            authorHandle: "__mirumi__",
+            avatarUrl: "https://pbs.twimg.com/profile_images/1/icon.jpg",
+            mediaUrls: ["https://pbs.twimg.com/media/abc.jpg"],
+            replyCount: 14,
+            repostCount: 13684,
+            likeCount: 10516,
+            linkCard: {
+              url: "https://example.com/",
+              title: "リンク先",
+              description: "説明",
+              imageUrl: "https://example.com/ogp.png",
+            },
+            createdAt: "2026-08-24T00:00:00.000Z",
+          },
+        },
+      },
+    )
+
+    expect(result.html).toContain(
+      '<div class="icon"><img src="https://pbs.twimg.com/profile_images/1/icon.jpg" alt="" width="49" height="49" loading="lazy"></div>',
+    )
+    expect(result.html).toContain('<div class="x_icon"></div>')
+    expect(result.html).toContain('<div class="link_card">')
+    expect(result.html).toContain('<div class="media_wrap">')
+    expect(result.html).toContain(
+      '<div class="reply">14</div><div class="retweet">13,684</div><div class="like">10,516</div>',
+    )
+    expect(result.warnings).toEqual([])
+  })
+
+  test("X ポストの URL とハッシュタグは色だけ付け、末尾の URL は card になったら落とす", () => {
+    const render = (text: string, linkCard: boolean) =>
+      renderArticleContent(
+        article([
+          {
+            id: "x-post",
+            type: "embed" as const,
+            url: "https://x.com/__mirumi__/status/123",
+            caption: [],
+            children: [],
+          },
+        ]),
+        {
+          amazonCardSignatures: {},
+          xPosts: {
+            "x-post": {
+              postId: "123",
+              url: "https://x.com/__mirumi__/status/123",
+              text,
+              authorName: "みるみ",
+              authorHandle: "__mirumi__",
+              avatarUrl: null,
+              mediaUrls: [],
+              replyCount: null,
+              repostCount: null,
+              likeCount: null,
+              linkCard: linkCard
+                ? {
+                    url: "https://example.com/site/",
+                    title: "リンク先",
+                    description: null,
+                    imageUrl: null,
+                  }
+                : null,
+              createdAt: null,
+            },
+          },
+        },
+      ).html
+
+    // 末尾の URL は card になっているので落とし、#タグと @メンションは色だけ付ける
+    expect(render("告知です #SHAXV @__mirumi__\nhttps://example.com/site/", true)).toContain(
+      '<div class="body">告知です <span class="link_text">#SHAXV</span> <span class="link_text">@__mirumi__</span><div class="link_card">',
+    )
+    // 末尾でなければ残し、表示は scheme を落として短くする
+    expect(render("詳細は https://example.com/site/ をどうぞ", true)).toContain(
+      '<span class="link_text">example.com/site</span>',
+    )
+    // card が無ければ末尾の URL も残す
+    expect(render("詳細は https://t.co/PisKzAC0ur", false)).toContain(
+      '<span class="link_text">t.co/PisKzAC0ur</span>',
+    )
+  })
+
+  test("内部 Bookmark の footer をカテゴリ名の folder アイコン付きにする", () => {
+    const result = renderArticleContent(
+      article([
+        {
+          id: "bookmark",
+          type: "bookmark" as const,
+          url: "https://mirumi.me/vivaldi/",
+          caption: [],
+          children: [],
+        },
+      ]),
+      {
+        amazonCardSignatures: {},
+        bookmarks: {
+          bookmark: {
+            kind: "internal",
+            url: "https://mirumi.me/vivaldi/",
+            title: "内部記事",
+            description: null,
+            imageUrl: null,
+            faviconUrl: null,
+            label: "PC",
+          },
+        },
+      },
+    )
+    expect(result.html).toContain(
+      '<div class="footer"><div class="category"><span>PC</span></div></div>',
+    )
+    expect(result.html).toContain('<div class="blogcard">')
+    expect(result.warnings).toEqual([])
+  })
+
+  test("GitHub の外部 Bookmark は thumbnail に crop 防止の class を付ける", () => {
+    const result = renderArticleContent(
+      article([
+        {
+          id: "bookmark",
+          type: "bookmark" as const,
+          url: "https://github.com/mirumirumi/mirumi-me",
+          caption: [],
+          children: [],
+        },
+      ]),
+      {
+        amazonCardSignatures: {},
+        bookmarks: {
+          bookmark: {
+            kind: "external",
+            url: "https://github.com/mirumirumi/mirumi-me",
+            title: "リポジトリ",
+            description: null,
+            imageUrl: "https://opengraph.githubassets.com/abc/mirumirumi/mirumi-me",
+            faviconUrl: "https://github.com/favicon.ico",
+            label: "github.com",
+          },
+        },
+      },
+    )
+
+    expect(result.html).toContain('<div class="thumbnail github">')
+    expect(result.warnings).toEqual([])
+  })
+
+  test("カテゴリのない固定ページ宛の内部 Bookmark は footer を隠す class を付ける", () => {
+    const result = renderArticleContent(
+      article([
+        {
+          id: "bookmark",
+          type: "bookmark" as const,
+          url: "https://mirumi.me/profile/",
+          caption: [],
+          children: [],
+        },
+      ]),
+      {
+        amazonCardSignatures: {},
+        bookmarks: {
+          bookmark: {
+            kind: "internal",
+            url: "https://mirumi.me/profile/",
+            title: "固定ページ",
+            description: null,
+            imageUrl: null,
+            faviconUrl: null,
+            label: "",
+          },
+        },
+      },
+    )
+    expect(result.html).toContain('<div class="blogcard page">')
     expect(result.warnings).toEqual([])
   })
 })

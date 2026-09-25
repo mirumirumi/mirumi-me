@@ -155,6 +155,60 @@ dev CloudFront distribution は常時有効で、CloudFront Function が閲覧�
 `deploy.yml` の trigger は `mode` を `full` で決め打ちしているため、CI から `bootstrap` は流れない。
 初回は CI を有効化する前に手元から 1 回 `bootstrap` を流し、それを見届けてから CI へ切り替える。
 
+### deploy 直後に build を投げない
+
+`wrangler deploy` が Container image を差し替えると、Container application の rollout が始まる。
+rollout が走っている間に起動した instance は **`Runtime signalled the container to exit due to a
+new version rollout` で途中で殺される**。Worker 側には `Container error:` とだけ出て、
+Workflow には `Container の publish job が失敗しました: 500` しか残らないので原因が見えにくい。
+`full` は retries 0 なのでそのまま Errored になる。
+
+deploy のあとは rollout の完了を待ってから trigger する。
+
+```bash
+bunx wrangler containers list --env dev
+```
+
+`LAST MODIFIED` が deploy 時刻より後になり、それ以上動かなくなったら rollout は終わっている
+（image を変えない deploy なら rollout は起きないので待つ必要はない）。
+
+2026-09-24 に dev で踏んだ。deploy の約 1 分後に full build を投げて 2 分で Errored、
+rollout の完了は trigger の 2 分半後だった。`deploy.yml` にも同じ問題があったため、
+deploy と trigger の間に `Wait for container rollout` を挟んである（固定 5 分 + `state` の確認）。
+
+### 複数記事の公開が重なったとき
+
+publish はすべて `BUILD_CONTAINER.getByName("publisher")` という単一の Durable Object に集まり、
+`SerialJobQueue` で直列化される。publish index を 1 本の書き手で守るための設計で、これ自体は正しい。
+ただし **後から来たジョブの待ち時間も Workflow step の timeout に数えられる**ので、
+同時に投げられる本数には上限がある。partial の step は 30 分 timeout・retries 2。
+
+1 本あたりの partial publish は 1.5〜4 分なので、数記事が重なる程度（コメント承認が続く、
+数本の記事を続けて更新する）は普通に流れる。10 本以上を一気に投げるときだけ
+`POST /admin/publish` に pageIds をまとめて渡し、Workflow と Container ジョブを 1 本にする。
+
+- 通常の執筆・コメント承認は気にせず操作してよい。
+  **ただし full build 中だけは 409 で断られる**（後述の「full build 中に触ってはいけないこと」）
+- 大量にまとめて公開したいときは `POST /admin/publish` に pageIds を複数渡す
+- 全記事へ反映したいときは full build を回す。publish index が埋まっていれば 35 分ほどで終わる
+  （2026-09-25 実測。x-post と bookmark の KV キャッシュが冷えていると 1 時間 30 分かかった）
+- 詰まったときは `wrangler workflows instances list` で走っている instance を確認し、
+  1 本ずつ終わらせる。`--status` は `running queued waiting paused` を順に見る。
+  terminate しても Container 内のジョブは走り続ける点に注意
+
+同時実行を安全にするために入れた対策が 2 つある。壊さないよう注意すること。
+
+- `destroyOutdatedInstance()`：Container の作り直しは `CF_VERSION_METADATA.id` が
+  前回と変わったときだけ。以前はジョブごとに `destroy()` していて、連続実行時の cold start churn が
+  詰まりの主因と見ている。version が取れない環境では従来どおり毎回作り直すフォールバックが残っている
+- `SerialJobQueue` の `workflowId` dedupe：step が timeout して retry が来たとき、
+  実行中の同じジョブに相乗りする。以前は retry がキューを積み増して詰まりを悪化させていた
+
+2026-09-24 に dev で 3 記事を同時に `公開待ち` にしたときは、2 本が 45 分で Errored、
+1 本が 1 時間走り続けた。上記 2 つを入れてから同じ手順（2 記事同時）を再実行したところ、
+1 本目 1 分 55 秒・2 本目 3 分 35 秒で両方 Completed した。2 つ同時に入れたので
+どちらが効いたかは切り分けていない。
+
 ### partial publish と Nuxt の app manifest
 
 Nuxt の client は `_nuxt/builds/meta/<buildId>.json` の `prerendered` に載っている route だけを
@@ -166,6 +220,75 @@ partial の generate はその回の route しか載せないため、Container 
 
 `routeRules` の `prerender: true` で回避しようとしてはいけない。Nuxt の `prerender.server` plugin が
 静的ページを全部生成対象に足すため、partial の generate が manifest にないページで落ちる。
+
+### full / bootstrap は受け付けと待機を分けている
+
+partial は `publish-site` step の中で Container の結果をそのまま待つ。1〜4 分で終わるのでこれでよい。
+
+full / bootstrap は 1 時間を超えるため、同じ形にすると「結果を待っているだけの invocation」が
+Workers の hang 判定で打ち切られる（2026-09-24 に 20 分で踏んだ）。そこで step を分けてある。
+
+```
+start-publish-site        Container に受け付けさせるだけ。数秒で返る
+wait-publish-site-N       step.sleep で 1 分眠る
+poll-publish-site-N       Container に状態を聞く。done なら summary を受け取って抜ける
+```
+
+polling は最大 720 回＝12 時間で打ち切る。publish index が空の初回ビルドは全記事の thumbnail
+生成が走るため極端に遅く、dev では 1 回の試行が 4.7 時間走ってまだ終わっていなかった。
+本番 bootstrap も同じ条件なので、余裕を取ってある（`step.sleep` は step 上限に数えられない）。Container 側は `POST /publish` が 202 を返して
+background で走り、`GET /publish-state` が `running` / `done` / `failed` / `unknown` を返す。
+`unknown` は Container が作り直されて受け付けた記録を失った状態なので、待たずに失敗させる。
+
+**publish index の書き手を 1 本に保つ責務は Container 側へ移っている。**
+`server/src/containers/http.ts` の `SerialJobQueue` が partial の同期実行・full の background 実行・
+comment refresh をすべて同じ queue に通す。DO 側の queue は step retry の相乗り用に残してある。
+
+#### full build 中に触ってはいけないこと
+
+full build のあいだ、Container は「HTTP を開いたまま待っていない」状態で走り続ける。
+そのため次の 3 つを、走っているジョブを壊さないための仕掛けとして入れてある。
+**消すと 1 時間以上のビルドが無言で死ぬので注意。**
+
+- **`BuildContainer.onActivityExpired()` の override**（`containers/container.ts`）。
+  ライブラリは inflight request が無いと 15 分（`sleepAfter`）で SIGTERM を送るが、
+  background の build は inflight を持たない。Container 本人に `GET /jobs` で聞いて、
+  走っていれば見送る。ライブラリがこのあと必ず `renewActivityTimeout()` を呼ぶので猶予が伸びる
+- **`destroyOutdatedInstance()` の busy ガード**。`destroy()` は SIGKILL なので、
+  走っているジョブがあるときは version を記録せずに見送り、空いている次のジョブで作り直す
+- **partial publish と comment refresh は full build 中だと 409 で断る**
+  （`containers/request-handler.ts`）。待たせると Workflow 側が hang 判定で殺され、
+  Notion へ失敗も書けないままジョブだけ 1 時間後に実行されて
+  「サイトには出ているのに Notion は 公開待ち」になるため。
+  **partial 同士は今まで通りキューに積む**（コメント承認や記事更新を続けて行う通常運用）
+- **14 時間を超えて走り続けているジョブは「ハングした」とみなす**（`background-publish.ts`）。
+  ジョブの promise が永久に settle しないと、409 で publish が止まり Container も止められない
+  ため、その時点で上の 3 つのガードをすべて解除して自力で回復させる。
+  Workflow の polling 予算（12 時間）より長く取ってあるので、待っている人がいるビルドは切らない
+
+**手動で deploy するときは、full build が走っていないことを先に確認する。**
+走っている最中に deploy しても上のガードでビルドは死なないが、
+**新しい image はその build に反映されない**（古い image のまま完走する）。
+CI には `Check running publish workflow` step を入れてあるので、CI 経由なら自動で落ちる。
+
+```bash
+for status in running queued waiting paused; do
+  bunx wrangler workflows instances list mirumi-me-publish-dev --status "$status" --env dev
+done
+```
+
+`step.sleep` 中の instance がどの status で報告されるかは環境依存なので、まとめて見る。
+
+#### CloudFront invalidation は 2 回流れる
+
+full / bootstrap では、Container がジョブ末尾に自分で invalidation を流す。
+Workflow が hang 判定などで先に諦めても CDN が更新されるようにするためで、
+`invalidate-cloudfront` step はそのまま残してある（冪等な念押し）。
+step を分けてある理由は、CloudFront のレート制限（`TooManyInvalidationsInProgress`、
+wildcard 同時 15 件上限）が build とは別の障害ドメインで、
+ビルドをやり直さずに指数バックオフで 5 回まで retry したいから。
+Container 側の失敗はログに残すだけで build 結果を捨てない。
+CallerReference の seed を `container:` 付きにして、2 つを別の invalidation として扱わせている。
 
 ### full / bootstrap build の見かた
 

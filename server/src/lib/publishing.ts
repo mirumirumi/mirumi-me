@@ -177,6 +177,14 @@ export interface PublishJobSummary {
   updatedPaths: Array<string>
 }
 
+// full / bootstrap は結果を待たずに受け付けるため、状態を polling で取りに行く。
+// unknown は Container が job を見失った状態（再作成された、など）
+export type PublishJobState =
+  | { status: "running" }
+  | { status: "done"; summary: PublishJobSummary }
+  | { status: "failed"; message: string }
+  | { status: "unknown" }
+
 export interface PublishWorkflowFailure {
   pageId: string
   code: PublishFailureCode

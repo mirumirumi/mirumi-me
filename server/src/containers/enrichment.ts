@@ -13,9 +13,9 @@ import type { Fetcher } from "../lib/types"
 
 export { createInternalBookmarkLookup, type InternalBookmarkSource }
 
-// Worker 側は外部サイト 5 秒、xAI 20 秒で打ち切るため、その外側として少しだけ長く取る。
+// Worker 側は外部サイト 5 秒、xAI 45 秒で打ち切るため、その外側として少しだけ長く取る。
 // ここを無期限にすると Worker の invocation が先に終わったときに Container が永久に待ち続ける
-const BRIDGE_TIMEOUT_MS = 30_000
+const BRIDGE_TIMEOUT_MS = 60_000
 
 const fetchJson = async (url: URL, fetcher: Fetcher): Promise<unknown> => {
   const response = await fetcher(url, { signal: AbortSignal.timeout(BRIDGE_TIMEOUT_MS) })

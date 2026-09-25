@@ -4,6 +4,7 @@ import type {
   DeploymentPageState,
   PageRevision,
   PublishJobRequest,
+  PublishJobState,
   PublishJobSummary,
   PublishWorkflowParams,
 } from "../lib/publishing"
@@ -12,18 +13,27 @@ import {
   type LoadedPublishRequest,
   PUBLISH_WORKFLOW_STEP_CONFIGS,
   type PublishWorkflowDependencies,
+  type PublishWorkflowStepExecutor,
   runPublishWorkflow,
-  type WorkflowStepExecutor,
 } from "./publish-workflow"
 
 describe("runPublishWorkflow", () => {
-  class MemoryStep implements WorkflowStepExecutor {
+  class MemoryStep implements PublishWorkflowStepExecutor {
     calls: Array<{ name: string; config: unknown }> = []
+    sleeps: Array<{ name: string; duration: string }> = []
+    // sleep は待たないので、poll より前に来ているかを別に記録して確かめる
+    order: Array<string> = []
 
     async do<T>(name: string, config: unknown, callback: () => Promise<T>): Promise<T> {
       this.calls.push({ name, config })
+      this.order.push(name)
 
       return callback()
+    }
+
+    async sleep(name: string, duration: string) {
+      this.sleeps.push({ name, duration })
+      this.order.push(name)
     }
   }
 
@@ -75,6 +85,10 @@ describe("runPublishWorkflow", () => {
   const createDependencies = (loaded: LoadedPublishRequest) => {
     const loadRequest = vi.fn(async () => loaded)
     const publishSite = vi.fn(async (_request: PublishJobRequest) => makeSummary())
+    const startPublishSite = vi.fn(async (_request: PublishJobRequest) => undefined)
+    const readPublishSiteState = vi.fn(async (_workflowId: string): Promise<PublishJobState> => {
+      return { status: "done", summary: makeSummary() }
+    })
     const invalidateSite = vi.fn(async (_summary: PublishJobSummary) => undefined)
     const loadDeploymentPages = vi.fn(async (_pageIds: Array<string>) => {
       return [] as Array<DeploymentPageState>
@@ -85,12 +99,16 @@ describe("runPublishWorkflow", () => {
       dependencies: {
         loadRequest,
         publishSite,
+        startPublishSite,
+        readPublishSiteState,
         invalidateSite,
         loadDeploymentPages,
         writeNotionResults,
       } satisfies PublishWorkflowDependencies,
       loadRequest,
       publishSite,
+      startPublishSite,
+      readPublishSiteState,
       invalidateSite,
       loadDeploymentPages,
       writeNotionResults,
@@ -200,7 +218,7 @@ describe("runPublishWorkflow", () => {
       (_, index) => `00000000-0000-0000-0000-${String(index + 1).padStart(12, "0")}`,
     )
     const step = new MemoryStep()
-    const { dependencies, publishSite, writeNotionResults } = createDependencies({
+    const { dependencies, readPublishSiteState, writeNotionResults } = createDependencies({
       revisions: pageIds.map((pageId, index) =>
         makeRevision({
           pageId,
@@ -211,8 +229,9 @@ describe("runPublishWorkflow", () => {
       ),
       failed: [],
     })
-    publishSite.mockResolvedValue(
-      makeSummary({
+    readPublishSiteState.mockResolvedValue({
+      status: "done",
+      summary: makeSummary({
         pages: pageIds.map((pageId) => ({
           pageId,
           action: "publish",
@@ -222,7 +241,7 @@ describe("runPublishWorkflow", () => {
           updatedAt: null,
         })),
       }),
-    )
+    })
     await runPublishWorkflow({
       workflowId: "workflow-id",
       params: {
@@ -432,5 +451,127 @@ describe("runPublishWorkflow", () => {
         error: "公開処理に失敗しました: container unavailable（Workflow: workflow-id）",
       },
     ])
+  })
+
+  describe("full build の完了待ち", () => {
+    const fullParams: PublishWorkflowParams = {
+      mode: "full",
+      source: "release",
+      requestId: "release-request",
+      requestedAt: params.requestedAt,
+      pageIds: [],
+    }
+
+    const runFullBuild = async (step: MemoryStep, dependencies: PublishWorkflowDependencies) => {
+      return runPublishWorkflow({
+        workflowId: "workflow-id",
+        params: fullParams,
+        step,
+        dependencies,
+      })
+    }
+
+    const loadedForFullBuild = () => {
+      return {
+        revisions: [
+          makeRevision({ internalState: "公開中", publishedAt: "2026-08-20T00:00:00.000Z" }),
+        ],
+        failed: [],
+      }
+    }
+
+    test("受け付けと待機を別の step に分ける", async () => {
+      const step = new MemoryStep()
+      const { dependencies, publishSite, startPublishSite } = createDependencies(
+        loadedForFullBuild(),
+      )
+
+      await runFullBuild(step, dependencies)
+
+      expect(publishSite).not.toHaveBeenCalled()
+      expect(startPublishSite).toHaveBeenCalledTimes(1)
+      expect(step.calls.map(({ name }) => name)).toEqual([
+        "load-request",
+        "preflight-request",
+        "start-publish-site",
+        "poll-publish-site-0",
+        "invalidate-cloudfront",
+      ])
+      expect(step.sleeps).toEqual([{ name: "wait-publish-site-0", duration: "1 minute" }])
+      expect(step.order).toEqual([
+        "load-request",
+        "preflight-request",
+        "start-publish-site",
+        "wait-publish-site-0",
+        "poll-publish-site-0",
+        "invalidate-cloudfront",
+      ])
+    })
+
+    test("running のあいだは polling を続ける", async () => {
+      const step = new MemoryStep()
+      const { dependencies, readPublishSiteState, invalidateSite } = createDependencies(
+        loadedForFullBuild(),
+      )
+      readPublishSiteState
+        .mockResolvedValueOnce({ status: "running" })
+        .mockResolvedValueOnce({ status: "running" })
+
+      await runFullBuild(step, dependencies)
+
+      expect(readPublishSiteState).toHaveBeenCalledTimes(3)
+      expect(step.sleeps.map(({ name }) => name)).toEqual([
+        "wait-publish-site-0",
+        "wait-publish-site-1",
+        "wait-publish-site-2",
+      ])
+      expect(step.order.slice(3, 9)).toEqual([
+        "wait-publish-site-0",
+        "poll-publish-site-0",
+        "wait-publish-site-1",
+        "poll-publish-site-1",
+        "wait-publish-site-2",
+        "poll-publish-site-2",
+      ])
+      expect(invalidateSite).toHaveBeenCalledTimes(1)
+    })
+
+    test("running のまま上限に達したら打ち切る", async () => {
+      const step = new MemoryStep()
+      const { dependencies, readPublishSiteState, invalidateSite } = createDependencies(
+        loadedForFullBuild(),
+      )
+      readPublishSiteState.mockResolvedValue({ status: "running" })
+
+      await expect(runFullBuild(step, dependencies)).rejects.toThrow(
+        "publish job が 720 回の polling で終わりませんでした",
+      )
+      expect(readPublishSiteState).toHaveBeenCalledTimes(720)
+      expect(step.sleeps).toHaveLength(720)
+      expect(invalidateSite).not.toHaveBeenCalled()
+    })
+
+    test("failed は Container のメッセージで落とす", async () => {
+      const step = new MemoryStep()
+      const { dependencies, invalidateSite } = createDependencies(loadedForFullBuild())
+      dependencies.readPublishSiteState = vi.fn(async () => {
+        return { status: "failed", message: "generate が失敗しました" } as PublishJobState
+      })
+
+      await expect(runFullBuild(step, dependencies)).rejects.toThrow("generate が失敗しました")
+      expect(invalidateSite).not.toHaveBeenCalled()
+    })
+
+    test("unknown は job を見失ったとして落とす", async () => {
+      const step = new MemoryStep()
+      const { dependencies } = createDependencies(loadedForFullBuild())
+      dependencies.readPublishSiteState = vi.fn(async () => {
+        return { status: "unknown" } as PublishJobState
+      })
+
+      await expect(runFullBuild(step, dependencies)).rejects.toThrow(
+        "Container が publish job を見失いました",
+      )
+    })
   })
 })

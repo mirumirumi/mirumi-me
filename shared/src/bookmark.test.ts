@@ -81,6 +81,7 @@ describe("bookmark", () => {
             <meta property="og:title" content="記事の &amp; タイトル">
             <meta property="og:description" content="説明文">
             <meta property="og:image" content="/images/ogp.png">
+            <link rel="shortcut icon" href="/images/favicon.png">
           </head><body></body></html>`,
         ),
       ])
@@ -91,8 +92,47 @@ describe("bookmark", () => {
         title: "記事の & タイトル",
         description: "説明文",
         imageUrl: "https://example.com/images/ogp.png",
+        faviconUrl: "https://example.com/images/favicon.png",
         label: "example.com",
       })
+    })
+
+    test("alternate icon より素の icon を優先する", async () => {
+      stubFetch([
+        htmlResponse(
+          `<html><head>
+            <link rel="mask-icon" href="/mask.svg" color="#000000">
+            <link rel="alternate icon" type="image/png" href="/favicon.png">
+            <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+          </head><body></body></html>`,
+        ),
+      ])
+
+      expect((await fetchBookmarkCard(new URL("https://example.com/article"))).faviconUrl).toEqual(
+        "https://example.com/favicon.svg",
+      )
+    })
+
+    test("favicon の宣言がなければ /favicon.ico の存在を確かめて使う", async () => {
+      const requested = stubFetch([
+        htmlResponse("<html><head><title>宣言なし</title></head></html>"),
+        new Response(null, { status: 200, headers: { "Content-Type": "image/x-icon" } }),
+      ])
+      const card = await fetchBookmarkCard(new URL("https://example.com/article"))
+
+      expect(card.faviconUrl).toEqual("https://example.com/favicon.ico")
+      expect(requested).toEqual(["https://example.com/article", "https://example.com/favicon.ico"])
+    })
+
+    test("/favicon.ico が画像でなければ favicon なしの card にする", async () => {
+      stubFetch([
+        htmlResponse("<html><head><title>宣言なし</title></head></html>"),
+        htmlResponse("<html><body>not found</body></html>", { status: 404 }),
+      ])
+
+      expect((await fetchBookmarkCard(new URL("https://example.com/article"))).faviconUrl).toEqual(
+        null,
+      )
     })
 
     test("redirect 先を再検証し、private address へは追従しない", async () => {
@@ -109,6 +149,7 @@ describe("bookmark", () => {
       stubFetch([
         new Response(null, { status: 301, headers: { Location: "https://example.org/moved" } }),
         htmlResponse("<html><head><title>移動先</title></head></html>"),
+        new Response(null, { status: 404 }),
       ])
       const card = await fetchBookmarkCard(new URL("https://example.com/old"))
 
@@ -129,7 +170,7 @@ describe("bookmark", () => {
     test("30日以内の cache は外部 fetch せず返す", async () => {
       const cache = new MemoryCache()
       cache.value = JSON.stringify({
-        version: 1,
+        version: 2,
         fetchedAt: "2026-08-20T00:00:00.000Z",
         card: {
           kind: "external",
@@ -137,6 +178,7 @@ describe("bookmark", () => {
           title: "cached",
           description: null,
           imageUrl: null,
+          faviconUrl: null,
           label: "example.com",
         },
       })
@@ -156,7 +198,7 @@ describe("bookmark", () => {
     test("再取得失敗時は stale cache を返す", async () => {
       const cache = new MemoryCache()
       cache.value = JSON.stringify({
-        version: 1,
+        version: 2,
         fetchedAt: "2026-01-01T00:00:00.000Z",
         card: {
           kind: "external",
@@ -164,6 +206,7 @@ describe("bookmark", () => {
           title: "stale",
           description: null,
           imageUrl: null,
+          faviconUrl: null,
           label: "example.com",
         },
       })
@@ -187,6 +230,7 @@ describe("bookmark", () => {
         title: "fetched",
         description: null,
         imageUrl: null,
+        faviconUrl: null,
         label: "example.com",
       }
       const cache: BookmarkCache = {

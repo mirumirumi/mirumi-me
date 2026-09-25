@@ -341,7 +341,7 @@ const createInternalBookmarkSources = (
       route: page.route,
       title: page.title,
       description: page.excerpt,
-      label: page.category?.name ?? "みるめも",
+      label: page.category?.name ?? "",
     })
   }
   for (const { prepared, media } of articles) {
@@ -352,7 +352,7 @@ const createInternalBookmarkSources = (
       route: prepared.route,
       title: media.article.title,
       description: createArticleExcerpt(media.article),
-      label: media.article.category?.name ?? "みるめも",
+      label: media.article.category?.name ?? "",
     })
   }
 

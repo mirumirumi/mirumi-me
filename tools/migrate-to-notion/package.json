@@ -11,7 +11,8 @@
     "upload": "bun src/upload.ts",
     "fetch-comments": "bun src/fetch-comments.ts",
     "import-comments": "bun src/import-comments.ts",
-    "verify-comments": "bun src/verify-comments.ts"
+    "verify-comments": "bun src/verify-comments.ts",
+    "fix-toc-anchors": "bun src/fix-toc-anchors.ts"
   },
   "dependencies": {
     "@notionhq/client": "^5.25.2",

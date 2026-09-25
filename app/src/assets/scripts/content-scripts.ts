@@ -26,28 +26,3 @@ export const loadYouTube = () => {
     })
   })
 }
-
-// Sync X (Twitter) widget theme
-export const switchTwitterColorTheme = () => {
-  const theme = useState<string>("theme", () => "")
-
-  // X のウィジェットに置換される前に備える用
-  const elementsBeforeReplace = Array.from(
-    document.querySelectorAll<HTMLQuoteElement>("blockquote.twitter-tweet"),
-  )
-  for (const el of elementsBeforeReplace) {
-    el.dataset.theme = theme.value
-  }
-
-  //X のウィジェットに置換された後に備える用
-  const elementsAfterReplace = Array.from(
-    document.querySelectorAll<HTMLIFrameElement>('[id^="twitter-widget-"]'),
-  ).filter((el) => /^twitter-widget-\d+$/.test(el.id))
-
-  for (const el of elementsAfterReplace) {
-    el.src =
-      theme.value === "dark"
-        ? el.src.replace("theme=light", "theme=dark")
-        : el.src.replace("theme=dark", "theme=light")
-  }
-}

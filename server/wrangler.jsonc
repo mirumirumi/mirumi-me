@@ -33,7 +33,7 @@
         "AMAZON_CREATORS_MARKETPLACE": "www.amazon.co.jp",
         "AMAZON_ASSOCIATE_TAG": "milmemo-22",
         "AMAZON_CREATORS_CREDENTIAL_VERSION": "3.3",
-        "XAI_MODEL": "grok-4.6",
+        "XAI_MODEL": "grok-4.7",
         "AWS_REGION": "ap-northeast-1",
         "SITE_BUCKET_NAME": "mirumime-dev-mirumi-me",
         "BACKUP_BUCKET_NAME": "mirumime-dev-backup",
@@ -86,6 +86,10 @@
           "class_name": "BackupWorkflow"
         }
       ],
+      // Container の image を作り直すべきか判断するために version を見る
+      "version_metadata": {
+        "binding": "CF_VERSION_METADATA"
+      },
       "containers": [
         {
           "name": "mirumi-me-build-dev",
@@ -181,7 +185,7 @@
         "AMAZON_CREATORS_MARKETPLACE": "www.amazon.co.jp",
         "AMAZON_ASSOCIATE_TAG": "milmemo-22",
         "AMAZON_CREATORS_CREDENTIAL_VERSION": "3.3",
-        "XAI_MODEL": "grok-4.6",
+        "XAI_MODEL": "grok-4.7",
         "AWS_REGION": "ap-northeast-1",
         "SITE_BUCKET_NAME": "mirumime-prd-mirumi-me",
         "BACKUP_BUCKET_NAME": "mirumime-prd-backup",
@@ -234,6 +238,10 @@
           "class_name": "BackupWorkflow"
         }
       ],
+      // Container の image を作り直すべきか判断するために version を見る
+      "version_metadata": {
+        "binding": "CF_VERSION_METADATA"
+      },
       "containers": [
         {
           "name": "mirumi-me-build-prd",

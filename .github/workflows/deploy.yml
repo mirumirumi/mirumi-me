@@ -19,15 +19,71 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.3.3
+          bun-version-file: .tool-versions
 
       - name: Install dependencies
         run: bun i --frozen-lockfile
+
+      # deploy は Container image を差し替えるため、走っている build に新しい image は反映されない。
+      # Container 側にも「走っているジョブがあるなら作り直さない」ガードがあるが、
+      # 黙って古い image のまま完走するより、ここで気づいて落ちたほうがよい
+      - name: Check running publish workflow
+        working-directory: server
+        run: |
+          set -o pipefail
+          # step.sleep 中の instance がどの status で報告されるかは環境に依存するため、
+          # 走っていると解釈しうる status を全部見る（見逃すより待たせる方が安全）
+          for status in running queued waiting paused; do
+            listed=$(bunx wrangler workflows instances list "mirumi-me-publish-${ENV_NAME}" \
+              --status "${status}" --per-page 5 --env "${ENV_NAME}")
+            echo "${listed}"
+            if echo "${listed}" | grep -q "Showing"; then
+              echo "publish workflow が ${status} です。終わるのを待ってから deploy してください"
+              exit 1
+            fi
+          done
 
       # Worker、Workflow、Container の準備だけ行う
       - name: Deploy Worker
         working-directory: server
         run: bun run "deploy:${ENV_NAME}"
+
+      # deploy が Container image を差し替えると application rollout が走り、その最中に起動した
+      # instance は "Runtime signalled the container to exit due to a new version rollout" で
+      # 途中で殺される。走っている build を復帰させる手段は無いので、収束を待ってから投げる。
+      # rollout に入ったかを外から判定する手段が wrangler に無いので、まず固定で待つ
+      # （2026-09-24 に dev で踏んだときは deploy から約 3 分で収束していた）
+      - name: Wait for container rollout
+        working-directory: server
+        run: |
+          set -o pipefail
+          sleep 300
+          # wrangler の state は instance の健康状態から導かれる（rollout 中は provisioning、
+          # ready は instance がゼロ、active は動いている instance がある）。
+          # ただし rollout の前後で ready と provisioning を行き来するため、
+          # 1 回の観測では収束を判定できない。落ち着いたことを 2 回続けて確認する
+          settled=0
+          for _ in $(seq 1 20); do
+            state=$(bunx wrangler containers list --env "${ENV_NAME}" --json \
+              | jq -r --arg name "mirumi-me-build-${ENV_NAME}" '[.[] | select(.name == $name)][0].state')
+            echo "container application state: ${state}"
+            case "${state}" in
+              ready|active)
+                settled=$((settled + 1))
+                if [ 2 -le "${settled}" ]; then
+                  exit 0
+                fi
+                ;;
+              degraded)
+                echo "Container application に failed instance があります"
+                exit 1
+                ;;
+              *) settled=0 ;;
+            esac
+            sleep 30
+          done
+          echo "Container application の rollout が収束しませんでした"
+          exit 1
 
       # サイトの生成、S3 反映、CloudFront invalidation はすべて Workflow が行う
       - name: Trigger full build

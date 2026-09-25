@@ -6,7 +6,7 @@ import { resolveXPost } from "shared/x-post"
 
 import { readLimitedText } from "../lib/request-body"
 import type { HonoEnv } from "../lib/types"
-import { createXaiPostFetcher } from "../services/x-post"
+import { createXaiPostFetcher, createXPostLinkCardResolver } from "../services/x-post"
 
 const MAX_BODY_BYTES = 256
 const RATE_LIMIT_KEY = "/_dev/x-post"
@@ -19,12 +19,19 @@ export type DevXPostRateLimiter = Pick<RateLimit, "limit">
 
 const createResolver = (c: Context<HonoEnv>): DevXPostResolver | null => {
   const cache = c.env.CONTENT_CACHE
-  if (!cache || !c.env.XAI_API_KEY || !c.env.XAI_MODEL) {
+  const apiKey = c.env.XAI_API_KEY
+  const configuredModel = c.env.XAI_MODEL
+  if (!cache || !apiKey || !configuredModel) {
     return null
   }
-  const fetchPost = createXaiPostFetcher(c.env.XAI_API_KEY, c.env.XAI_MODEL)
 
-  return (postId) => resolveXPost(postId, cache, fetchPost)
+  return (postId) =>
+    resolveXPost(
+      postId,
+      cache,
+      createXaiPostFetcher(apiKey, configuredModel),
+      createXPostLinkCardResolver(cache),
+    )
 }
 
 export const handleDevXPost = async (
@@ -61,7 +68,17 @@ export const handleDevXPost = async (
     return c.json({ error: "Rate limit exceeded" }, 429, { "Retry-After": "60" })
   }
 
-  return c.json(await resolver(parsed.data.postId), 200, { "Cache-Control": "private, no-store" })
+  try {
+    return c.json(await resolver(parsed.data.postId), 200, {
+      "Cache-Control": "private, no-store",
+    })
+  } catch (err) {
+    // dev 限定の endpoint なので、xAI 側の失敗理由をそのまま返して切り分けられるようにする
+    const detail = err instanceof Error ? err.message : String(err)
+    console.error(JSON.stringify({ event: "dev_x_post_failed", detail }))
+
+    return c.json({ error: "X post fetch failed", detail }, 502)
+  }
 }
 
 export const postDevXPost = async (c: Context<HonoEnv>): Promise<Response> => {

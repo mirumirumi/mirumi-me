@@ -87,12 +87,6 @@
       background-color: #363636;
     }
 
-    .keyboard-key {
-      color: #d9d9d9;
-      background-color: #535353;
-      border: solid 1.57px #878787;
-    }
-
     a.blogcard {
       &:hover .blogcard {
         background-color: #333334;
@@ -100,14 +94,6 @@
 
       .blogcard {
         border-color: #686868;
-
-        .thumbnail.github + .content {
-          .favicon {
-            img {
-              mix-blend-mode: multiply;
-            }
-          }
-        }
 
         .footer {
           color: #aeadab;
@@ -117,14 +103,45 @@
               background-color: #aeadab;
             }
           }
+
+          // favicon は透過のものが多く、GitHub のように glyph が暗いと dark では沈んでしまう。
+          // サイトごとに dark 用 favicon を拾う手段がないので、薄い下地を敷いて一律で視認させる
+          .favicon img {
+            background-color: #dcdcdc;
+            border-radius: 2px;
+          }
         }
       }
     }
-    // いまは使っていないのでダークモードのカラー調整も未実施
-    .static_tweet {}
 
-    .speech-balloon {
-      background-color: #404040;
+    .static_tweet {
+      > a {
+        border-color: #575553;
+        background-color: #333334;
+
+        .content_wrap {
+          .header .author .id {
+            color: #a09e9b;
+          }
+
+          .body {
+            border-bottom-color: #4f4d4b;
+
+            .link_card,
+            .media_wrap {
+              border-color: #4f4d4b;
+            }
+          }
+
+          .meta {
+            color: #a09e9b;
+          }
+        }
+
+        &:hover {
+          background-color: #3a3a3b;
+        }
+      }
     }
 
     .appreach {

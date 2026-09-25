@@ -6,6 +6,7 @@ export interface BookmarkCardData {
   title: string
   description: string | null
   imageUrl: string | null
+  faviconUrl: string | null
   label: string
 }
 
@@ -15,6 +16,7 @@ const bookmarkCardSchema: z.ZodType<BookmarkCardData> = z.strictObject({
   title: z.string().min(1).max(300),
   description: z.string().max(1_000).nullable(),
   imageUrl: z.url().nullable(),
+  faviconUrl: z.url().nullable(),
   label: z.string().max(300),
 })
 
@@ -23,7 +25,7 @@ const MAX_HTML_BYTES = 1_024 * 1_024
 const FETCH_TIMEOUT_MS = 5_000
 const MAX_REDIRECTS = 3
 const cacheSchema = z.strictObject({
-  version: z.literal(1),
+  version: z.literal(2),
   fetchedAt: z.string().refine((value) => !Number.isNaN(Date.parse(value))),
   card: z.strictObject({
     kind: z.literal("external"),
@@ -31,6 +33,7 @@ const cacheSchema = z.strictObject({
     title: z.string().max(300),
     description: z.string().max(1_000).nullable(),
     imageUrl: z.url().nullable(),
+    faviconUrl: z.url().nullable(),
     label: z.string().max(300),
   }),
 })
@@ -134,6 +137,30 @@ const htmlAttribute = (tag: string, name: string): string | null => {
   return match?.[2]?.trim() || null
 }
 
+// `rel="alternate icon"`（SVG を読めない browser 用の控え）を先に宣言するサイトがあるため、
+// 素の `icon` を最優先にし、alternate、apple-touch-icon の順で拾う
+const iconPriority = (rel: string | null): number => {
+  const tokens = rel?.toLowerCase().split(/\s+/) ?? []
+  if (tokens.includes("icon")) {
+    return tokens.includes("alternate") ? 1 : 0
+  }
+
+  return tokens.includes("apple-touch-icon") ? 2 : Number.POSITIVE_INFINITY
+}
+
+const iconHref = (html: string): string | null => {
+  let best: { priority: number; href: string } | null = null
+  for (const tag of html.match(/<link\b[^>]*>/gi) ?? []) {
+    const priority = iconPriority(htmlAttribute(tag, "rel"))
+    const href = htmlAttribute(tag, "href")
+    if (href && priority < (best?.priority ?? Number.POSITIVE_INFINITY)) {
+      best = { priority, href }
+    }
+  }
+
+  return best?.href ?? null
+}
+
 const metaContent = (html: string, names: Array<string>): string | null => {
   for (const tag of html.match(/<meta\b[^>]*>/gi) ?? []) {
     const key = htmlAttribute(tag, "property") ?? htmlAttribute(tag, "name")
@@ -152,6 +179,32 @@ const decodeEntities = (value: string): string => {
     .replaceAll("&gt;", ">")
     .replaceAll("&quot;", '"')
     .replaceAll("&#39;", "'")
+}
+
+// favicon はサイト自身が宣言しているものを使う。WordPress 時代は Google の s2 favicons を
+// 直リンクしていたが、OGP のためにどのみち HTML を取っているので宣言を読むだけで済む。
+// 宣言がないサイトだけ /favicon.ico の存在を確かめ、それも無ければ favicon なしの card にする
+const resolveFaviconUrl = async (html: string, url: URL): Promise<string | null> => {
+  const declared = iconHref(html)
+  if (declared) {
+    try {
+      return validateBookmarkUrl(new URL(decodeEntities(declared), url).href).href
+    } catch {}
+  }
+  const fallback = new URL("/favicon.ico", url)
+  try {
+    const response = await fetch(fallback, {
+      method: "HEAD",
+      redirect: "follow",
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    })
+    await response.body?.cancel()
+    if (response.ok && response.headers.get("Content-Type")?.toLowerCase().startsWith("image/")) {
+      return fallback.href
+    }
+  } catch {}
+
+  return null
 }
 
 export const fetchBookmarkCard = async (initialUrl: URL): Promise<BookmarkCardData> => {
@@ -206,6 +259,7 @@ export const fetchBookmarkCard = async (initialUrl: URL): Promise<BookmarkCardDa
       title: decodeEntities(rawTitle).slice(0, 300),
       description: rawDescription ? decodeEntities(rawDescription).slice(0, 1_000) : null,
       imageUrl,
+      faviconUrl: await resolveFaviconUrl(html, url),
       label: url.hostname,
     }
   }
@@ -264,11 +318,12 @@ export const resolveExternalBookmark = async (
       title: url.hostname,
       description: null,
       imageUrl: null,
+      faviconUrl: null,
       label: url.hostname,
     }
   }
   try {
-    await cache.put(key, JSON.stringify({ version: 1, fetchedAt: now, card }), {
+    await cache.put(key, JSON.stringify({ version: 2, fetchedAt: now, card }), {
       expirationTtl: 365 * 24 * 60 * 60,
     })
   } catch {}

@@ -11,6 +11,7 @@ import type {
 } from "./content"
 import { resolveResponsiveBodyImage } from "./media"
 import type { StaticXPostData } from "./x-post"
+import { findXPostLinkMatch } from "./x-post"
 
 export interface RenderOptions {
   amazonCardSignatures: Readonly<Record<string, string>>
@@ -176,7 +177,7 @@ const renderChildren = (block: ContentBlock, context: RenderContext): string => 
 // 1 文字あたりの情報量が多く、42 bit を 7 文字で表せる。
 // ただし Notion の ID は時系列順で先頭バイトが作成時刻なので、先頭ではなく末尾から取る
 // （同じ記事のブロックは作成時刻が近く、先頭を使うと大量に衝突する）
-const headingId = (blockId: string): string => {
+export const headingId = (blockId: string): string => {
   const hex = blockId.replaceAll("-", "")
   const bytes = Uint8Array.from(hex.match(/../g) ?? [], (pair) => Number.parseInt(pair, 16))
   const base64url = btoa(String.fromCharCode(...bytes))
@@ -251,7 +252,7 @@ const renderTable = (block: TableBlock, context: RenderContext): string => {
     .map((row, index) => renderRow(row, index + bodyStart))
     .join("")
 
-  return `<div class="table-wrapper"><table>${head}<tbody>${body}</tbody></table></div>`
+  return `<table>${head}<tbody>${body}</tbody></table>`
 }
 
 // 追記ブロックの「追記 (日付) ：」は WordPress では span.rewrite-date で緑の太字にしていた。
@@ -282,6 +283,70 @@ const renderCallout = (
   const inner = `${body}${renderChildren(block, context)}`
 
   return `<div class="${className}">${block.icon === "♻️" ? markRewriteDates(inner) : inner}</div>`
+}
+
+// 入れ子のリンクは HTML として不正なので、カード全体を 1 つの `a` にしたまま
+// URL・メンション・ハッシュタグは色だけリンクらしくする（WordPress 時代のカードと同じ扱い）
+const X_POST_TOKEN = /(https?:\/\/[^\s<>"']*[^\s<>"'.,)])|(@[A-Za-z0-9_]{1,15})|([#＃][^\s#＃]+)/g
+const MAX_DISPLAY_URL = 32
+
+const displayXPostUrl = (url: string): string => {
+  const trimmed = url.replace(/^https?:\/\//, "").replace(/\/$/, "")
+
+  return trimmed.length <= MAX_DISPLAY_URL ? trimmed : `${trimmed.slice(0, MAX_DISPLAY_URL)}…`
+}
+
+const renderXPostText = (text: string): string => {
+  let html = ""
+  let index = 0
+  for (const match of text.matchAll(X_POST_TOKEN)) {
+    const start = match.index ?? 0
+    html += escapeHtml(text.slice(index, start))
+    html += `<span class="link_text">${escapeHtml(match[1] ? displayXPostUrl(match[0]) : match[0])}</span>`
+    index = start + match[0].length
+  }
+  html += escapeHtml(text.slice(index))
+
+  return html.replaceAll("\n", "<br>")
+}
+
+// 旧 Twitter ウィジェット時代のカードと同じ構成に戻す。数値は取得時点のもので固定される
+const renderXPost = (post: StaticXPostData): string => {
+  const icon = post.avatarUrl
+    ? `<div class="icon"><img src="${escapeHtml(post.avatarUrl)}" alt="" width="49" height="49" loading="lazy"></div>`
+    : ""
+  const media =
+    0 < post.mediaUrls.length
+      ? `<div class="media_wrap"><div class="thumbnails">${post.mediaUrls
+          .map((url) => `<img src="${escapeHtml(url)}" alt="" loading="lazy">`)
+          .join("")}</div></div>`
+      : ""
+  const card = post.linkCard
+    ? `<div class="link_card">${
+        post.linkCard.imageUrl
+          ? `<div class="thumbnail"><img src="${escapeHtml(post.linkCard.imageUrl)}" alt="" loading="lazy"></div>`
+          : ""
+      }<div class="content"><div class="title">${escapeHtml(post.linkCard.title)}</div>${
+        post.linkCard.description
+          ? `<div class="description">${escapeHtml(post.linkCard.description)}</div>`
+          : ""
+      }</div></div>`
+    : ""
+  const count = (className: string, value: number | null): string => {
+    return value === null ? "" : `<div class="${className}">${value.toLocaleString("ja-JP")}</div>`
+  }
+  // カードになった URL が本文の末尾にあるときは、X と同じく本文から落とす
+  const linkMatch = post.linkCard ? findXPostLinkMatch(post.text) : null
+  const trimmed = post.text.trimEnd()
+  const text =
+    linkMatch && trimmed.endsWith(linkMatch.raw)
+      ? trimmed.slice(0, trimmed.length - linkMatch.raw.length).trimEnd()
+      : post.text
+  const timestamp = post.createdAt
+    ? `<div class="timestamp">${escapeHtml(new Date(post.createdAt).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }))}</div>`
+    : ""
+
+  return `<div class="static_tweet"><a href="${escapeHtml(post.url)}" target="_blank" rel="noopener"><div class="content_wrap"><div class="header">${icon}<div class="author"><div class="name">${escapeHtml(post.authorName)}</div><div class="id">@${escapeHtml(post.authorHandle)}</div></div><div class="x_icon"></div></div><div class="body">${renderXPostText(text)}${card}${media}</div><div class="meta">${count("reply", post.replyCount)}${count("retweet", post.repostCount)}${count("like", post.likeCount)}${timestamp}</div></div></a></div>`
 }
 
 const renderMedia = (
@@ -331,11 +396,7 @@ const renderMedia = (
 
         return `<div class="waku-common"><p>🚨 X ポストを解決できませんでした</p><p><a href="${escapedUrl}">${escapedUrl}</a></p></div>`
       }
-      const timestamp = post.createdAt
-        ? `<div class="timestamp">${escapeHtml(new Date(post.createdAt).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }))}</div>`
-        : ""
-
-      return `<div class="static_tweet"><a href="${escapeHtml(post.url)}" target="_blank" rel="noopener"><div class="content_wrap"><div class="header"><div class="author"><div class="name">${escapeHtml(post.authorName)}</div><div class="id">@${escapeHtml(post.authorHandle)}</div></div></div><div class="body">${escapeHtml(post.text).replaceAll("\n", "<br>")}</div><div class="meta">${timestamp}</div></div></a></div>`
+      return renderXPost(post)
     }
 
     return `<div><iframe src="${escapedUrl}" loading="lazy" allowfullscreen></iframe>${captionHtml}</div>`
@@ -348,14 +409,26 @@ const renderMedia = (
     return `<div class="waku-common"><p>🚨 ブックマークを解決できませんでした</p><p><a href="${escapedUrl}">${caption || escapedUrl}</a></p></div>`
   }
   const external = bookmark.kind === "external"
+  // GitHub の OGP はリポジトリ説明カードで横長なため、mobile だけ thumbnail 枠を広げて crop を防ぐ
+  const isGithub = external && /^(.+\.)?github\.com$/.test(new URL(bookmark.url).hostname)
   const image = bookmark.imageUrl
-    ? `<div class="thumbnail"><img src="${escapeHtml(bookmark.imageUrl)}" alt="" loading="lazy"></div>`
+    ? `<div class="thumbnail${isGithub ? " github" : ""}"><img src="${escapeHtml(bookmark.imageUrl)}" alt="" loading="lazy"></div>`
     : ""
   const snippet = bookmark.description
     ? `<div class="snippet">${escapeHtml(bookmark.description)}</div>`
     : ""
+  const favicon = bookmark.faviconUrl
+    ? `<div class="favicon"><img src="${escapeHtml(bookmark.faviconUrl)}" alt="${escapeHtml(bookmark.label)}" loading="lazy"></div>`
+    : ""
 
-  return `<a class="blogcard${external ? " external" : ""}" href="${escapeHtml(bookmark.url)}"${external ? ' target="_blank" rel="noopener"' : ""}><div class="blogcard">${image}<div class="content"><div class="title">${escapeHtml(bookmark.title)}</div>${snippet}<div class="footer">${escapeHtml(bookmark.label)}</div></div></div></a>`
+  // 内部カードの label はカテゴリ名なので、WordPress 時代と同じ folder アイコン付きで出す。
+  // カテゴリを持たない固定ページ宛のカードは label が空になるので、`page` を付けて footer を隠す
+  const footer = external
+    ? `<div class="footer">${favicon}<div class="domain">${escapeHtml(bookmark.label)}</div></div>`
+    : `<div class="footer"><div class="category"><span>${escapeHtml(bookmark.label)}</span></div></div>`
+  const cardClass = !external && !bookmark.label ? "blogcard page" : "blogcard"
+
+  return `<a class="blogcard${external ? " external" : ""}" href="${escapeHtml(bookmark.url)}"${external ? ' target="_blank" rel="noopener"' : ""}><div class="${cardClass}">${image}<div class="content"><div class="title">${escapeHtml(bookmark.title)}</div>${snippet}${footer}</div></div></a>`
 }
 
 // image ブロックのキャプションは、先頭に `[image …]` のオプショントークンを置ける。

@@ -391,7 +391,7 @@ export class NotionDevelopmentContentReader {
           route,
           title: revision.title,
           description: null,
-          label: revision.category?.name ?? "みるめも",
+          label: revision.category?.name ?? "",
         },
       ]
     })

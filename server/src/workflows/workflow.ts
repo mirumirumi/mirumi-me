@@ -19,14 +19,15 @@ import type {
   DeploymentPageState,
   PublishFailure,
   PublishJobRequest,
+  PublishJobState,
   PublishJobSummary,
   PublishWorkflowParams,
   PublishWorkflowResult,
 } from "../lib/publishing"
 import {
   type LoadedPublishRequest,
+  type PublishWorkflowStepExecutor,
   runPublishWorkflow,
-  type WorkflowStepExecutor,
 } from "../services/publish-workflow"
 
 const publishWorkflowParamsSchema = z
@@ -160,6 +161,25 @@ const publishSite = async (
   return env.BUILD_CONTAINER.getByName("publisher").runPublishJob(request)
 }
 
+const startPublishSite = async (request: PublishJobRequest, env: CloudflareBindings) => {
+  if (!env.BUILD_CONTAINER) {
+    throw Error("BuildContainer binding がありません")
+  }
+
+  await env.BUILD_CONTAINER.getByName("publisher").startPublishJob(request)
+}
+
+const readPublishSiteState = async (
+  workflowId: string,
+  env: CloudflareBindings,
+): Promise<PublishJobState> => {
+  if (!env.BUILD_CONTAINER) {
+    throw Error("BuildContainer binding がありません")
+  }
+
+  return env.BUILD_CONTAINER.getByName("publisher").readPublishJobState(workflowId)
+}
+
 const invalidateSite = async (summary: PublishJobSummary, env: CloudflareBindings) => {
   if (!env.BUILD_CONTAINER) {
     throw Error("BuildContainer binding がありません")
@@ -207,9 +227,10 @@ const writeNotionResults = async (
   }
 }
 
-const createStepExecutor = (step: WorkflowStep): WorkflowStepExecutor => {
+const createStepExecutor = (step: WorkflowStep): PublishWorkflowStepExecutor => {
   return {
     do: (name, config, callback) => step.do(name, config, callback),
+    sleep: (name, duration) => step.sleep(name, duration),
   }
 }
 
@@ -232,6 +253,8 @@ export class PublishWorkflow extends WorkflowEntrypoint<CloudflareBindings, Publ
       dependencies: {
         loadRequest: async () => loadRequest(params, this.env),
         publishSite: async (request) => publishSite(request, this.env),
+        startPublishSite: async (request) => startPublishSite(request, this.env),
+        readPublishSiteState: async (id) => readPublishSiteState(id, this.env),
         invalidateSite: async (summary) => invalidateSite(summary, this.env),
         loadDeploymentPages: async (pageIds) => loadDeploymentPages(pageIds, this.env),
         writeNotionResults: async (results, delayMs) =>

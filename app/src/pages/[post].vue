@@ -157,7 +157,6 @@ onMounted(async () => {
 
   // Load content scripts
   cs.loadYouTube()
-  cs.switchTwitterColorTheme()
   void cs.hydrateAmazonCards(runtimeConfig.public.workersApiOrigin)
 
   // Insert toc hash links
@@ -194,7 +193,6 @@ onUnmounted(() => {
 })
 
 useHead({ script: [{ src: "/assets/prism.js", defer: true }] })
-useHead({ script: [{ src: "https://platform.x.com/widgets.js", async: true }] })
 if (post.customCss) {
   useHead({ style: [{ textContent: post.customCss }] })
 }

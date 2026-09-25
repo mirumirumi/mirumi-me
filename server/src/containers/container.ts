@@ -5,9 +5,17 @@ import { resolveExternalBookmark } from "shared/bookmark"
 import { resolveXPost } from "shared/x-post"
 
 import type { CommentRefreshJobRequest, CommentRefreshJobSummary } from "../lib/comment-refresh"
-import type { DeploymentPageState, PublishJobRequest, PublishJobSummary } from "../lib/publishing"
+import type {
+  DeploymentPageState,
+  PublishJobRequest,
+  PublishJobState,
+  PublishJobSummary,
+} from "../lib/publishing"
 import { PUBLISH_FAILURE_CODES } from "../lib/publishing"
-import { createXaiPostFetcher } from "../services/x-post"
+import { createXaiPostFetcher, createXPostLinkCardResolver } from "../services/x-post"
+import { SerialJobQueue, shouldRecreateContainer } from "./job-queue"
+
+const CONTAINER_VERSION_KEY = "containerVersion"
 
 const publishFailureSchema = z
   .object({
@@ -48,6 +56,15 @@ const publishJobSummarySchema = z
   })
   .strict()
 
+const publishJobStateSchema: z.ZodType<PublishJobState> = z.discriminatedUnion("status", [
+  z.object({ status: z.literal("running") }).strict(),
+  z.object({ status: z.literal("done"), summary: publishJobSummarySchema }).strict(),
+  z.object({ status: z.literal("failed"), message: z.string().min(1).max(4_000) }).strict(),
+  z.object({ status: z.literal("unknown") }).strict(),
+])
+
+const containerJobsSchema = z.object({ busy: z.boolean() }).strict()
+
 const deploymentPageStateSchema = z.discriminatedUnion("status", [
   z
     .object({
@@ -78,13 +95,14 @@ const commentRefreshJobSummarySchema: z.ZodType<CommentRefreshJobSummary> = z
 const readErrorDetail = async (response: Response): Promise<string | null> => {
   try {
     const body: unknown = await response.json()
-    if (
-      typeof body === "object" &&
-      body !== null &&
-      "detail" in body &&
-      typeof body.detail === "string"
-    ) {
-      return body.detail
+    if (typeof body === "object" && body !== null) {
+      // catch-all の 500 は detail、明示的に返すエラーは error に理由が入っている
+      for (const key of ["detail", "error"] as const) {
+        const value = (body as Record<string, unknown>)[key]
+        if (typeof value === "string" && 0 < value.length) {
+          return value
+        }
+      }
     }
   } catch {
     // body が JSON でなければ status だけを伝える
@@ -107,7 +125,7 @@ export class BuildContainer extends Container<CloudflareBindings> {
   override pingEndpoint = "health"
   override sleepAfter = "15m"
 
-  private jobQueue: Promise<void> = Promise.resolve()
+  private readonly jobs = new SerialJobQueue()
 
   private createEnvVars(): Record<string, string> {
     return {
@@ -128,9 +146,60 @@ export class BuildContainer extends Container<CloudflareBindings> {
     }
   }
 
-  private async executePublishJob(request: PublishJobRequest): Promise<PublishJobSummary> {
-    // suspended instance は application rollout 前の image を保持しうるため、build ごとに作り直す
+  // Container の中でジョブが走っているかを本人に聞く。停止中なら聞くだけで起動してしまうので、
+  // running のときしか問い合わせない
+  private async isContainerBusy(): Promise<boolean> {
+    // 親クラスの this.container は型が private なので、DO の binding から直接見る
+    if (!this.ctx.container?.running) {
+      return false
+    }
+    // 判断できないときは「走っているかもしれない」側に倒し、動いているジョブを守る。
+    // ここで throw すると、ガードのためにジョブを落としたり alarm を回し続けたりしてしまう
+    try {
+      const response = await this.containerFetch("http://container.internal/jobs")
+      if (!response.ok) {
+        await response.body?.cancel()
+
+        return true
+      }
+
+      return containerJobsSchema.parse(await response.json()).busy
+    } catch {
+      return true
+    }
+  }
+
+  // full build は HTTP を開いたまま待たないので、走っている最中でも containerFetch の
+  // inflight が 0 になる。つまりライブラリから見るとアイドルで、放っておくと sleepAfter の
+  // 15 分で SIGTERM が飛び、1 時間のビルドが記録も残さず消える。
+  // ここで本人に確認して、走っているなら止めない。ライブラリはこのあと必ず
+  // renewActivityTimeout() を呼ぶので、見送るたびに次の猶予が 15 分ぶん伸びる
+  override async onActivityExpired(): Promise<void> {
+    if (await this.isContainerBusy()) {
+      return
+    }
+    await super.onActivityExpired()
+  }
+
+  private async destroyOutdatedInstance(): Promise<void> {
+    const version = this.env.CF_VERSION_METADATA?.id
+    const lastSeen = await this.ctx.storage.get<string>(CONTAINER_VERSION_KEY)
+    if (!shouldRecreateContainer(version, lastSeen)) {
+      return
+    }
+    // destroy は SIGKILL なので、走っているジョブを巻き込む。version を記録せずに見送り、
+    // 空いている次のジョブで作り直させる
+    if (await this.isContainerBusy()) {
+      return
+    }
     await this.destroy()
+    if (version) {
+      await this.ctx.storage.put(CONTAINER_VERSION_KEY, version)
+    }
+  }
+
+  private async executePublishJob(request: PublishJobRequest): Promise<PublishJobSummary> {
+    await this.destroyOutdatedInstance()
     this.envVars = this.createEnvVars()
     const response = await this.containerFetch("http://container.internal/publish", {
       method: "POST",
@@ -150,7 +219,7 @@ export class BuildContainer extends Container<CloudflareBindings> {
   private async executeCommentRefreshJob(
     request: CommentRefreshJobRequest,
   ): Promise<CommentRefreshJobSummary> {
-    await this.destroy()
+    await this.destroyOutdatedInstance()
     this.envVars = this.createEnvVars()
     const response = await this.containerFetch("http://container.internal/comment-refresh", {
       method: "POST",
@@ -168,22 +237,49 @@ export class BuildContainer extends Container<CloudflareBindings> {
   }
 
   async runPublishJob(request: PublishJobRequest): Promise<PublishJobSummary> {
-    return this.enqueue(() => this.executePublishJob(request))
+    return this.jobs.run(`publish:${request.workflowId}`, () => this.executePublishJob(request))
+  }
+
+  // full / bootstrap 用。Container に受け付けさせるだけで、完了は readPublishJobState で待つ
+  async startPublishJob(request: PublishJobRequest): Promise<void> {
+    await this.destroyOutdatedInstance()
+    this.envVars = this.createEnvVars()
+    const response = await this.containerFetch("http://container.internal/publish", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    })
+    if (!response.ok) {
+      const detail = await readErrorDetail(response)
+      throw Error(
+        `Container が publish job を受け付けませんでした: ${response.status}${detail ? ` (${detail})` : ""}`,
+      )
+    }
+    // body を残すと containerFetch の inflight が減らず、sleepAfter が発火しなくなる
+    await response.body?.cancel()
+  }
+
+  // 走っている job を巻き込むため、ここでは instance を作り直さない
+  async readPublishJobState(workflowId: string): Promise<PublishJobState> {
+    this.envVars = this.createEnvVars()
+    const url = new URL("http://container.internal/publish-state")
+    url.searchParams.set("workflowId", workflowId)
+    const response = await this.containerFetch(url.toString())
+    if (!response.ok) {
+      const detail = await readErrorDetail(response)
+      throw Error(
+        `Container の publish job 状態を取得できませんでした: ${response.status}${detail ? ` (${detail})` : ""}`,
+      )
+    }
+
+    return publishJobStateSchema.parse(await response.json())
   }
 
   // publish index を書くのは publish と comment refresh の両方なので、同じ queue で直列にする
   async runCommentRefreshJob(request: CommentRefreshJobRequest): Promise<CommentRefreshJobSummary> {
-    return this.enqueue(() => this.executeCommentRefreshJob(request))
-  }
-
-  private enqueue<T>(execute: () => Promise<T>): Promise<T> {
-    const job = this.jobQueue.then(execute)
-    this.jobQueue = job.then(
-      () => undefined,
-      () => undefined,
+    return this.jobs.run(`comment-refresh:${request.workflowId}`, () =>
+      this.executeCommentRefreshJob(request),
     )
-
-    return job
   }
 
   async invalidateSiteCache(
@@ -250,6 +346,7 @@ BuildContainer.outboundByHost = {
           postId,
           env.CONTENT_CACHE,
           createXaiPostFetcher(env.XAI_API_KEY, env.XAI_MODEL),
+          createXPostLinkCardResolver(env.CONTENT_CACHE),
         ),
       )
     }

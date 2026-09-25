@@ -53,17 +53,22 @@ const loadTurnstile = (): Promise<TurnstileApi> => {
 
 export const useTurnstile = (action: string) => {
   const runtimeConfig = useRuntimeConfig()
+  const theme = useState<string>("theme", () => "")
   const token = ref<string | null>(null)
   const isReady = ref(false)
   let api: TurnstileApi | null = null
   let widgetId: string | null = null
+  let container: HTMLElement | null = null
 
-  const render = async (container: HTMLElement) => {
-    api = await loadTurnstile()
+  const draw = () => {
+    if (!api || !container) {
+      return
+    }
     widgetId = api.render(container, {
       sitekey: runtimeConfig.public.turnstileSiteKey,
       action,
-      theme: "auto",
+      // `auto` は OS の設定を見るため、サイトのテーマ切り替えには追従しない
+      theme: theme.value === "dark" ? "dark" : "light",
       callback: (value) => {
         token.value = value
         isReady.value = true
@@ -76,6 +81,25 @@ export const useTurnstile = (action: string) => {
       },
     })
   }
+
+  const render = async (element: HTMLElement) => {
+    api = await loadTurnstile()
+    container = element
+    draw()
+  }
+
+  // widget は iframe なので、テーマを変えるには作り直すしかない。
+  // 取得済み token は捨てられるが、widget 側がすぐ取り直す
+  watch(theme, () => {
+    if (!api || widgetId === null) {
+      return
+    }
+    api.remove(widgetId)
+    widgetId = null
+    token.value = null
+    isReady.value = false
+    draw()
+  })
 
   // token は 5 分・single-use なので、送信の成否にかかわらず毎回 widget を作り直す
   const reset = () => {

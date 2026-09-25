@@ -11,19 +11,24 @@ describe("development X post handler", () => {
     text: "投稿本文",
     authorName: "みるみ",
     authorHandle: "__mirumi__",
+    avatarUrl: null,
+    mediaUrls: [],
+    replyCount: null,
+    repostCount: null,
+    likeCount: null,
+    linkCard: null,
     createdAt: null,
   }
   const request = async (
     body: string,
     appEnv: "dev" | "prd" = "dev",
     rateLimitSuccess = true,
+    resolve: () => Promise<typeof post> = async () => post,
   ): Promise<Response> => {
     const app = new Hono<HonoEnv>().post("/_dev/x-post", (c) =>
-      handleDevXPost(
-        c,
-        vi.fn(async () => post),
-        { limit: vi.fn(async () => ({ success: rateLimitSuccess })) },
-      ),
+      handleDevXPost(c, vi.fn(resolve), {
+        limit: vi.fn(async () => ({ success: rateLimitSuccess })),
+      }),
     )
 
     return app.request(
@@ -39,6 +44,18 @@ describe("development X post handler", () => {
     expect(response.status).toEqual(200)
     expect(await response.json()).toEqual(post)
     expect(response.headers.get("Cache-Control")).toEqual("private, no-store")
+  })
+
+  test("xAI が失敗したら理由を添えて 502 を返す", async () => {
+    const response = await request(JSON.stringify({ postId: "1234567890" }), "dev", true, () => {
+      throw Error("xAI API が失敗しました: 404")
+    })
+
+    expect(response.status).toEqual(502)
+    expect(await response.json()).toEqual({
+      error: "X post fetch failed",
+      detail: "xAI API が失敗しました: 404",
+    })
   })
 
   test("余分な prompt や不正な post ID を受けつけない", async () => {

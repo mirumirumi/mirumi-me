@@ -4,6 +4,7 @@ tools/migrate-to-notion/dry-run-report.json
 tools/migrate-to-notion/media-attachments.ndjson
 tools/migrate-to-notion/media-mapping*.json
 tools/migrate-to-notion/media-normalization-report.json
+tools/migrate-to-notion/toc-anchor-report.json
 tools/migrate-to-notion/upload-state*.json
 tools/migrate-to-notion/comments.ndjson
 tools/migrate-to-notion/comments-import-state*.json

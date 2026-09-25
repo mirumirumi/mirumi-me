@@ -59,6 +59,7 @@ describe("article enrichment", () => {
           title: "外部記事",
           description: null,
           imageUrl: null,
+          faviconUrl: null,
           label: "example.com",
         })
       }
@@ -69,6 +70,12 @@ describe("article enrichment", () => {
         text: "投稿",
         authorName: "みるみ",
         authorHandle: "__mirumi__",
+        avatarUrl: null,
+        mediaUrls: [],
+        replyCount: null,
+        repostCount: null,
+        likeCount: null,
+        linkCard: null,
         createdAt: null,
       })
     })
@@ -81,6 +88,7 @@ describe("article enrichment", () => {
         title: "リンク先",
         description: "概要",
         imageUrl: null,
+        faviconUrl: null,
         label: "くらし",
       },
       external: expect.objectContaining({ kind: "external", title: "外部記事" }),

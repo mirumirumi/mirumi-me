@@ -32,6 +32,8 @@ export const createInternalBookmarkLookup = (
         description: page.description,
         // 内部ブログカードは thumbnail の有無にかかわらず画像を出さない（現行サイトの仕様）
         imageUrl: null,
+        // 内部カードの footer はカテゴリ名なので favicon は使わない
+        faviconUrl: null,
         label: page.label,
       },
     ]),

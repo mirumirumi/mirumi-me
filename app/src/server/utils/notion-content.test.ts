@@ -142,6 +142,12 @@ describe("NotionDevelopmentContentReader", () => {
         text: "投稿本文",
         authorName: "みるみ",
         authorHandle: "__mirumi__",
+        avatarUrl: null,
+        mediaUrls: [],
+        replyCount: null,
+        repostCount: null,
+        likeCount: null,
+        linkCard: null,
         createdAt: null,
       })
     })

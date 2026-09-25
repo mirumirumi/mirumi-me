@@ -6,6 +6,7 @@ import type {
   PreparedPageRevision,
   PublishFailure,
   PublishJobRequest,
+  PublishJobState,
   PublishJobSummary,
   PublishWorkflowParams,
   PublishWorkflowResult,
@@ -40,11 +41,16 @@ export const PUBLISH_WORKFLOW_STEP_CONFIGS = {
     timeout: "30 minutes",
   },
   // full と bootstrap は全記事の取得に加えて、thumbnail を持たない記事ぶんの自動生成 Lambda を
-  // 直列で通すため初回は数時間かかる。publish index が保存されれば次回以降は生成を省略できる。
-  // 途中で失敗したときに数時間をもう一度やり直すのは無駄なので retry はしない
-  publishSiteFullBuild: {
-    retries: { limit: 0, delay: "10 seconds", backoff: "constant" },
-    timeout: "6 hours",
+  // 直列で通すため初回は数時間かかる。受け付けるだけなのでこの step 自体は短く、
+  // 完了を待つのは FULL_BUILD_POLL_LIMIT 側の予算
+  startPublishSite: {
+    retries: { limit: 2, delay: "10 seconds", backoff: "exponential" },
+    timeout: "5 minutes",
+  },
+  // 受け付け済みの job の状態を見に行くだけ。ここで諦めると走っている build を追えなくなる
+  pollPublishSite: {
+    retries: { limit: 5, delay: "10 seconds", backoff: "exponential" },
+    timeout: "2 minutes",
   },
   invalidateCloudFront: {
     retries: { limit: 5, delay: "10 seconds", backoff: "exponential" },
@@ -72,6 +78,11 @@ export interface WorkflowStepExecutor {
   ): Promise<T>
 }
 
+// 長い build の完了待ちを step.sleep で刻むのは publish workflow だけなので、ここで足す
+export interface PublishWorkflowStepExecutor extends WorkflowStepExecutor {
+  sleep(name: string, duration: WorkflowDuration): Promise<void>
+}
+
 export interface LoadedPublishRequest {
   revisions: Array<PageRevision>
   failed: Array<PublishFailure>
@@ -80,6 +91,8 @@ export interface LoadedPublishRequest {
 export interface PublishWorkflowDependencies {
   loadRequest(): Promise<LoadedPublishRequest>
   publishSite(request: PublishJobRequest): Promise<PublishJobSummary>
+  startPublishSite(request: PublishJobRequest): Promise<void>
+  readPublishSiteState(workflowId: string): Promise<PublishJobState>
   invalidateSite(summary: PublishJobSummary): Promise<void>
   loadDeploymentPages(pageIds: Array<string>): Promise<Array<DeploymentPageState>>
   writeNotionResults(results: Array<NotionPublishResult>, delayMs?: number): Promise<void>
@@ -88,7 +101,7 @@ export interface PublishWorkflowDependencies {
 interface RunPublishWorkflowOptions {
   workflowId: string
   params: PublishWorkflowParams
-  step: WorkflowStepExecutor
+  step: PublishWorkflowStepExecutor
   dependencies: PublishWorkflowDependencies
 }
 
@@ -237,6 +250,53 @@ const toSuccessfulNotionResults = (summary: PublishJobSummary): Array<NotionPubl
   })
 }
 
+// full / bootstrap は 1 時間以上かかるため、1 つの step で結果を待つと「待っているだけの
+// invocation」が Workers の hang 判定で打ち切られる。受け付けと待機を分けて step.sleep で刻む
+const FULL_BUILD_POLL_INTERVAL: WorkflowDuration = "1 minute"
+// publish index が空の初回ビルドは全記事の thumbnail 生成が走るため極端に遅く、
+// dev では 1 回の試行が 4.7 時間走ってまだ終わっていなかった。本番 bootstrap も同じ条件なので、
+// 同期方式のときの step timeout（6 時間）では足りない恐れがある。
+// step.sleep は Workflows の step 上限に数えられず、待っているあいだのコストも無いので長く取る
+const FULL_BUILD_POLL_LIMIT = 720
+
+const runPublishSite = async (
+  request: PublishJobRequest,
+  step: PublishWorkflowStepExecutor,
+  dependencies: PublishWorkflowDependencies,
+): Promise<PublishJobSummary> => {
+  // partial は数分で終わるので、1 step で完結させたままにする
+  if (request.params.mode === "partial") {
+    return step.do("publish-site", PUBLISH_WORKFLOW_STEP_CONFIGS.publishSite, async () => {
+      return dependencies.publishSite(request)
+    })
+  }
+  await step.do("start-publish-site", PUBLISH_WORKFLOW_STEP_CONFIGS.startPublishSite, async () => {
+    await dependencies.startPublishSite(request)
+  })
+  for (let attempt = 0; attempt < FULL_BUILD_POLL_LIMIT; attempt++) {
+    await step.sleep(`wait-publish-site-${attempt}`, FULL_BUILD_POLL_INTERVAL)
+    const state = await step.do(
+      `poll-publish-site-${attempt}`,
+      PUBLISH_WORKFLOW_STEP_CONFIGS.pollPublishSite,
+      async () => {
+        return dependencies.readPublishSiteState(request.workflowId)
+      },
+    )
+    if (state.status === "done") {
+      return state.summary
+    }
+    if (state.status === "failed") {
+      throw Error(state.message)
+    }
+    // Container が作り直されると受け付けた記録も消えるため、待ち続けずに落とす
+    if (state.status === "unknown") {
+      throw Error("Container が publish job を見失いました")
+    }
+  }
+
+  throw Error(`publish job が ${FULL_BUILD_POLL_LIMIT} 回の polling で終わりませんでした`)
+}
+
 export const runPublishWorkflow = async ({
   workflowId,
   params,
@@ -288,13 +348,11 @@ export const runPublishWorkflow = async ({
 
   let summary: PublishJobSummary
   try {
-    const publishSiteConfig =
-      params.mode === "partial"
-        ? PUBLISH_WORKFLOW_STEP_CONFIGS.publishSite
-        : PUBLISH_WORKFLOW_STEP_CONFIGS.publishSiteFullBuild
-    summary = await step.do("publish-site", publishSiteConfig, async () => {
-      return dependencies.publishSite({ workflowId, params, pages: publishablePages })
-    })
+    summary = await runPublishSite(
+      { workflowId, params, pages: publishablePages },
+      step,
+      dependencies,
+    )
     validateJobSummary(summary, workflowId, publishablePages)
   } catch (err) {
     if (params.mode === "partial") {
