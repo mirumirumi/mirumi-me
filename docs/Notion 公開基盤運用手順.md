@@ -155,6 +155,39 @@ dev CloudFront distribution は常時有効で、CloudFront Function が閲覧�
 `deploy.yml` の trigger は `mode` を `full` で決め打ちしているため、CI から `bootstrap` は流れない。
 初回は CI を有効化する前に手元から 1 回 `bootstrap` を流し、それを見届けてから CI へ切り替える。
 
+### 手元から full build を投げる
+
+コードを変えずにサイト全体を作り直したいときは、npm script を使う。
+
+```bash
+bun run full-build:dev
+bun run full-build:prd   # yes の入力を求められる
+```
+
+`--dry-run` を付けると、投げずに instance ID と payload を表示する。
+初回だけ必要な `bootstrap` は `--mode bootstrap` で流す（`--` の後に渡す）。
+
+```bash
+bun run full-build:dev -- --mode bootstrap --dry-run
+```
+
+スクリプトがやっていること。
+
+- 走っている instance（`running` / `queued` / `waiting` / `paused`）があれば投げずに中止する。
+  重ねるとキューで待つだけになり、そのあいだ partial publish が 409 で断られる
+- `source` を `release` で固定する。`full` と `bootstrap` はこれ以外だと入力検証で弾かれる
+- instance ID を時刻から作る。同じ ID は二度投げられない
+- wrangler の設定をスクリプト自身の位置から解決する。どのディレクトリから実行しても動く
+
+**prd を手元から投げるのは例外的な操作。**通常は `main` への push で `deploy.yml` が
+deploy のあとに投げる。手動が必要なのは、CI のビルドだけが失敗した場合や、
+コードを変えずに全記事を作り直したい場合。次の 2 点に注意する。
+
+- **初回は `full` ではなく `bootstrap`**。詳細は上の「application release と full build」を参照。
+  順序を間違えると `last-deploy` を初期化する手段がなくなる
+- CI が deploy している最中には投げない。スクリプトは走っている Workflow は見るが、
+  進行中の deploy は検知できない
+
 ### deploy 直後に build を投げない
 
 `wrangler deploy` が Container image を差し替えると、Container application の rollout が始まる。
