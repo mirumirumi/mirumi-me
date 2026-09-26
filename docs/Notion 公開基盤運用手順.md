@@ -88,6 +88,20 @@ Nuxt は Notion も Worker も読まない。Container が approved を取得し
   親から補う。`本文形式` と `投稿日` が空なら `プレーンテキスト` と作成時刻に倒し、本文が空の承認済み row は描画しない
 - digest は 09:00 JST の Cron が `from=公開フォーム AND 通知日 is empty` を集めて SES で
   `COMMENT_DIGEST_RECIPIENT` に送る。0 件なら送らない。送信後に `通知日` を書く
+    - SES は us-east-1。送信元は `mail@mirumi.me`、宛先は verify 済みの outlook.com アドレス。アカウントはまだサンドボックス
+    - **サンドボックスでは送信元の identity だけでなく宛先の identity にも `ses:SendEmail` の許可が要る。**
+      IAM user `mirumime-comment-digest` の policy が `identity/mirumi.me` だけだった 2026-09-23〜25 は毎朝
+      `SES SendEmail が失敗しました: 403` で落ちていた。宛先の identity ARN を足した（2026-09-25）翌朝から送れている。
+      送信に失敗した row は `通知日` が空のまま翌日に持ち越されるので、コメントは失われない
+    - 届いたかどうかは `通知日` と CloudWatch の `AWS/SES` の `Send` / `Delivery` / `Bounce` で確認できる。
+      Worker の `comment_digest_finished` のログは Observability に残らないことがある（2026-09-26 に実測）
+    - 2026-09-26 に 1 通目が Outlook の迷惑メールに入った。当時の `mirumi.me` は DMARC レコードがなく、SPF は Microsoft 365 だけを許可しており、
+      SES の送信は DKIM でしか `mirumi.me` として認証されていなかった
+    - 対策として `terraform/modules/virginia/route53.tf` に `_dmarc.mirumi.me`（`v=DMARC1; p=none`）と、SES の MAIL FROM 用の
+      `bounce.mirumi.me`（MX と SPF）を追加した（plan は 3 件追加のみ）。apex の MX / SPF は手動管理のままで触らない。
+      SES identity `mirumi.me` の Custom MAIL FROM は `bounce.mirumi.me`（MX 失敗時は既定値へ fallback）で、これは Terraform 外の設定。
+      2026-09-26 に圭くんが apply と SES の設定を行い、DNS の公開、`MailFromDomainStatus: SUCCESS`、apex の MX / SPF が不変なことを確認した
+      （AI の実行環境では DNS 変更が止められるので、DNS まわりの変更は圭くんが手元で行う）
 - Notion の property 名は `shared/src/notion-comments.ts` の `COMMENT_PROPERTIES`、select の option 名は
   同ファイルの `*_LABELS` が正。Notion 側で名前を変えたらここを合わせる（property ID は変わらない）
 - `親コメント` は自分自身への relation だが、Notion の片方向（single property）の self relation は対称に
