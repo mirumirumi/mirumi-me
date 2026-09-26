@@ -20,7 +20,7 @@ describe("media mapping", () => {
           sourceUrl: "https://mirumi.media/my-image-1999x1124.png",
           usage: "body",
           kind: "responsive",
-          fallbackUrl: "https://mirumi.media/0123456789abcdef-my-image-1600w.webp",
+          fallbackUrl: "https://mirumi.media/0123456789abcdef-my-image-1600x900-1600w.webp",
           sourceWidth: 1_999,
         },
         {
@@ -34,7 +34,7 @@ describe("media mapping", () => {
     })
 
     expect(resolver.resolve("https://mirumi.media/my-image-1999x1124.png", "body")).toEqual(
-      "https://mirumi.media/0123456789abcdef-my-image-1600w.webp",
+      "https://mirumi.media/0123456789abcdef-my-image-1600x900-1600w.webp",
     )
     expect(resolver.resolve("https://example.com/external.png", "body")).toEqual(
       "https://example.com/external.png",
@@ -42,6 +42,28 @@ describe("media mapping", () => {
     expect(() => resolver.resolve("https://mirumi.media/not-in-mapping.png", "body")).toThrow(
       "media mapping にありません",
     )
+  })
+
+  test("WordPress の表示幅と比べるための実寸を返す", () => {
+    const resolver = createMediaMigrationResolver({
+      schemaVersion: 1,
+      generatedAt: "2026-08-24T00:00:00.000Z",
+      entries: [
+        {
+          sourceUrl: "https://mirumi.media/screenshot.jpg",
+          usage: "body",
+          kind: "responsive",
+          fallbackUrl: "https://mirumi.media/0123456789abcdef-screenshot-1433x2709-1433w.webp",
+          sourceWidth: 1_433,
+        },
+      ],
+    })
+
+    expect(
+      resolver.sourceWidth("http://mirumi.in/wp-content/uploads/screenshot.jpg", "body"),
+    ).toEqual(1_433)
+    expect(resolver.sourceWidth("https://mirumi.media/screenshot.jpg", "thumbnail")).toEqual(null)
+    expect(resolver.sourceWidth("https://example.com/external.png", "body")).toEqual(null)
   })
 
   test("同じ URL と用途の重複を拒否する", () => {

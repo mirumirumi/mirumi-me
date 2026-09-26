@@ -49,6 +49,13 @@ publish index の保存は S3 配信のあとに行うため、最後の index �
 取りこぼさないためのもので、Worker は page を 1 回取得して comments の承認済み row のときだけ動く。
 他の型は署名検証後に `ignored` として 200 を返すだけになる。
 
+**posts / pages に page を作ると Workers Logs に warn が出るが、想定どおりで対応不要。**
+subscription はデータソース単位ではないので、posts / pages の page 作成でも `page.created` が届く。
+Worker は comments の `status` の property ID を `filter_properties` に付けて page を取得してから comments の row かを判定するため、
+その property が無い posts / pages では Notion が `validation_error`（`filter_properties contains an invalid attribute`）を返す。
+これを `@notionhq/client warn: request fail` として SDK が出し、ハンドラは comments ではないとみなして `ignored` で返す。
+publish や comment refresh の失敗ではない
+
 Notion が送った `verification_token` は通常ログへ出さず、`CONTENT_CACHE` に 10 分だけ保存する。
 subscription 作成直後に Access 配下の `GET /admin/notion-webhook-verification` で 1 回だけ取得し、
 Notion の確認画面へ貼り付けたあと、同じ値を `NOTION_WEBHOOK_SECRET` へ登録する。
@@ -390,10 +397,12 @@ MIRUMI_BUILD_MANIFEST_DIR=/tmp/mirumi-build/JOB/manifest bun run dev
 - thumbnail: 412x216 / 600x315 / 1200x630、cover、WebP quality 80
 - 記事ヘッダー: mobile 600、desktop 1200
 - トップと内部ブログカード: 412。トップと一覧のカードは thumbnail がない記事でも自動生成 OGP の 412 variant を使う（記事ヘッダーと内部ブログカードには出さない）
-- key: `{assetHash}-{cleanStem}-{size}.webp`
+- key: 本文は `{assetHash}-{cleanStem}-{setWidth}x{setHeight}-{actualWidth}w.webp`、thumbnail は `{assetHash}-{cleanStem}-{width}x{height}.webp`
+- `{setWidth}x{setHeight}` は本文画像セットの最大 variant の実寸。フロントエンドはこれを `<img>` の `width` / `height` に出す（Notion の image block に寸法がないため URL で運ぶ）
+- 画像変換契約は `v2`（2026-09-25 に本文 key へ寸法を追加して `v1` から上げた。`v1` の本文 object は S3 に 1 つも作られていない）
 - thumbnail の `cleanStem` は Notion Files property のファイル名を使う。名前を変えると URL も変わるが、旧 object は残す
 - 同じ画像セットは同じ `assetHash`、入力 bytes または変換契約が変われば hash も変わる
-- 本文 animation は変換せず byte-for-byte で S3 へコピーし、`srcset` を付けない
+- 本文 animation は変換せず byte-for-byte で S3 へコピーし、`srcset` を付けない。key は `{assetHash}-{cleanStem}-{width}x{height}.{元の拡張子}` で、`width` / `height` だけ出す
 - animated thumbnail は現在 validation error
 - thumbnail が canonical でなければ publish 時にホストを問わず取り込んで正規化する。Notion upload も WordPress 時代の `mirumi.media` 直下の画像も同じ経路を通る
 
@@ -417,9 +426,20 @@ bun run upload
 - `--apply` だけが media S3 へ書く
 - `upload` だけが Notion へ書く
 - static image の mapping 欠落は import error
-- 既存 animation と ICO は旧 URL のまま
+- 既存 animation と ICO は旧 URL のまま。名前に寸法がないので `width` / `height` は付かない（20 件）
 - 旧 object は削除しない
 - final import 後の Notion 画像 URL に `-1999x...` などの WordPress 寸法サフィックスを残さない
+
+**既存記事の画像まわりの最終形は dev には出ていない（2026-09-26 時点）。本番 import で初めて効く。**
+dev の Notion は旧変換で取り込み済みで、本文画像も旧 URL（`<名前>-1999x1124.png` など）のまま入っている。そのため次の 2 つは dev では見えない。
+
+- 本文画像の `width` / `height`。名前に寸法を持つ canonical URL にならないと付かない（`normalize-media --apply` と import が要る）
+- `convert.ts` が import 時に付けるトークン。WordPress のエディタで変えた表示幅 `[image width="316px"]`（約 1,400 箇所）、
+  本文幅より狭い画像の `align="none"`、`[quoteImage]` の `width`（漫画 17 箇所）、`align="center"` を付けないこと
+
+render 側のコードはすべて dev に入っており、Notion に新しく upload した画像では `width` / `height` と新しい key まで end-to-end で確認済み。
+dev で最終形を見るには `normalize-media --apply`（prd と共用の media バケットへ約 12,000 object を書く）と dev の取り込み直しが要るため、
+圭くんの判断で本番リリースまで持ち越した。本番の手順（`normalize-media --apply` → import → `fix-toc-anchors --apply` → bootstrap）は変わらない
 
 ## Amazon 商品カード
 
@@ -496,6 +516,9 @@ Creators API の日本向け credential version `3.3` と media bucket 名は va
 - media normalization の unresolved static image を 0 件にする
 - dev Notion data source へ external WebP canary を投入する
 - 470 page の route uniqueness と full generate を通す
+- 本番 import 後、bootstrap 前に prd の `/preview?pageId=` で画像表示を mirumi.me（旧 WordPress 配信）と見比べる。dev では確認できていないため。
+  `android-app`（縮めたスクショ）、`comics`（漫画の引用画像 415px）、`pc-freesoft` / `firefox-plugin`（インラインのアイコン）、
+  `albumartwork-puttogether`（縮めた画像 + alt）、小さい画像が本文幅まで引き伸ばされていないこと
 - production bootstrap、Webhook subscription 有効化、GitHub release 切り替えは別の明示 GO 後に行う
 - けいが記述：本当は Notion の dev 系データソースでカラム幅みたいに見た目レベルで調整したものをそのまま本番でも使いたいから、すべての作業が終わって WP データ移行する直前に dev のデータソース丸ごと複製するようにしたいけど、いろんな id とか変わっちゃったりしないかという点で悩ましい
 

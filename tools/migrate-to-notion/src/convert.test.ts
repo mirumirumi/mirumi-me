@@ -45,14 +45,14 @@ describe("convertWordPressContent", () => {
           sourceUrl: bodySource,
           usage: "body",
           kind: "responsive",
-          fallbackUrl: "https://mirumi.media/0123456789abcdef-body-1600w.webp",
+          fallbackUrl: "https://mirumi.media/0123456789abcdef-body-1600x900-1600w.webp",
           sourceWidth: 1_999,
         },
         {
           sourceUrl: inlineSource,
           usage: "body",
           kind: "responsive",
-          fallbackUrl: "https://mirumi.media/abcdef0123456789-inline-1600w.webp",
+          fallbackUrl: "https://mirumi.media/abcdef0123456789-inline-1600x900-1600w.webp",
           sourceWidth: 1_999,
         },
         {
@@ -72,10 +72,10 @@ describe("convertWordPressContent", () => {
     )
 
     expect(JSON.stringify(converted.children[0])).toContain(
-      "https://mirumi.media/0123456789abcdef-body-1600w.webp",
+      "https://mirumi.media/0123456789abcdef-body-1600x900-1600w.webp",
     )
     expect(JSON.stringify(converted.children[1])).toContain(
-      '[image name=\\"abcdef0123456789-inline-1600w.webp\\"]',
+      '[image name=\\"abcdef0123456789-inline-1600x900-1600w.webp\\"]',
     )
     expect(converted.properties.thumbnail).toEqual({
       type: "files",
@@ -502,6 +502,106 @@ describe("convertWordPressContent", () => {
     ])
   })
 
+  describe("WordPress で指定した表示幅と左寄せ", () => {
+    const naturalWidths: Record<string, number> = {
+      "shrunk.jpg": 1_433,
+      "natural.png": 640,
+      "huge.jpg": 4_032,
+      "enlarged.png": 600,
+      "rounded.png": 500,
+      "left-medium.png": 500,
+      "left-wide.png": 1_600,
+      "icon.png": 64,
+      "comic.jpg": 1_006,
+    }
+    const resolver = createMediaMigrationResolver({
+      schemaVersion: 1,
+      generatedAt: "2026-09-25T00:00:00.000Z",
+      entries: Object.entries(naturalWidths).map(([name, width]) => ({
+        sourceUrl: `https://mirumi.media/${name}`,
+        usage: "body" as const,
+        kind: "passthrough" as const,
+        fallbackUrl: `https://mirumi.media/${name}`,
+        sourceWidth: width,
+      })),
+    })
+    const convert = (content: string) => {
+      return convertWordPressContent(makeRecord(content, { thumbnailUrl: null }), resolver)
+    }
+    const tokenOf = (content: string): string => {
+      const block = convert(content).children[0]
+      const first = block && "image" in block ? block.image.caption?.[0] : undefined
+
+      return first && "text" in first ? first.text.content : ""
+    }
+
+    test("エディタで変えた表示幅だけを px で持ち込む", () => {
+      // 縮めたものも、実寸より広げたものも WordPress での見た目どおりにする
+      expect(
+        tokenOf(
+          '<p><img class="aligncenter" src="https://mirumi.media/shrunk.jpg" width="316" height="598"></p>',
+        ),
+      ).toEqual('[image width="316px"]')
+      expect(
+        tokenOf('<p><img src="https://mirumi.media/enlarged.png" width="785" height="500"></p>'),
+      ).toEqual('[image width="785px"]')
+      // 実寸どおりの値や、どちらも本文幅で頭打ちになる値は WordPress が自動で書いただけとみなす
+      expect(
+        tokenOf('<p><img src="https://mirumi.media/natural.png" width="640" height="480"></p>'),
+      ).toEqual("")
+      expect(
+        tokenOf('<p><img src="https://mirumi.media/huge.jpg" width="1999" height="1124"></p>'),
+      ).toEqual("")
+      expect(
+        tokenOf('<p><img src="https://mirumi.media/rounded.png" width="501" height="300"></p>'),
+      ).toEqual("")
+      expect(
+        tokenOf('<p><img src="https://mirumi.media/natural.png" width="100%" height="auto"></p>'),
+      ).toEqual("")
+    })
+
+    test("左寄せは本文幅より狭く表示される画像にだけ持ち込み、中央寄せは既定なので持ち込まない", () => {
+      expect(
+        tokenOf(
+          '<p><img class="alignnone" src="https://mirumi.media/left-medium.png" width="500"></p>',
+        ),
+      ).toEqual('[image align="none"]')
+      expect(
+        tokenOf(
+          '<p><img class="alignnone" src="https://mirumi.media/left-wide.png" width="1600"></p>',
+        ),
+      ).toEqual("")
+      expect(
+        tokenOf('<p><img class="alignnone" src="https://mirumi.media/shrunk.jpg" width="316"></p>'),
+      ).toEqual('[image width="316px" align="none"]')
+      expect(
+        tokenOf(
+          '<p><img class="aligncenter" src="https://mirumi.media/natural.png" width="640"></p>',
+        ),
+      ).toEqual("")
+    })
+
+    test("漫画の引用画像にも表示幅を持たせる", () => {
+      const converted = convert(
+        '<blockquote class="img"><img src="https://mirumi.media/comic.jpg" width="415" height="591">©集英社</blockquote>',
+      )
+
+      expect(JSON.stringify(converted.children[0])).toContain(
+        '[quoteImage name=\\"comic.jpg\\" copyright=\\"©集英社\\" width=\\"415px\\"]',
+      )
+    })
+
+    test("インライン画像にも同じ基準で幅と左寄せを持たせる", () => {
+      const converted = convert(
+        '<p><img class="alignnone" src="https://mirumi.media/icon.png" width="32" height="32">アイコンの説明</p>',
+      )
+
+      expect(JSON.stringify(converted.children[0])).toContain(
+        '[image name=\\"icon.png\\" width=\\"32px\\" align=\\"none\\"]',
+      )
+    })
+  })
+
   test("ファイル名から復元できない alt だけを持っていく", () => {
     const converted = convertWordPressContent(
       makeRecord(`
@@ -530,9 +630,8 @@ describe("convertWordPressContent", () => {
     )
 
     expect(converted.children.map(blockType)).toEqual(["paragraph"])
-    expect(JSON.stringify(converted.children[0])).toContain(
-      '[image name=\\"inline.png\\" align=\\"center\\"]',
-    )
+    // 中央寄せは render の既定なので持ち込まない
+    expect(JSON.stringify(converted.children[0])).toContain('[image name=\\"inline.png\\"]')
   })
 
   test("ブログカードが 2 枚入った div でも両方をブックマークにする", () => {

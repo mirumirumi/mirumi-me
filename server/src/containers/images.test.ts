@@ -27,6 +27,20 @@ describe("MediaNormalizer", () => {
       .toBuffer()
   }
 
+  const createAnimation = async (width: number, height: number): Promise<Uint8Array> => {
+    const frames = await Promise.all(
+      ["#8ab4f8", "#f28b82"].map((background) => {
+        return sharp({ create: { width, height, channels: 3, background } })
+          .png()
+          .toBuffer()
+      }),
+    )
+
+    return sharp(frames, { join: { animated: true } })
+      .gif()
+      .toBuffer()
+  }
+
   test("本文画像を拡大せず標準幅と元幅の WebP にする", async () => {
     const store = new MemoryMediaStore()
     const normalizer = new MediaNormalizer(store)
@@ -38,16 +52,57 @@ describe("MediaNormalizer", () => {
 
     expect(result.animated).toEqual(false)
     expect(result.width).toEqual(1_000)
+    expect(result.height).toEqual(500)
+    // 画像セットの寸法を全 variant の key に持たせ、renderer が width / height を復元できるようにする
     expect(result.fallbackUrl).toMatch(
-      /^https:\/\/mirumi\.media\/[a-f0-9]{16}-my-cats-1000w\.webp$/,
+      /^https:\/\/mirumi\.media\/[a-f0-9]{16}-my-cats-1000x500-1000w\.webp$/,
     )
     expect(store.puts.map((key) => key.replace(/^[a-f0-9]{16}-/, ""))).toEqual([
-      "my-cats-800w.webp",
-      "my-cats-1000w.webp",
+      "my-cats-1000x500-800w.webp",
+      "my-cats-1000x500-1000w.webp",
     ])
     expect([...store.objects.values()].map(({ metadata }) => metadata)).toEqual([
       expect.objectContaining({ width: "800", height: "400", usage: "body" }),
       expect.objectContaining({ width: "1000", height: "500", usage: "body" }),
+    ])
+  })
+
+  test("1600 px を超える本文画像は 1600 px の寸法を画像セットの寸法にする", async () => {
+    const store = new MemoryMediaStore()
+    const result = await new MediaNormalizer(store).normalizeBodyImage(
+      await createImage(2_000, 1_000),
+      "https://file.notion.so/wide.png",
+      "image-block",
+    )
+
+    expect(result.width).toEqual(1_600)
+    expect(result.height).toEqual(800)
+    expect(store.puts.map((key) => key.replace(/^[a-f0-9]{16}-/, ""))).toEqual([
+      "wide-1600x800-800w.webp",
+      "wide-1600x800-1200w.webp",
+      "wide-1600x800-1600w.webp",
+    ])
+  })
+
+  test("本文 animation は元 bytes のまま 1 frame の寸法を key に持たせる", async () => {
+    const store = new MemoryMediaStore()
+    const source = await createAnimation(48, 32)
+    const result = await new MediaNormalizer(store).normalizeBodyImage(
+      source,
+      "https://file.notion.so/Dancing%20Cat.gif",
+      "image-block",
+    )
+
+    expect(result).toEqual({
+      fallbackUrl: expect.stringMatching(
+        /^https:\/\/mirumi\.media\/[a-f0-9]{16}-dancing-cat-48x32\.gif$/,
+      ),
+      width: 48,
+      height: 32,
+      animated: true,
+    })
+    expect([...store.objects.values()]).toEqual([
+      expect.objectContaining({ body: source, contentType: "image/gif" }),
     ])
   })
 

@@ -18,6 +18,9 @@ export interface MediaMigrationMapping {
 
 export interface MediaMigrationResolver {
   resolve(sourceUrl: string, usage: MediaUsage): string
+  // WordPress の width 属性が実寸どおりか、エディタで変えた表示幅かを見分けるために使う。
+  // mapping にない外部画像などは実寸が分からないので null
+  sourceWidth(sourceUrl: string, usage: MediaUsage): number | null
 }
 
 const WORDPRESS_UPLOAD_HOSTS = new Set([
@@ -106,6 +109,9 @@ export const createMediaMigrationResolver = (
       }
 
       return entry.fallbackUrl
+    },
+    sourceWidth: (sourceUrl, usage) => {
+      return entries.get(mappingKey(sourceUrl, usage))?.sourceWidth ?? null
     },
   }
 }

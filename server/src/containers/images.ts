@@ -3,7 +3,7 @@ import sharp from "sharp"
 
 import type { ThumbnailUrls } from "../lib/publishing"
 
-const MEDIA_TRANSFORM_VERSION = "v1"
+const MEDIA_TRANSFORM_VERSION = "v2"
 const MEDIA_ORIGIN = "https://mirumi.media"
 const MAX_IMAGE_BYTES = 20 * 1_024 * 1_024
 const MAX_IMAGE_DIMENSION = 20_000
@@ -39,6 +39,7 @@ export interface MediaObjectStore {
 export interface NormalizedBodyImage {
   fallbackUrl: string
   width: number
+  height: number
   animated: boolean
 }
 
@@ -167,18 +168,24 @@ export class MediaNormalizer {
         source.format,
         source.compression,
       )
-      const key = `${hash}-${stem}.${extension}`
+      const key = `${hash}-${stem}-${source.width}x${source.height}.${extension}`
       await this.#saveVariant(key, bytes, contentType, "body", {
         width: source.width,
         height: source.height,
       })
 
-      return { fallbackUrl: publicMediaUrl(key), width: source.width, animated: true }
+      return {
+        fallbackUrl: publicMediaUrl(key),
+        width: source.width,
+        height: source.height,
+        animated: true,
+      }
     }
 
     const maximumWidth = Math.min(source.width, BODY_WIDTHS.at(-1)!)
     const widths = [...BODY_WIDTHS.filter((width) => width < maximumWidth), maximumWidth]
-    let fallbackUrl = ""
+    // key に画像セットの寸法（fallback の実寸）を入れるため、先に全 variant を作ってから保存する
+    const variants: Array<{ output: Uint8Array; width: number; height: number }> = []
     for (const width of widths) {
       const output = await sharp(bytes, { limitInputPixels: MAX_IMAGE_PIXELS })
         .rotate()
@@ -186,20 +193,33 @@ export class MediaNormalizer {
         .webp({ quality: 80, effort: 6, smartSubsample: true })
         .toBuffer()
       const outputMetadata = await sharp(output).metadata()
-      const actualWidth = outputMetadata.width
-      const actualHeight = outputMetadata.height
-      if (!actualWidth || !actualHeight) {
+      if (!outputMetadata.width || !outputMetadata.height) {
         throw Error("変換後の本文画像の寸法を取得できません")
       }
-      const key = `${hash}-${stem}-${actualWidth}w.webp`
-      await this.#saveVariant(key, output, "image/webp", "body", {
-        width: actualWidth,
-        height: actualHeight,
-      })
-      fallbackUrl = publicMediaUrl(key)
+      variants.push({ output, width: outputMetadata.width, height: outputMetadata.height })
     }
 
-    return { fallbackUrl, width: maximumWidth, animated: false }
+    const fallback = variants.at(-1)!
+    const prefix = `${hash}-${stem}-${fallback.width}x${fallback.height}`
+    for (const variant of variants) {
+      await this.#saveVariant(
+        `${prefix}-${variant.width}w.webp`,
+        variant.output,
+        "image/webp",
+        "body",
+        {
+          width: variant.width,
+          height: variant.height,
+        },
+      )
+    }
+
+    return {
+      fallbackUrl: publicMediaUrl(`${prefix}-${fallback.width}w.webp`),
+      width: fallback.width,
+      height: fallback.height,
+      animated: false,
+    }
   }
 
   async normalizeThumbnailImage(

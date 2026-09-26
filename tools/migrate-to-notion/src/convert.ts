@@ -9,6 +9,7 @@ import type { BlockObjectRequest, CreatePageParameters } from "@notionhq/client"
 import { HTMLElement, Node, NodeType, parse } from "node-html-parser"
 
 import { canonicalizeAmazonShortcode } from "shared/amazon"
+import { BODY_CONTENT_WIDTH } from "shared/media"
 
 import { CATEGORY_PAGE_IDS, PAGES_DATA_SOURCE_ID, POSTS_DATA_SOURCE_ID } from "./config"
 import type { MediaMigrationResolver } from "./media-mapping"
@@ -305,6 +306,8 @@ const imageUrl = (element: HTMLElement, context: ConversionContext): string | nu
 
 // max-width や min-width を巻き込まないよう直前の文字まで見る
 const WIDTH_STYLE = /(?:^|[;\s])width:\s*([^;]+)/i
+// WordPress の中間サイズや縮小の丸めで実寸と 1〜2px ずれることがあるので、この差までは同じ幅とみなす
+const WIDTH_TOLERANCE = 2
 
 const isTrackingImage = (element: HTMLElement): boolean => {
   const style = element.getAttribute("style") ?? ""
@@ -318,35 +321,79 @@ const isTrackingImage = (element: HTMLElement): boolean => {
   return (Number.isFinite(width) && width < 2) || (Number.isFinite(height) && height < 2)
 }
 
-const imageAttributes = (element: HTMLElement): Array<string> => {
-  // width 属性は WordPress が原寸として自動で吐くだけなので、意図的なサイズ指定である
-  // インラインスタイルの width だけを採用する
-  const width = element.getAttribute("style")?.match(WIDTH_STYLE)?.[1]?.trim()
-  const align = element.classList.contains("alignnone")
-    ? "none"
-    : element.classList.contains("aligncenter")
-      ? "center"
-      : null
+const widthAttribute = (element: HTMLElement): number | null => {
+  const value = element.getAttribute("width")?.trim() ?? ""
 
-  return [
-    width && width !== "100%" ? shortcodeValue("width", width) : null,
-    align ? shortcodeValue("align", align) : null,
-  ].filter((value): value is string => value !== null)
+  return /^\d+$/.test(value) ? Number(value) : null
 }
 
-// alignnone / aligncenter は WordPress がほぼ全画像に付ける既定のクラスなので、
-// それだけを根拠にオプションを足すとキャプションが埋まってしまう。
-// 明示的な見た目の調整が入っている画像だけを対象にする。
-// なお枠線なし指定の .sss は移行を機に廃止したので判定にも使わない
-const hasCustomAppearance = (element: HTMLElement): boolean => {
-  const style = element.getAttribute("style") ?? ""
-  const width = Number.parseInt(element.getAttribute("width") ?? "", 10)
+// クラシックエディタで表示サイズを変えると、その幅が width 属性に入る（style ではない）。
+// 実寸どおりの値や、実寸と一緒に本文幅で頭打ちになる値は WordPress が自動で書いただけなので持ち込まない
+const resizedWidth = (
+  element: HTMLElement,
+  sourceUrl: string,
+  context: ConversionContext,
+): number | null => {
+  const width = widthAttribute(element)
+  const naturalWidth = context.media.sourceWidth(sourceUrl, "body")
+  if (width === null || naturalWidth === null) {
+    return null
+  }
+  const displayed = (value: number) => Math.min(value, BODY_CONTENT_WIDTH)
 
-  return (
-    /(?:transform|box-shadow):/i.test(style) ||
-    WIDTH_STYLE.test(style) ||
-    (element.classList.contains("alignnone") && Number.isFinite(width) && width < 300)
-  )
+  return Math.abs(displayed(width) - displayed(naturalWidth)) <= WIDTH_TOLERANCE ? null : width
+}
+
+// 左寄せと中央寄せの違いは、画像が本文幅より狭く表示されるときにしか見た目に出ない
+const isNarrowerThanContent = (
+  width: string | null,
+  element: HTMLElement,
+  sourceUrl: string,
+  context: ConversionContext,
+): boolean => {
+  if (width) {
+    const pixels = width.match(/^([\d.]+)px$/i)?.[1]
+    return pixels ? Number(pixels) < BODY_CONTENT_WIDTH : true
+  }
+  // 実寸が分からない画像は、見た目を変えないほうへ倒して左寄せを残す
+  const naturalWidth = context.media.sourceWidth(sourceUrl, "body") ?? widthAttribute(element)
+
+  return naturalWidth === null || naturalWidth < BODY_CONTENT_WIDTH
+}
+
+// 見た目に効く指定だけを返す。alignnone / aligncenter は WordPress がほぼ全画像に付けるクラスなので、
+// そのまま持ち込むとキャプションが埋まってしまう。中央寄せは render の既定なので持ち込まず、
+// 左寄せも本文幅いっぱいに表示される画像では見た目が変わらないので落とす。
+// なお枠線なし指定の .sss は移行を機に廃止したので判定にも使わない
+const imageWidth = (
+  element: HTMLElement,
+  sourceUrl: string,
+  context: ConversionContext,
+): string | null => {
+  // インラインスタイルの width は意図的な指定なので、エディタで変えた表示幅より優先する
+  const styleWidth = element.getAttribute("style")?.match(WIDTH_STYLE)?.[1]?.trim()
+  if (styleWidth !== undefined) {
+    return styleWidth === "100%" ? null : styleWidth
+  }
+  const resized = resizedWidth(element, sourceUrl, context)
+
+  return resized === null ? null : `${resized}px`
+}
+
+const imageAttributes = (
+  element: HTMLElement,
+  sourceUrl: string,
+  context: ConversionContext,
+): Array<string> => {
+  const width = imageWidth(element, sourceUrl, context)
+  const alignNone =
+    element.classList.contains("alignnone") &&
+    isNarrowerThanContent(width, element, sourceUrl, context)
+
+  return [
+    width ? shortcodeValue("width", width) : null,
+    alignNone ? shortcodeValue("align", "none") : null,
+  ].filter((value): value is string => value !== null)
 }
 
 const fileStem = (url: string): string => {
@@ -370,10 +417,14 @@ const authoredAlt = (element: HTMLElement, url: string): string | null => {
 
 // ブロックとして置ける画像は Notion の image ブロックにし、指定があるものだけ
 // キャプション先頭のトークンとしてオプションを持たせる
-const imageOptions = (element: HTMLElement, url: string): string | null => {
+const imageOptions = (
+  element: HTMLElement,
+  url: string,
+  context: ConversionContext,
+): string | null => {
   const alt = authoredAlt(element, url)
   const attributes = [
-    ...(hasCustomAppearance(element) ? imageAttributes(element) : []),
+    ...imageAttributes(element, url, context),
     ...(alt ? [shortcodeValue("alt", alt)] : []),
   ]
 
@@ -381,15 +432,20 @@ const imageOptions = (element: HTMLElement, url: string): string | null => {
 }
 
 // 段落の途中に置かれた画像は image ブロックにできないため、ショートコードのまま本文に残す
-const imageShortcode = (element: HTMLElement, url: string, altSourceUrl?: string): string => {
+const imageShortcode = (
+  element: HTMLElement,
+  url: string,
+  sourceUrl: string,
+  context: ConversionContext,
+): string => {
   const name = decodeURIComponent(
     new URL(url).pathname.split("/").filter(Boolean).at(-1) ?? "image",
   )
-  const alt = authoredAlt(element, altSourceUrl ?? url)
+  const alt = authoredAlt(element, sourceUrl)
 
   return `[image ${[
     shortcodeValue("name", name),
-    ...imageAttributes(element),
+    ...imageAttributes(element, sourceUrl, context),
     ...(alt ? [shortcodeValue("alt", alt)] : []),
   ].join(" ")}]`
 }
@@ -436,7 +492,7 @@ const collectRichText = (
       if (url) {
         appendText(
           richText,
-          imageShortcode(node, migratedImageUrl(context, url, "body"), url),
+          imageShortcode(node, migratedImageUrl(context, url, "body"), url, context),
           state,
         )
       }
@@ -649,7 +705,7 @@ const imageBlock = (
   if (!url) {
     return null
   }
-  const options = imageOptions(element, url)
+  const options = imageOptions(element, url, context)
   const optionToken = options ? plainRichText(0 < caption.length ? `${options} ` : options) : []
 
   return {
@@ -975,7 +1031,12 @@ const quoteImageShortcode = (
   const copyright = normalizeInlineWhitespace(
     element.text.replaceAll(/\[\/?caption[^\]]*]/gi, ""),
   ).trim()
-  const value = `[quoteImage ${shortcodeValue("name", name)} ${shortcodeValue("copyright", copyright)}]`
+  const width = imageWidth(image, url, context)
+  const value = `[quoteImage ${[
+    shortcodeValue("name", name),
+    shortcodeValue("copyright", copyright),
+    ...(width ? [shortcodeValue("width", width)] : []),
+  ].join(" ")}]`
 
   return paragraph(plainRichText(value))
 }
@@ -1371,7 +1432,7 @@ export const convertWordPressContent = (
     articleUrl: `https://mirumi.me/${record.slug}/`,
     customCss: [],
     warnings: [],
-    media: media ?? { resolve: (sourceUrl) => sourceUrl },
+    media: media ?? { resolve: (sourceUrl) => sourceUrl, sourceWidth: () => null },
   }
   const root = parse(prepareHtml(record.content), {
     comment: true,

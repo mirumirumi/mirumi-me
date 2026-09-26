@@ -34,8 +34,9 @@ describe("syncArticleMedia", () => {
 
   test("Notion upload だけ同期し、canonical thumbnail 群を復元する", async () => {
     const normalizeBodyImage = vi.fn(async () => ({
-      fallbackUrl: "https://mirumi.media/hash-image-800w.webp",
+      fallbackUrl: "https://mirumi.media/0123456789abcdef-image-800x400-800w.webp",
       width: 800,
+      height: 400,
       animated: false,
     }))
     const result = await syncArticleMedia(
@@ -46,7 +47,9 @@ describe("syncArticleMedia", () => {
     )
 
     expect(result.article.blocks[0]).toEqual(
-      expect.objectContaining({ url: "https://mirumi.media/hash-image-800w.webp" }),
+      expect.objectContaining({
+        url: "https://mirumi.media/0123456789abcdef-image-800x400-800w.webp",
+      }),
     )
     expect(result.thumbnailUrls).toEqual({
       article: "https://mirumi.media/0123456789abcdef-cover-1200x630.webp",
@@ -141,8 +144,17 @@ describe("isNotionHostedImage", () => {
         "https://prod-files-secure.s3.us-west-2.amazonaws.com/path/image.png?signature=x",
       ),
     ).toEqual(true)
+    // ワークスペースのデータ保管リージョンによってバケットが変わる（mirumi.me は東京）
+    expect(
+      isNotionHostedImage(
+        "https://prod-files-secure-apne1.s3.ap-northeast-1.amazonaws.com/space/file/image.png?X-Amz-Signature=x",
+      ),
+    ).toEqual(true)
     expect(isNotionHostedImage("https://file.notion.so/image.png")).toEqual(true)
     expect(isNotionHostedImage("https://mirumi.media/image.png")).toEqual(false)
+    expect(
+      isNotionHostedImage("https://other-bucket.s3.ap-northeast-1.amazonaws.com/a.png"),
+    ).toEqual(false)
     expect(isNotionHostedImage("https://example.com/image.png")).toEqual(false)
   })
 })

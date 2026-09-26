@@ -108,7 +108,14 @@ describe("renderArticleContent", () => {
         {
           id: "canonical",
           type: "image",
-          url: "https://mirumi.media/0123456789abcdef-screen-shot-1600w.webp",
+          url: "https://mirumi.media/0123456789abcdef-screen-shot-1600x900-1600w.webp",
+          caption: [],
+          children: [],
+        },
+        {
+          id: "canonical-animation",
+          type: "image",
+          url: "https://mirumi.media/0123456789abcdef-dancing-cat-480x270.gif",
           caption: [],
           children: [],
         },
@@ -118,6 +125,7 @@ describe("renderArticleContent", () => {
     // トークンがなければファイル名から復元する
     expect(result.html).toContain('alt="my-cats"')
     expect(result.html).toContain('alt="screen-shot"')
+    expect(result.html).toContain('alt="dancing-cat"')
     // トークンの alt が優先され、トークン部分はキャプションから取り除かれる
     expect(result.html).toContain('alt="タグ編集の例"')
     expect(result.html).toContain('<p class="wp-caption-text">説明文</p>')
@@ -143,23 +151,48 @@ describe("renderArticleContent", () => {
         {
           id: "canonical-inline",
           type: "paragraph",
-          richText: [text('[image name="0123456789abcdef-inline-image-1200w.webp"]')],
+          richText: [text('[image name="0123456789abcdef-inline-image-1200x675-1200w.webp"]')],
           children: [],
         },
       ]),
     )
 
+    // 左寄せの指定は文章の流れに残すため alignnone として出す
     expect(result.html).toContain(
-      '前<img src="https://mirumi.media/vscode.png" alt="vscode" loading="lazy">後',
+      '前<img src="https://mirumi.media/vscode.png" alt="vscode" class="alignnone" loading="lazy">後',
     )
     // 段落以外のブロックでも解決し、alt があればそれを使う
     expect(result.html).toContain(
       '<li><img src="https://mirumi.media/246310.png" alt="タグ編集の例" loading="lazy"> 説明</li>',
     )
+    // canonical な名前なら画像セットの寸法を width / height に出す
     expect(result.html).toContain(
-      '<img src="https://mirumi.media/0123456789abcdef-inline-image-1200w.webp" alt="inline-image" loading="lazy">',
+      '<img src="https://mirumi.media/0123456789abcdef-inline-image-1200x675-1200w.webp" alt="inline-image" width="1200" height="675" loading="lazy">',
     )
     expect(result.html).not.toContain("[image")
+    expect(result.warnings).toEqual([])
+  })
+
+  test("インライン画像の shortcode にある幅と左寄せを反映する", () => {
+    const result = renderArticleContent(
+      article([
+        {
+          id: "inline-left",
+          type: "paragraph",
+          richText: [
+            text(
+              '[image name="0123456789abcdef-icon-64x64-64w.webp" width="32px" align="none"]アイコンの説明',
+            ),
+          ],
+          children: [],
+        },
+      ]),
+    )
+
+    // alignnone がないと本文 CSS の display: block で文章から切り離され、中央に 1 行ぶん居座ってしまう
+    expect(result.html).toContain(
+      '<p><img src="https://mirumi.media/0123456789abcdef-icon-64x64-64w.webp" alt="icon" width="64" height="64" class="alignnone" style="width:32px" loading="lazy">アイコンの説明</p>',
+    )
     expect(result.warnings).toEqual([])
   })
 
@@ -234,6 +267,16 @@ describe("renderArticleContent", () => {
           richText: [text('[quoteImage name="beji-ta.jpg" copyright="©集英社"]')],
           children: [],
         },
+        {
+          id: "canonical-quote",
+          type: "paragraph",
+          richText: [
+            text(
+              '[quoteImage name="0123456789abcdef-comic-1200x1697-1200w.webp" copyright="©講談社" width="415px"]',
+            ),
+          ],
+          children: [],
+        },
       ]),
     )
 
@@ -244,6 +287,9 @@ describe("renderArticleContent", () => {
     expect(result.html).toContain('<img src="https://mirumi.media/t.jpg"')
     expect(result.html).toContain(
       '<blockquote class="img"><div class="wp-caption"><img src="https://mirumi.media/beji-ta.jpg" alt="©集英社" loading="lazy"><p class="wp-caption-text">©集英社</p></div></blockquote>',
+    )
+    expect(result.html).toContain(
+      '<img src="https://mirumi.media/0123456789abcdef-comic-1200x1697-1200w.webp" alt="©講談社" width="1200" height="1697" style="width:415px" loading="lazy">',
     )
     expect(result.warnings).toEqual([])
   })
@@ -268,13 +314,38 @@ describe("renderArticleContent", () => {
     expect(result.warnings).toEqual([])
   })
 
-  test("canonical 本文画像には srcset と sizes を付ける", () => {
+  test("canonical 本文画像には width と height と srcset と sizes を付ける", () => {
     const result = renderArticleContent(
       article([
         {
           id: "00000000-0000-0000-0000-000000000001",
           type: "image",
-          url: "https://mirumi.media/0123456789abcdef-screenshot-1600w.webp",
+          url: "https://mirumi.media/0123456789abcdef-screenshot-1600x900-1600w.webp",
+          caption: [],
+          children: [],
+        },
+      ]),
+    )
+
+    // width がないと srcset の w 記述子と sizes から 785px 相当に引き伸ばされるので、小さい画像ほど必須
+    expect(result.html).toContain(
+      '<img src="https://mirumi.media/0123456789abcdef-screenshot-1600x900-1600w.webp" alt="screenshot" width="1600" height="900" srcset=',
+    )
+    expect(result.html).toContain(
+      'srcset="https://mirumi.media/0123456789abcdef-screenshot-1600x900-800w.webp 800w, https://mirumi.media/0123456789abcdef-screenshot-1600x900-1200w.webp 1200w, https://mirumi.media/0123456789abcdef-screenshot-1600x900-1600w.webp 1600w"',
+    )
+    expect(result.html).toContain(
+      'sizes="(max-width: 428px) calc(100vw - 54px), (max-width: 829px) calc(100vw - 44px), 785px"',
+    )
+  })
+
+  test("canonical animation には width と height だけを付ける", () => {
+    const result = renderArticleContent(
+      article([
+        {
+          id: "animation",
+          type: "image",
+          url: "https://mirumi.media/0123456789abcdef-dancing-cat-480x270.gif",
           caption: [],
           children: [],
         },
@@ -282,10 +353,25 @@ describe("renderArticleContent", () => {
     )
 
     expect(result.html).toContain(
-      'srcset="https://mirumi.media/0123456789abcdef-screenshot-800w.webp 800w, https://mirumi.media/0123456789abcdef-screenshot-1200w.webp 1200w, https://mirumi.media/0123456789abcdef-screenshot-1600w.webp 1600w"',
+      '<img src="https://mirumi.media/0123456789abcdef-dancing-cat-480x270.gif" alt="dancing-cat" width="480" height="270" loading="lazy">',
     )
+  })
+
+  test("幅の指定がある canonical 画像も width と height を併記して縦横比を保つ", () => {
+    const result = renderArticleContent(
+      article([
+        {
+          id: "sized-canonical",
+          type: "image",
+          url: "https://mirumi.media/0123456789abcdef-icon-256x100-256w.webp",
+          caption: [text('[image width="120px" align="none"]')],
+          children: [],
+        },
+      ]),
+    )
+
     expect(result.html).toContain(
-      'sizes="(max-width: 428px) calc(100vw - 54px), (max-width: 829px) calc(100vw - 44px), 785px"',
+      '<img src="https://mirumi.media/0123456789abcdef-icon-256x100-256w.webp" alt="icon" width="256" height="100" srcset="https://mirumi.media/0123456789abcdef-icon-256x100-256w.webp 256w" sizes="(max-width: 428px) calc(100vw - 54px), (max-width: 829px) calc(100vw - 44px), 785px" class="alignnone" style="width:120px" loading="lazy">',
     )
   })
 

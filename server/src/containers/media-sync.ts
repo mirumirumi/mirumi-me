@@ -16,6 +16,10 @@ export interface SyncedArticleMedia {
   ogImageUrl: string
 }
 
+// Notion のアップロード先はワークスペースのデータ保管リージョンで変わる。mirumi.me のワークスペースは
+// prod-files-secure-apne1.s3.ap-northeast-1 で、us-west-2 だけを見ていると同期されず署名付き URL のまま公開される
+const NOTION_FILE_BUCKET_HOST = /^prod-files-secure(?:-[a-z0-9]+)?\.s3\.[a-z0-9-]+\.amazonaws\.com$/
+
 export const isNotionHostedImage = (value: string): boolean => {
   try {
     const { hostname } = new URL(value)
@@ -23,7 +27,7 @@ export const isNotionHostedImage = (value: string): boolean => {
     return (
       hostname === "file.notion.so" ||
       hostname.endsWith(".notionusercontent.com") ||
-      hostname === "prod-files-secure.s3.us-west-2.amazonaws.com"
+      NOTION_FILE_BUCKET_HOST.test(hostname)
     )
   } catch {
     return false

@@ -9,7 +9,7 @@ import type {
   TableBlock,
   TableRowBlock,
 } from "./content"
-import { resolveResponsiveBodyImage } from "./media"
+import { resolveMediaDimensions, resolveResponsiveBodyImage } from "./media"
 import type { StaticXPostData } from "./x-post"
 import { findXPostLinkMatch } from "./x-post"
 
@@ -134,7 +134,15 @@ const imageAltFromFilename = (name: string): string => {
   return name
     .replace(/\.[a-z0-9]+$/i, "")
     .replace(/^[a-f0-9]{16}-/, "")
-    .replace(/-(?:\d+w|\d+x\d+)$/, "")
+    .replace(/-\d+x\d+(?:-\d+w)?$/, "")
+}
+
+// 寸法がないと遅延読み込みのたびにレイアウトがずれ、srcset 付きの小さい画像は sizes の幅まで引き伸ばされる。
+// 寸法は canonical なファイル名からしか分からないので、旧 URL のまま残る画像には付かない
+const dimensionAttributes = (url: string): string => {
+  const dimensions = resolveMediaDimensions(url)
+
+  return dimensions ? ` width="${dimensions.width}" height="${dimensions.height}"` : ""
 }
 
 // alt はエスケープ済みの HTML から切り出すため、`&` を二重変換しないよう属性を閉じられる文字だけを潰す
@@ -154,8 +162,12 @@ const renderInlineImages = (html: string, context: RenderContext): string => {
     if (alt.includes("<")) {
       context.warnings.push(`インライン画像の alt に書式が含まれています: ${name}`)
     }
+    // 本文の img は display: block なので、alignnone がないと文章から切り離されて中央に置かれる
+    const width = rest.match(/\bwidth=&quot;(.*?)&quot;/)?.[1]
+    const className = /\balign=&quot;none&quot;/.test(rest) ? ' class="alignnone"' : ""
+    const style = width ? ` style="width:${escapeAttributeValue(width)}"` : ""
 
-    return `<img src="${escapeHtml(url)}" alt="${escapeAttributeValue(alt)}" loading="lazy">`
+    return `<img src="${escapeHtml(url)}" alt="${escapeAttributeValue(alt)}"${dimensionAttributes(url)}${className}${style} loading="lazy">`
   })
 }
 
@@ -524,8 +536,10 @@ const renderQuoteImage = (attributes: Record<string, string>, context: RenderCon
   const copyright = attributes.copyright
     ? `<p class="wp-caption-text">${escapeHtml(attributes.copyright)}</p>`
     : ""
+  // 漫画のコマは大きさをそろえて並べたいことが多いので、本文画像と同じく幅を指定できる
+  const style = attributes.width ? ` style="width:${escapeHtml(attributes.width)}"` : ""
 
-  return `<blockquote class="img"><div class="wp-caption"><img src="${escapeHtml(url)}" alt="${escapeHtml(attributes.copyright ?? "")}" loading="lazy">${copyright}</div></blockquote>`
+  return `<blockquote class="img"><div class="wp-caption"><img src="${escapeHtml(url)}" alt="${escapeHtml(attributes.copyright ?? "")}"${dimensionAttributes(url)}${style} loading="lazy">${copyright}</div></blockquote>`
 }
 
 // ボタンは WordPress 時代から常に中央寄せの段落に置かれていた（実データ 56 件すべて）ので、
@@ -662,7 +676,7 @@ const renderBlock = (block: ContentBlock, context: RenderContext): string => {
         ? ` srcset="${escapeHtml(responsive.srcset)}" sizes="${escapeHtml(responsive.sizes)}"`
         : ""
 
-      return `<div class="wp-caption"><img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}"${responsiveAttributes}${className}${style} loading="lazy">${captionHtml ? `<p class="wp-caption-text">${captionHtml}</p>` : ""}</div>`
+      return `<div class="wp-caption"><img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}"${dimensionAttributes(url)}${responsiveAttributes}${className}${style} loading="lazy">${captionHtml ? `<p class="wp-caption-text">${captionHtml}</p>` : ""}</div>`
     }
     case "audio":
     case "video":
