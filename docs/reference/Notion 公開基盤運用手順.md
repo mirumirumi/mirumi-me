@@ -418,6 +418,7 @@ MIRUMI_BUILD_MANIFEST_DIR=/tmp/mirumi-build/JOB/manifest bun run dev
 - `assetHash` は変換契約 version、用途（本文 / thumbnail）、入力 bytes から作る sha256 の先頭 16 文字。同じ画像セットの各 variant で共有し、入力 bytes か変換契約が変われば hash も変わる
 - `cleanStem` は元 URL のファイル名から作る。拡張子と末尾の `-{W}x{H}`（WordPress の寸法サフィックス）を落とし、NFKC 正規化と小文字化のうえで文字と数字以外を `-` にまとめ、80 文字までにする。本文画像でこれが空になるときは `image-{ハイフンを除いた block ID の末尾 12 文字}` を使う
 - resize、quality、命名規則を変えるときは変換契約 version も上げる。生成済みの variant を単品で rename / delete しない
+- S3 の object は immutable として扱う。publish のたびに記事内の画像を走査し、同じ key がすでにあれば PUT を省略する。既存 object の metadata（変換契約、用途、寸法、bytes の hash）が食い違えば失敗させる
 - 本文 animation は変換せず byte-for-byte で S3 へコピーし、`srcset` を付けない。key は `{assetHash}-{cleanStem}-{width}x{height}.{元の拡張子}` で、`width` / `height` だけ出す
 - animated thumbnail は現在 validation error
 - thumbnail が canonical でなければ publish 時にホストを問わず取り込んで正規化する。Notion upload も WordPress 時代の `mirumi.media` 直下の画像も同じ経路を通る

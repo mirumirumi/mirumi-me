@@ -35,7 +35,6 @@
                 - thumbnail は 412x216（トップ・内部ブログカード）、600x315（mobile article header）、1200x630（desktop article header・OGP）を `cover` で生成する
             - 既存記事が参照している静止画像も、最終 Notion import 前の 1 回限りの batch で同じ形式に揃える
             - 既存 animation は変換も URL 変更もしない。新しい本文 animation だけ元 bytes のまま S3 へコピーし、animated thumbnail は当面公開エラーにする
-            - 通常 publish は対象記事内の画像を毎回走査し、S3 HEAD で同じ key が存在すれば PUT を省略する
         - 新規公開した記事の公開日も Workers がセットする
             - 公開成功時の最終書き込みで、`公開日` が空なら現在日時をセットし、すでに値があれば維持する
         - `更新日` も Workers がセットする
