@@ -24,3 +24,8 @@ Notion → Workers → Workflows → Containers の公開基盤について、�
 ## サムネイルの自動生成
 
 - サムネイル生成 Lambda は画像を返すところまでとし、webp への変換と S3 への配置は Container が行う
+
+## 目次のアンカー
+
+- 見出しの id は Notion の block ID から作る。block ID を base64url にした末尾 7 文字に `h-` を付ける
+- 先頭側を使わないのは、Notion の ID が UUID v7 で先頭のバイトが作成時刻になっており、近い時期に作った見出しどうしで衝突するため
