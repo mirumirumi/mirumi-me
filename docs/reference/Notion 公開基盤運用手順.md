@@ -14,7 +14,7 @@
 ## Notion 移行の完了条件
 
 production bootstrap だけでは移行完了ではない。コメント、検索、PV、管理拡張、バックアップなど
-`tools/migrate-to-notion/やること.md` の必須項目を完了し、runtime の WordPress 依存をすべて撤去したあとに WordPress を完全廃止する。
+`docs/L1/Notion 移行 やること.md` の必須項目を完了し、runtime の WordPress 依存をすべて撤去したあとに WordPress を完全廃止する。
 
 移行期間中は検索、PV、いいねが WordPress に依存する。
 コメントはコードとしては新基盤へ切り替え済みで、Notion の comments schema 作成と既存コメントの import が残る。
@@ -63,7 +63,7 @@ endpoint は取得時に一時保存値を削除する。期限切れの場合�
 
 ## コメント
 
-設計の経緯は `.contexts/コメント基盤の移行設計.md`。保存先は private な Notion `comments` データソースで、
+設計の経緯は `docs/L2/コメント基盤の移行設計.md`。保存先は private な Notion `comments` データソースで、
 Nuxt は Notion も Worker も読まない。Container が approved を取得して `BuildPage.comments` に入れ、
 コメント本文は静的 HTML と payload に焼き込まれる。ローカル dev は常に 0 件。
 
@@ -136,7 +136,7 @@ Cron（19:00 UTC = 04:00 JST）が `BackupWorkflow` を起動する。Worker だ
 - 全体で 18 分ほどかかる。ほぼ全部が posts の step（467 記事 / 53,016 block で 17 分）で、他の step は
   すべて 15 秒以内に終わる。Workflow instance の subrequest 上限（10,000）と Worker のメモリ
   （gzip 済み bytes しか抱えない）の範囲に収まっている
-- 壊れたときの手順は `docs/バックアップからの復旧手順.md`
+- 壊れたときの手順は `docs/reference/バックアップからの復旧手順.md`
 
 ## Cloudflare Access
 
@@ -367,7 +367,7 @@ deploy token は対象 account だけに絞り、`Workers Scripts Edit` と Cont
 通常 full build は `公開中`の現在本文だけを再生成する。
 `公開待ち / 非公開待ち`の route は上書きせず、一覧、sitemap、feed には publish index の最後の公開値を使う。
 
-現行の `.github/workflows/deploy.yml` からこの方式への切り替えは、production bootstrap と同じ明示 GO のあとに行う。
+🚧 現行の `.github/workflows/deploy.yml` からこの方式への切り替えは、production bootstrap と同じ明示 GO のあとに行う。
 
 ## ローカル frontend 開発
 
@@ -521,7 +521,7 @@ Creators API の日本向け credential version `3.3` と media bucket 名は va
 - 失敗時の Notion state は publish index の実配信状態から復元し、index を読めない場合は state を推測しない
 - rollback は Notion の内容を戻して再公開するか、full build を回す。site bucket に S3 versioning は入れていない
 
-## production bootstrap 前
+## 🚧 production bootstrap 前
 
 - dev で新規公開、更新、非公開、重複 Webhook、途中失敗を実動確認する
 - dev / prd の bucket、CloudFront、KV、Secrets と Access policy を確認する
@@ -536,7 +536,7 @@ Creators API の日本向け credential version `3.3` と media bucket 名は va
 - production bootstrap、Webhook subscription 有効化、GitHub release 切り替えは別の明示 GO 後に行う
 - けいが記述：本当は Notion の dev 系データソースでカラム幅みたいに見た目レベルで調整したものをそのまま本番でも使いたいから、すべての作業が終わって WP データ移行する直前に dev のデータソース丸ごと複製するようにしたいけど、いろんな id とか変わっちゃったりしないかという点で悩ましい
 
-## WordPress 廃止前
+## 🚧 WordPress 廃止前
 
 - 既存コメントの記事との対応、本文、承認状態、親子関係、日時、投稿者名、非公開のメールアドレスを保ったまま新しい保存先へ移行する
 - コメント投稿、Turnstile、承認・返信、通知、コメント feed を新基盤へ切り替える

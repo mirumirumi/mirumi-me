@@ -109,7 +109,7 @@
 
 - コメントの移行✅（dev では実施確認済み）
     - Notion の comments データソースに移行する
-    - 細かい計画は `.contexts/コメント基盤の移行設計.md` を参照のこと
+    - 細かい計画は `docs/L2/コメント基盤の移行設計.md` を参照のこと
 
 - バックアップ用の定期バッチ ✅
     - Cloudflare Cron Triggers を使う
