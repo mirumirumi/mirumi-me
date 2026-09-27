@@ -68,9 +68,7 @@
         - そのプラットフォームが必要とするシークレットはそのプラットフォームで管理する
 
 - フルビルド（通常のアプリケーションリリース）✅（dev で動確認済み）
-    - GitHub Actions は `wrangler deploy` 後に Workflow を起動し、Notion 取得、nuxt generate、S3 deploy、CloudFront invalidation までを同じ公開基盤で行う
-        - GitHub Actions は Cloudflare deploy token だけを持ち、Notion / AWS secret や `nuxt build` の責務は持たない
-        - deploy.yml を新方式に差し替え済みなのでAWS 系と GPG_PASSPHRASE はもう不要🔴
+    - deploy.yml を新方式に差し替え済みなのでAWS 系と GPG_PASSPHRASE はもう不要🔴
     - いままで通り全記事フェッチはする
         - 後述するバックアップ用定期バッチでもおそらく同じ全記事フェッチロジックを使うので、レートリミットコントロール含めて共通化したい
         - プロパティから「編集したがまだ公開していない」記事だけフェッチから除外する
