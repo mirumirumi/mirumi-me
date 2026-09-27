@@ -20,3 +20,7 @@ Notion → Workers → Workflows → Containers の公開基盤について、�
 - Notion の webhook event ID を Workflow の instance ID に使い、重複起動を防ぐ
 - 取得、バリデーション、ビルド、デプロイ、Notion への書き戻しを永続ステップに分け、途中で失敗したときの再試行と再開を Workflow に任せる
 - 外部への副作用は再試行されても安全なつくりにし、古い内容による上書きは公開前の競合チェックで防ぐ
+
+## サムネイルの自動生成
+
+- サムネイル生成 Lambda は画像を返すところまでとし、webp への変換と S3 への配置は Container が行う
