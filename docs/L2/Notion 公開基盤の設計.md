@@ -13,3 +13,10 @@ Notion → Workers → Workflows → Containers の公開基盤について、�
 
 - 公開のたびに slug が変わっていないかを確かめるため、S3 の `_internal/publish-index-v1.json` に最後に公開できた pageId、slug、route の所有者を持ち、現在値と照合する
 - 非公開にしたあとも記録は残し、同じ slug が別の記事で誤って再利用されるのを防ぐ
+
+## 公開処理の Workflow
+
+- Webhook は Workflow インスタンスを作ったらすぐに成功を返す
+- Notion の webhook event ID を Workflow の instance ID に使い、重複起動を防ぐ
+- 取得、バリデーション、ビルド、デプロイ、Notion への書き戻しを永続ステップに分け、途中で失敗したときの再試行と再開を Workflow に任せる
+- 外部への副作用は再試行されても安全なつくりにし、古い内容による上書きは公開前の競合チェックで防ぐ
