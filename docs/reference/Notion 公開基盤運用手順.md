@@ -530,7 +530,7 @@ Creators API の日本向け credential version `3.3` と media bucket 名は va
 - Creators API を実 ASIN で確認する
 - production の site bucket に `_internal/*` の Deny を入れる。dev には入っているが production にはまだない
 - media normalization の unresolved static image を 0 件にする
-- dev Notion data source へ external WebP canary を投入する
+- dev Notion data source へ external WebP canary を投入する。拒否された場合だけ Notion 用の JPEG / PNG fallback を追加する
 - 470 page の route uniqueness と full generate を通す
 - 本番 import 後、bootstrap 前に prd の `/preview?pageId=` で画像表示を mirumi.me（旧 WordPress 配信）と見比べる。dev では確認できていないため。
   `android-app`（縮めたスクショ）、`comics`（漫画の引用画像 415px）、`pc-freesoft` / `firefox-plugin`（インラインのアイコン）、

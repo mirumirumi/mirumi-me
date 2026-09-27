@@ -34,9 +34,6 @@
                 - 本文画像は横幅 800 / 1200 / 1600 px、拡大なしで生成し、`srcset` で使う
                 - thumbnail は 412x216（トップ・内部ブログカード）、600x315（mobile article header）、1200x630（desktop article header・OGP）を `cover` で生成する
             - 既存記事が参照している静止画像も、最終 Notion import 前の 1 回限りの batch で同じ形式に揃える
-                - batch が出す旧 URL -> canonical URL の mapping を移行スクリプトに渡し、記事本文と thumbnail の URL も同時に置き換える
-                - 旧 object は rollback のため残し、未参照画像を含む cleanup は別作業にする
-                - Notion 公式の external image 対応拡張子一覧には webp がないが実際の API 投入は成功済み。本番 import 前にも canary を通し、拒否された場合だけ Notion 用 JPEG / PNG fallback を追加する
             - 既存 animation は変換も URL 変更もしない。新しい本文 animation だけ元 bytes のまま S3 へコピーし、animated thumbnail は当面公開エラーにする
             - 通常 publish は対象記事内の画像を毎回走査し、S3 HEAD で同じ key が存在すれば PUT を省略する
         - 新規公開した記事の公開日も Workers がセットする
