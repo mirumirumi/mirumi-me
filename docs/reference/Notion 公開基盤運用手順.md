@@ -415,7 +415,10 @@ MIRUMI_BUILD_MANIFEST_DIR=/tmp/mirumi-build/JOB/manifest bun run dev
 - `{setWidth}x{setHeight}` は本文画像セットの最大 variant の実寸。フロントエンドはこれを `<img>` の `width` / `height` に出す（Notion の image block に寸法がないため URL で運ぶ）
 - 画像変換契約は `v2`（2026-09-25 に本文 key へ寸法を追加して `v1` から上げた。`v1` の本文 object は S3 に 1 つも作られていない）
 - thumbnail の `cleanStem` は Notion Files property のファイル名を使う。名前を変えると URL も変わるが、旧 object は残す
-- 同じ画像セットは同じ `assetHash`、入力 bytes または変換契約が変われば hash も変わる
+- `assetHash` は変換契約 version、用途（本文 / thumbnail）、入力 bytes から作る sha256 の先頭 16 文字。同じ画像セットの各 variant で共有し、入力 bytes か変換契約が変われば hash も変わる
+- `cleanStem` は元 URL のファイル名から作る。拡張子と末尾の `-{W}x{H}`（WordPress の寸法サフィックス）を落とし、NFKC 正規化と小文字化のうえで文字と数字以外を `-` にまとめ、80 文字までにする。本文画像でこれが空になるときは `image-{ハイフンを除いた block ID の末尾 12 文字}` を使う
+- resize、quality、命名規則を変えるときは変換契約 version も上げる。生成済みの variant を単品で rename / delete しない
+- S3 の object は immutable として扱う。publish のたびに記事内の画像を走査し、同じ key がすでにあれば PUT を省略する。既存 object の metadata（変換契約、用途、寸法、bytes の hash）が食い違えば失敗させる
 - 本文 animation は変換せず byte-for-byte で S3 へコピーし、`srcset` を付けない。key は `{assetHash}-{cleanStem}-{width}x{height}.{元の拡張子}` で、`width` / `height` だけ出す
 - animated thumbnail は現在 validation error
 - thumbnail が canonical でなければ publish 時にホストを問わず取り込んで正規化する。Notion upload も WordPress 時代の `mirumi.media` 直下の画像も同じ経路を通る
@@ -525,10 +528,11 @@ Creators API の日本向け credential version `3.3` と media bucket 名は va
 
 - dev で新規公開、更新、非公開、重複 Webhook、途中失敗を実動確認する
 - dev / prd の bucket、CloudFront、KV、Secrets と Access policy を確認する
+- prd の integration が `(dev)` のデータソースに接続していないことを確認する
 - Creators API を実 ASIN で確認する
 - production の site bucket に `_internal/*` の Deny を入れる。dev には入っているが production にはまだない
 - media normalization の unresolved static image を 0 件にする
-- dev Notion data source へ external WebP canary を投入する
+- dev Notion data source へ external WebP canary を投入する。拒否された場合だけ Notion 用の JPEG / PNG fallback を追加する
 - 470 page の route uniqueness と full generate を通す
 - 本番 import 後、bootstrap 前に prd の `/preview?pageId=` で画像表示を mirumi.me（旧 WordPress 配信）と見比べる。dev では確認できていないため。
   `android-app`（縮めたスクショ）、`comics`（漫画の引用画像 415px）、`pc-freesoft` / `firefox-plugin`（インラインのアイコン）、

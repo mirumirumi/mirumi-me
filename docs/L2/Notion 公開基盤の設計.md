@@ -1,0 +1,39 @@
+---
+owner: ai
+sources:
+  - docs/L1/Notion 移行 やること.md
+---
+
+# Notion 公開基盤の設計
+
+Notion → Workers → Workflows → Containers の公開基盤について、設計の中身とその理由を書く。
+手順や契約として確定しているものは `docs/reference/Notion 公開基盤運用手順.md` を正とする。
+
+## slug の所有
+
+- 公開のたびに slug が変わっていないかを確かめるため、S3 の `_internal/publish-index-v1.json` に最後に公開できた pageId、slug、route の所有者を持ち、現在値と照合する
+- 非公開にしたあとも記録は残し、同じ slug が別の記事で誤って再利用されるのを防ぐ
+
+## 公開処理の Workflow
+
+- Webhook は Workflow インスタンスを作ったらすぐに成功を返す
+- Notion の webhook event ID を Workflow の instance ID に使い、重複起動を防ぐ
+- 取得、バリデーション、ビルド、デプロイ、Notion への書き戻しを永続ステップに分け、途中で失敗したときの再試行と再開を Workflow に任せる
+- 外部への副作用は再試行されても安全なつくりにし、古い内容による上書きは公開前の競合チェックで防ぐ
+
+## サムネイルの自動生成
+
+- サムネイル生成 Lambda は画像を返すところまでとし、webp への変換と S3 への配置は Container が行う
+
+## 目次のアンカー
+
+- 見出しの id は Notion の block ID から作る。block ID を base64url にした末尾 7 文字に `h-` を付ける
+- 先頭側を使わないのは、Notion の ID が UUID v7 で先頭のバイトが作成時刻になっており、近い時期に作った見出しどうしで衝突するため
+
+## Notion の status と公開結果の書き戻し
+
+- `last-notion-edit` は公開処理中の競合検出にだけ使い、`last-deploy` との大小比較には使わない
+- 公開開始時のページの `last_edited_time` を保持し、デプロイ成功後の最終書き込みの直前に取り直した値と違えば成功扱いにしない
+- 成功時は `internal-state = 公開中`、`last-deploy` の更新、`公開エラー` のクリアを最後の 1 回の書き込みにまとめる。失敗時は短い理由と trace ID だけを残す
+    - 失敗時は、`last-deploy` がなければ `internal-state = 下書き`、あれば `internal-state = 公開中` に戻す
+- 公開処理から記事に書き戻す経路は `workers-api` だけにする（取り直してから書き込むまでの短い競合の窓は許容する）
