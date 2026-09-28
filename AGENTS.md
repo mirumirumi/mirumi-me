@@ -18,7 +18,10 @@
         - サーバーは ConoHa WING のレンタルサーバーで動いていて、SSH で中身はいつでも確認できます
             - 接続したければ `ssh conoha-wing` でどうぞ
             - ただし、書き込み系コマンドは許可なく実行してはいけません！
-            - WP CLI はサーバーにログインしたあと `cd public_html/mirumi.in` すると使えるようになるよ（非対話 SSH だと使えないという情報もあり）
+            - WP CLI はサーバーにログインしたあと `cd public_html/mirumi.in` すると使えるようになるよ
+                - 非対話 SSH では `wp` が PATH に無いので、`ssh -o BatchMode=yes conoha-wing 'cd public_html/mirumi.in && php ~/workspace/wp-cli.phar <サブコマンド>'` の形で使う
+                - 出力の先頭に locale の perl warning が混ざるので、必要なら grep で落とす
+                - MySQL が古く `WITH RECURSIVE` が使えないので、再帰的な集計は自己結合を並べて書く
     - このドメインでも実は mirumi.me と全く同じ記事 URL でサイトが公開されているけど、すべて noindex にしてあるので実害はない
         - もし実際の表示やレンダリング結果を確認するときは必ず mirumi.in ではなく mirumi.me を見るように気をつけてください
     - 現在は WordPress 側のリポジトリは別物としてわかれており、~/dev/mirumi-me-wordpress にあります

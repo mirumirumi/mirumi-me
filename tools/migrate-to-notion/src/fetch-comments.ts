@@ -14,7 +14,7 @@ const temporaryPath = `${outputPath}.tmp`
 
 const php = String.raw`<?php
 ini_set('display_errors', 'stderr');
-$config = file_get_contents('/home/c2485919/public_html/mirumi.in/wp-config.php');
+$config = file_get_contents(getenv('HOME') . '/public_html/mirumi.in/wp-config.php');
 $config = preg_replace(
     '/require_once\s+ABSPATH\s*\.\s*[\'\"]wp-settings\.php[\'\"]\s*;/',
     '',
