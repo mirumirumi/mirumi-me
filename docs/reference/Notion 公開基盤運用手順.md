@@ -528,6 +528,7 @@ Creators API の日本向け credential version `3.3` と media bucket 名は va
 
 - dev で新規公開、更新、非公開、重複 Webhook、途中失敗を実動確認する
 - dev / prd の bucket、CloudFront、KV、Secrets と Access policy を確認する
+- prd の integration が `(dev)` のデータソースに接続していないことを確認する
 - Creators API を実 ASIN で確認する
 - production の site bucket に `_internal/*` の Deny を入れる。dev には入っているが production にはまだない
 - media normalization の unresolved static image を 0 件にする
