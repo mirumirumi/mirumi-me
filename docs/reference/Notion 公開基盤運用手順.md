@@ -524,28 +524,6 @@ Creators API の日本向け credential version `3.3` と media bucket 名は va
 - 失敗時の Notion state は publish index の実配信状態から復元し、index を読めない場合は state を推測しない
 - rollback は Notion の内容を戻して再公開するか、full build を回す。site bucket に S3 versioning は入れていない
 
-## 🚧 production bootstrap 前
+## 本番リリース
 
-- dev で新規公開、更新、非公開、重複 Webhook、途中失敗を実動確認する
-- dev / prd の bucket、CloudFront、KV、Secrets と Access policy を確認する
-- prd の integration が `(dev)` のデータソースに接続していないことを確認する
-- Creators API を実 ASIN で確認する
-- production の site bucket に `_internal/*` の Deny を入れる。dev には入っているが production にはまだない
-- media normalization の unresolved static image を 0 件にする
-- dev Notion data source へ external WebP canary を投入する。拒否された場合だけ Notion 用の JPEG / PNG fallback を追加する
-- 470 page の route uniqueness と full generate を通す
-- 本番 import 後、bootstrap 前に prd の `/preview?pageId=` で画像表示を mirumi.me（旧 WordPress 配信）と見比べる。dev では確認できていないため。
-  `android-app`（縮めたスクショ）、`comics`（漫画の引用画像 415px）、`pc-freesoft` / `firefox-plugin`（インラインのアイコン）、
-  `albumartwork-puttogether`（縮めた画像 + alt）、小さい画像が本文幅まで引き伸ばされていないこと
-- production bootstrap、Webhook subscription 有効化、GitHub release 切り替えは別の明示 GO 後に行う
-- けいが記述：本当は Notion の dev 系データソースでカラム幅みたいに見た目レベルで調整したものをそのまま本番でも使いたいから、すべての作業が終わって WP データ移行する直前に dev のデータソース丸ごと複製するようにしたいけど、いろんな id とか変わっちゃったりしないかという点で悩ましい
-
-## 🚧 WordPress 廃止前
-
-- 既存コメントの記事との対応、本文、承認状態、親子関係、日時、投稿者名、非公開のメールアドレスを保ったまま新しい保存先へ移行する
-- コメント投稿、Turnstile、承認・返信、通知、コメント feed を新基盤へ切り替える
-- 検索画面、PV 送信、`site-admin-extension` を Workers / Analytics Engine / Notion へ切り替える
-- 廃止するいいね UI と WordPress endpoint 呼び出しを削除する
-- Cron による R2 / S3 バックアップを稼働させる
-- `app/src/app.config.ts` の `mirumi.in` / WordPress `baseURL` と、旧 GitHub release 処理を削除する
-- repository、生成 HTML、browser の実通信に WordPress endpoint が残っていないことを確認する
+production bootstrap の前に揃えるものと、WordPress を廃止するまでに残っている作業は、`本番リリース手順.md` に手順としてまとめてある。
