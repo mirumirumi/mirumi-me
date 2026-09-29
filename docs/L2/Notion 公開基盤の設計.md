@@ -151,6 +151,11 @@ generate のあいだ、Container は「HTTP を開いたまま待っていな�
     - サーバーのコードは、generate の経路の入口（`containers/http.ts`、`containers/container.ts`、`workflows/workflow.ts`）から import をたどって決める。静的なリストだと、あとで Container が Worker 側のファイルを import し始めたときに、generate を飛ばす側（危ない側）に間違える
     - 型だけの import はたどらない（実行時に消える）。`shared` は app も使うので丸ごと効くものとして扱い、たどらない
     - vitest は Node で動くので、import の読み取りには Bun の Transpiler ではなく TypeScript の parser を使っている
+    - 弱点は 3 つ。どれも気づかないと generate を飛ばす側（危ない側）に間違えるので、触るときは注意する
+        - たどるのは相対 import だけ。`tsconfig.json` の `paths` に `shared/*` 以外の alias を足して server で使うと、その先をたどれない
+        - 入口は `release.ts` の `GENERATE_ENTRYPOINTS` に固定で書いてある。generate の経路に新しい入口（別の Workflow など）を足したら、ここにも足す
+        - `import()` に文字列以外を渡したり、`.ts` を import ではなく別プロセスで実行したりすると、たどれない
+    - TypeScript を 7（Go 製）に上げると、`typescript` パッケージの JS API が使えなくなるかもしれない。そのときは `plan` job が import の時点で落ちるので、静かに間違えることはない
     - `git diff` は `-z` で読む。付けないと日本語のパスが引用符付きでエスケープされ、`docs/` などの前方一致に掛からない
 - CI は generate の完了まで待つ。generate は Notion に何も書き戻さないので、待たないと失敗に誰も気づけない。repo が public なので Actions の時間は課金されない。待っているあいだの push は、失敗せずに順番待ちになる
 - generate しない run でも rollout の収束は待つ。CI が緑になった時点で公開を試せるようにするため

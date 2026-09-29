@@ -24,6 +24,7 @@ dev / prd のリソースと、共通にしているものの理由をまとめ�
 | Access `mirumi-me-local-x-post` | なし | 専用 AUD | dev のみ | prd では同 route を 404 にする |
 | Access service token | なし | `mirumi-me-local-development` | dev のみ | 有効期限 1 年 |
 | `workers.dev` サブドメイン | 共通 | 共通 | 共通 | アカウントに 1 つ |
+| 請求予算アラート（budget alert） | 共通 | 共通 | 共通 | アカウントに 1 つ。Cloudflare が自動で作ったもので、しきい値は $10（2026-09-29 時点）。従量課金だけが対象でメールが届くだけ |
 
 ## AWS
 
