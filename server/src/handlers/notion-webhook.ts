@@ -177,7 +177,7 @@ export const handleNotionWebhook = async (
   }
   // integration 自身が起こした event（既存コメントの import、公開フォームの create、公開エラー の書き戻し）で
   // comment-refresh を起動しない。import は 3,000 件超の page.created を一気に送るので、1 件ずつ
-  // Workflow を作ると Container を数百回起動する storm になる。import 後の反映は full build が担う
+  // Workflow を作ると Container を数百回起動する storm になる。import 後の反映は generate が担う
   const botOnly = isBotOnlyEvent(webhook.event.authors)
   if (webhook.kind === "page-created") {
     if (botOnly) {

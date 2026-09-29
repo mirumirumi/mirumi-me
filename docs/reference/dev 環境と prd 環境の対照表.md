@@ -72,6 +72,6 @@ dev / prd のリソースと、共通にしているものの理由をまとめ�
 
 | リソース | prd | dev | 区分 | メモ |
 | --- | --- | --- | --- | --- |
-| GitHub Actions deploy | `main` push | `dev` push | 分離 | `ENV_NAME` が ref 名から切り替わる |
+| GitHub Actions deploy | `main` push | `dev` push | 分離 | `ENV_NAME` が ref 名から切り替わる。`workflow_dispatch` は ref が `main` なら prd、それ以外は dev |
 | `CLOUDFLARE_API_TOKEN` | 共通 | 共通 | 共通 | deploy 権限のみのトークン 1 本 |
 | ローカル `app/.env` | 使わない | dev を参照 | dev のみ | Notion token と Access service token |

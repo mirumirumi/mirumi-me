@@ -56,7 +56,7 @@ const loadComment = async (
 
     return { slug, slugInherited: slug !== "", refreshError: record.refreshError }
   } catch (err) {
-    // 削除済み row は slug を特定できないので何もしない。誤削除は full build で収束させる運用
+    // 削除済み row は slug を特定できないので何もしない。誤削除は generate で収束させる運用
     if (isNotionObjectNotFound(err)) {
       return null
     }

@@ -127,7 +127,7 @@ export const runContainerCommentRefreshJob = async (
   const snapshot = await snapshotStore.load(deployed.pageId, deployed.contentHash)
   if (!snapshot) {
     throw Error(
-      `公開済み snapshot がありません。記事を再公開するか full build を通してください: ${request.slug}`,
+      `公開済み snapshot がありません。記事を再公開するか generate を流してください: ${request.slug}`,
     )
   }
   await progress.report("load-articles", 0, 1)

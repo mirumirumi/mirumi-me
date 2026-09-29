@@ -13,9 +13,21 @@ import type {
 } from "../lib/publishing"
 import { PUBLISH_FAILURE_CODES } from "../lib/publishing"
 import { createXaiPostFetcher, createXPostLinkCardResolver } from "../services/x-post"
+import {
+  BACKGROUND_JOB_START_TIMEOUT_MS,
+  CONTROL_REQUEST_TIMEOUT_MS,
+  type ContainerActivity,
+  type DispatchedJobTimes,
+  decideExpiredAction,
+  SYNC_JOB_STALE_MS,
+} from "./job-limits"
 import { SerialJobQueue, shouldRecreateContainer } from "./job-queue"
 
 const CONTAINER_VERSION_KEY = "containerVersion"
+// Container に渡して、まだ終わりを見届けていないジョブの開始時刻。Container が応答しなくなっても
+// 期限で止められるよう、DO 側にも残す
+const BACKGROUND_JOB_STARTED_AT_KEY = "backgroundJobStartedAt"
+const SYNC_JOB_STARTED_AT_KEY = "syncJobStartedAt"
 
 const publishFailureSchema = z
   .object({
@@ -146,36 +158,85 @@ export class BuildContainer extends Container<CloudflareBindings> {
     }
   }
 
+  // Container が応答しないとリクエストが開いたままになり、ライブラリが使用中とみなし続けて
+  // sleepAfter が永久に発火しない。打ち切ると containerFetch は 500 を返すので、原因のわかる例外に変える
+  private async fetchContainer(
+    url: string,
+    timeoutMs: number,
+    init?: RequestInit,
+  ): Promise<Response> {
+    const signal = AbortSignal.timeout(timeoutMs)
+    const response = await this.containerFetch(url, { ...init, signal })
+    if (signal.aborted) {
+      await response.body?.cancel()
+      throw Error(
+        `Container が ${timeoutMs / 60_000} 分以内に応答しませんでした: ${new URL(url).pathname}`,
+      )
+    }
+
+    return response
+  }
+
   // Container の中でジョブが走っているかを本人に聞く。停止中なら聞くだけで起動してしまうので、
   // running のときしか問い合わせない
-  private async isContainerBusy(): Promise<boolean> {
+  private async readContainerActivity(): Promise<ContainerActivity> {
     // 親クラスの this.container は型が private なので、DO の binding から直接見る
     if (!this.ctx.container?.running) {
-      return false
+      return "idle"
     }
-    // 判断できないときは「走っているかもしれない」側に倒し、動いているジョブを守る。
+    // 判断できないときは unknown を返し、どちらに倒すかは呼び出し側が決める。
     // ここで throw すると、ガードのためにジョブを落としたり alarm を回し続けたりしてしまう
     try {
-      const response = await this.containerFetch("http://container.internal/jobs")
+      const response = await this.fetchContainer(
+        "http://container.internal/jobs",
+        CONTROL_REQUEST_TIMEOUT_MS,
+      )
       if (!response.ok) {
         await response.body?.cancel()
 
-        return true
+        return "unknown"
       }
 
-      return containerJobsSchema.parse(await response.json()).busy
+      return containerJobsSchema.parse(await response.json()).busy ? "busy" : "idle"
     } catch {
-      return true
+      return "unknown"
     }
   }
 
-  // full build は HTTP を開いたまま待たないので、走っている最中でも containerFetch の
+  private async readDispatchedJobTimes(): Promise<DispatchedJobTimes> {
+    return {
+      background: (await this.ctx.storage.get<number>(BACKGROUND_JOB_STARTED_AT_KEY)) ?? null,
+      sync: (await this.ctx.storage.get<number>(SYNC_JOB_STARTED_AT_KEY)) ?? null,
+    }
+  }
+
+  // generate は HTTP を開いたまま待たないので、走っている最中でも containerFetch の
   // inflight が 0 になる。つまりライブラリから見るとアイドルで、放っておくと sleepAfter の
   // 15 分で SIGTERM が飛び、1 時間のビルドが記録も残さず消える。
   // ここで本人に確認して、走っているなら止めない。ライブラリはこのあと必ず
-  // renewActivityTimeout() を呼ぶので、見送るたびに次の猶予が 15 分ぶん伸びる
+  // renewActivityTimeout() を呼ぶので、見送るたびに次の猶予が 15 分ぶん伸びる。
+  // ただし期限（job-limits.ts）を過ぎたジョブは、Container が busy と答えても応答しなくても守らない
   override async onActivityExpired(): Promise<void> {
-    if (await this.isContainerBusy()) {
+    const activity = await this.readContainerActivity()
+    const dispatched = await this.readDispatchedJobTimes()
+    const action = decideExpiredAction(activity, dispatched, Date.now())
+    if (action === "keep") {
+      return
+    }
+    if (action === "adopt") {
+      console.warn(JSON.stringify({ event: "container_job_adopted", activity }))
+      await this.ctx.storage.put(BACKGROUND_JOB_STARTED_AT_KEY, Date.now())
+
+      return
+    }
+    await this.ctx.storage.delete([BACKGROUND_JOB_STARTED_AT_KEY, SYNC_JOB_STARTED_AT_KEY])
+    if (action === "destroy") {
+      // 固まったジョブを止めた記録。これがないと課金でしか気づけない
+      console.warn(
+        JSON.stringify({ event: "container_destroyed_after_deadline", activity, ...dispatched }),
+      )
+      await this.destroy()
+
       return
     }
     await super.onActivityExpired()
@@ -188,8 +249,8 @@ export class BuildContainer extends Container<CloudflareBindings> {
       return
     }
     // destroy は SIGKILL なので、走っているジョブを巻き込む。version を記録せずに見送り、
-    // 空いている次のジョブで作り直させる
-    if (await this.isContainerBusy()) {
+    // 空いている次のジョブで作り直させる。判断できないときも走っているかもしれない側に倒す
+    if ((await this.readContainerActivity()) !== "idle") {
       return
     }
     await this.destroy()
@@ -201,11 +262,18 @@ export class BuildContainer extends Container<CloudflareBindings> {
   private async executePublishJob(request: PublishJobRequest): Promise<PublishJobSummary> {
     await this.destroyOutdatedInstance()
     this.envVars = this.createEnvVars()
-    const response = await this.containerFetch("http://container.internal/publish", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(request),
-    })
+    await this.ctx.storage.put(SYNC_JOB_STARTED_AT_KEY, Date.now())
+    const response = await this.fetchContainer(
+      "http://container.internal/publish",
+      SYNC_JOB_STALE_MS,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(request),
+      },
+    )
+    // 答えが返ったのでジョブは終わっている。打ち切ったときは記録を残し、期限で止められるようにする
+    await this.ctx.storage.delete(SYNC_JOB_STARTED_AT_KEY)
     if (!response.ok) {
       const detail = await readErrorDetail(response)
       throw Error(
@@ -221,11 +289,17 @@ export class BuildContainer extends Container<CloudflareBindings> {
   ): Promise<CommentRefreshJobSummary> {
     await this.destroyOutdatedInstance()
     this.envVars = this.createEnvVars()
-    const response = await this.containerFetch("http://container.internal/comment-refresh", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(request),
-    })
+    await this.ctx.storage.put(SYNC_JOB_STARTED_AT_KEY, Date.now())
+    const response = await this.fetchContainer(
+      "http://container.internal/comment-refresh",
+      SYNC_JOB_STALE_MS,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(request),
+      },
+    )
+    await this.ctx.storage.delete(SYNC_JOB_STARTED_AT_KEY)
     if (!response.ok) {
       const detail = await readErrorDetail(response)
       throw Error(
@@ -244,12 +318,19 @@ export class BuildContainer extends Container<CloudflareBindings> {
   async startPublishJob(request: PublishJobRequest): Promise<void> {
     await this.destroyOutdatedInstance()
     this.envVars = this.createEnvVars()
-    const response = await this.containerFetch("http://container.internal/publish", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(request),
-    })
+    await this.ctx.storage.put(BACKGROUND_JOB_STARTED_AT_KEY, Date.now())
+    const response = await this.fetchContainer(
+      "http://container.internal/publish",
+      BACKGROUND_JOB_START_TIMEOUT_MS,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(request),
+      },
+    )
     if (!response.ok) {
+      // 受け付けられていないので、走っているジョブはない
+      await this.ctx.storage.delete(BACKGROUND_JOB_STARTED_AT_KEY)
       const detail = await readErrorDetail(response)
       throw Error(
         `Container が publish job を受け付けませんでした: ${response.status}${detail ? ` (${detail})` : ""}`,
@@ -264,7 +345,7 @@ export class BuildContainer extends Container<CloudflareBindings> {
     this.envVars = this.createEnvVars()
     const url = new URL("http://container.internal/publish-state")
     url.searchParams.set("workflowId", workflowId)
-    const response = await this.containerFetch(url.toString())
+    const response = await this.fetchContainer(url.toString(), CONTROL_REQUEST_TIMEOUT_MS)
     if (!response.ok) {
       const detail = await readErrorDetail(response)
       throw Error(
@@ -272,7 +353,13 @@ export class BuildContainer extends Container<CloudflareBindings> {
       )
     }
 
-    return publishJobStateSchema.parse(await response.json())
+    const state = publishJobStateSchema.parse(await response.json())
+    // unknown は Container が作り直されて、受け付けたジョブごと消えた状態
+    if (state.status !== "running") {
+      await this.ctx.storage.delete(BACKGROUND_JOB_STARTED_AT_KEY)
+    }
+
+    return state
   }
 
   // publish index を書くのは publish と comment refresh の両方なので、同じ queue で直列にする
@@ -288,11 +375,15 @@ export class BuildContainer extends Container<CloudflareBindings> {
     paths: Array<string>,
   ): Promise<void> {
     this.envVars = this.createEnvVars()
-    const response = await this.containerFetch("http://container.internal/invalidate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ workflowId, buildHash, paths }),
-    })
+    const response = await this.fetchContainer(
+      "http://container.internal/invalidate",
+      CONTROL_REQUEST_TIMEOUT_MS,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ workflowId, buildHash, paths }),
+      },
+    )
     if (!response.ok) {
       await response.body?.cancel()
       throw Error(`Container の invalidation が失敗しました: ${response.status}`)
@@ -302,11 +393,15 @@ export class BuildContainer extends Container<CloudflareBindings> {
 
   async loadDeploymentPageStates(pageIds: Array<string>): Promise<Array<DeploymentPageState>> {
     this.envVars = this.createEnvVars()
-    const response = await this.containerFetch("http://container.internal/deployment-state", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pageIds }),
-    })
+    const response = await this.fetchContainer(
+      "http://container.internal/deployment-state",
+      CONTROL_REQUEST_TIMEOUT_MS,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pageIds }),
+      },
+    )
     if (!response.ok) {
       await response.body?.cancel()
       throw Error(`Container の publish index 取得が失敗しました: ${response.status}`)

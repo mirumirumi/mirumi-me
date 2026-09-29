@@ -125,7 +125,7 @@ export const runCommentRefreshWorkflow = async ({
       throw Error("Container から別の comment refresh の結果が返されました")
     }
   } catch (err) {
-    // desired state は Notion の status に残る。失敗理由だけを row に出して次の retry / full build に委ねる
+    // desired state は Notion の status に残る。失敗理由だけを row に出して次の retry / generate に委ねる
     await writeError(`反映に失敗しました: ${summarizeError(err)}（Workflow: ${workflowId}）`)
     throw err
   }

@@ -9,6 +9,7 @@ import { loadDeploymentPageStates } from "./deployment-state"
 import { SerialJobQueue } from "./job-queue"
 import { runContainerPublishJob } from "./publish-job"
 import { createRequestHandler } from "./request-handler"
+import { SyncJobs } from "./sync-jobs"
 
 // CloudFront の CallerReference は seed から作る。full / bootstrap ではジョブ末尾と Workflow の
 // step の 2 回流すため、seed を変えて別の invalidation として扱わせる
@@ -32,6 +33,7 @@ const jobs = new SerialJobQueue()
 const handleRequest = createRequestHandler({
   jobs,
   backgroundPublishJobs: new BackgroundPublishJobs(jobs),
+  syncJobs: new SyncJobs(jobs),
   readConfig: readContainerConfig,
   runPublishJob: runContainerPublishJob,
   runCommentRefreshJob: runContainerCommentRefreshJob,
@@ -62,7 +64,7 @@ const server = Bun.serve({
 
 // sleepAfter の停止は SIGTERM を送るだけで、PID 1 のプロセスには既定のシグナル動作が入らず
 // ハンドラがないと黙って無視される。明示的に受けて終了しないと Container が動き続ける。
-// なお full build は HTTP を開いたまま待たないため、走っている最中でもアイドル扱いになりうる。
+// なお generate は HTTP を開いたまま待たないため、走っている最中でもアイドル扱いになりうる。
 // 活性を保っているのは Workflow からの 1 分ごとの /publish-state だけ
 const shutdown = () => {
   void server.stop()

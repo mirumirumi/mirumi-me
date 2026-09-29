@@ -192,7 +192,7 @@ describe("publishing lifecycle", () => {
       expect(page.issues.map((issue) => issue.code)).toEqual(["unexpected-category"])
     })
 
-    test("未公開 page の非公開要求と full build の公開日欠落を拒否する", () => {
+    test("未公開 page の非公開要求と generate の公開日欠落を拒否する", () => {
       const unpublish = preparePageRevision(
         makeRevision({ internalState: "非公開待ち" }),
         "partial",

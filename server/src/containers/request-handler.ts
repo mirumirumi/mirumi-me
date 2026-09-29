@@ -8,9 +8,10 @@ import { PUBLISH_VALIDATION_CODES } from "../lib/publishing"
 import type { BackgroundPublishJobs } from "./background-publish"
 import type { ContainerConfig } from "./config"
 import type { SerialJobQueue } from "./job-queue"
+import type { SyncJobs } from "./sync-jobs"
 
 const MAX_REQUEST_BYTES = 2 * 1_024 * 1_024
-// admin の部分公開は 100 件までだが、full build は現行 473 page をまとめて受け取る
+// admin の部分公開は 100 件までだが、generate は現行 473 page をまとめて受け取る
 const MAX_PUBLISH_JOB_PAGES = 1_000
 const dateSchema = z.string().refine((value) => !Number.isNaN(Date.parse(value)))
 const categorySchema = z.strictObject({ name: z.string().min(1), slug: z.string().min(1) })
@@ -72,6 +73,8 @@ export interface RequestHandlerDependencies {
   // publish index の書き手を 1 本に保つための queue。partial の同期実行も full の background 実行も通す
   jobs: SerialJobQueue
   backgroundPublishJobs: BackgroundPublishJobs
+  // partial と comment refresh はここを通し、固まったかを判定できるよう走り始めた時刻を持たせる
+  syncJobs: SyncJobs
   readConfig(): ContainerConfig
   runPublishJob(request: PublishJobRequest, config: ContainerConfig): Promise<PublishJobSummary>
   runCommentRefreshJob(
@@ -109,9 +112,9 @@ const readJson = async (request: Request): Promise<unknown> => {
 export const createRequestHandler = (
   dependencies: RequestHandlerDependencies,
 ): ((request: Request) => Promise<Response>) => {
-  const { jobs, backgroundPublishJobs } = dependencies
+  const { jobs, backgroundPublishJobs, syncJobs } = dependencies
 
-  // full build の裏に積むと、待っている HTTP が返る前に Workflow 側が hang 判定で殺される。
+  // generate の裏に積むと、待っている HTTP が返る前に Workflow 側が hang 判定で殺される。
   // そうなると catch が走らず Notion へ失敗も書けないまま、ジョブだけ 1 時間後に実行されて
   // 「サイトには出ているのに Notion は公開待ち」という不整合が残る。待たせずに断る
   const backgroundJobConflict = (): Response | null => {
@@ -120,7 +123,7 @@ export const createRequestHandler = (
       return null
     }
 
-    return jsonResponse({ error: `full build の実行中です: ${running.join(", ")}` }, 409)
+    return jsonResponse({ error: `generate の実行中です: ${running.join(", ")}` }, 409)
   }
 
   const startBackgroundPublishJob = (job: PublishJobRequest) => {
@@ -177,7 +180,7 @@ export const createRequestHandler = (
         }
 
         return jsonResponse(
-          await jobs.run(`publish:${job.workflowId}`, () =>
+          await syncJobs.run(`publish:${job.workflowId}`, () =>
             dependencies.runPublishJob(job, dependencies.readConfig()),
           ),
         )
@@ -190,7 +193,8 @@ export const createRequestHandler = (
       // ハングしたジョブを busy と答え続けると、Container を止めることも作り直すこともできない。
       // その後ろに積まれたジョブも道連れで動けないので、まとめて busy ではないと答える
       return jsonResponse({
-        busy: jobs.isBusy() && !backgroundPublishJobs.hasStaleRunning(),
+        busy:
+          jobs.isBusy() && !backgroundPublishJobs.hasStaleRunning() && !syncJobs.hasStaleRunning(),
       })
     }
     if (request.method === "GET" && url.pathname === "/publish-state") {
@@ -213,7 +217,7 @@ export const createRequestHandler = (
       }
 
       return jsonResponse(
-        await jobs.run(`comment-refresh:${job.workflowId}`, () =>
+        await syncJobs.run(`comment-refresh:${job.workflowId}`, () =>
           dependencies.runCommentRefreshJob(job, dependencies.readConfig()),
         ),
       )

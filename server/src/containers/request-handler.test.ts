@@ -5,6 +5,7 @@ import { BackgroundPublishJobs } from "./background-publish"
 import type { ContainerConfig } from "./config"
 import { SerialJobQueue } from "./job-queue"
 import { createRequestHandler, type RequestHandlerDependencies } from "./request-handler"
+import { SyncJobs } from "./sync-jobs"
 
 describe("createRequestHandler", () => {
   const config: ContainerConfig = {
@@ -92,7 +93,7 @@ describe("createRequestHandler", () => {
     })
   }
 
-  const createDependencies = () => {
+  const createDependencies = (now?: () => Date) => {
     const jobs = new SerialJobQueue()
     const runPublishJob = vi.fn(async (request: PublishJobRequest) => {
       return makeSummary(request.workflowId)
@@ -114,6 +115,7 @@ describe("createRequestHandler", () => {
     const dependencies: RequestHandlerDependencies = {
       jobs,
       backgroundPublishJobs: new BackgroundPublishJobs(jobs),
+      syncJobs: new SyncJobs(jobs, { now }),
       readConfig: () => config,
       runPublishJob,
       runCommentRefreshJob,
@@ -178,7 +180,7 @@ describe("createRequestHandler", () => {
       await handle(postPublish("workflow-b", "partial"))
     })
 
-    test("full build 実行中の partial は 409 で断り、キューに積まない", async () => {
+    test("generate 実行中の partial は 409 で断り、キューに積まない", async () => {
       const { dependencies, handle, runPublishJob } = createDependencies()
       const job = deferred()
       runPublishJob.mockImplementationOnce(() => job.promise)
@@ -220,7 +222,7 @@ describe("createRequestHandler", () => {
       expect(runCommentRefreshJob).toHaveBeenCalledTimes(1)
     })
 
-    test("full build 実行中は 409 で断る", async () => {
+    test("generate 実行中は 409 で断る", async () => {
       const { handle, runPublishJob, runCommentRefreshJob } = createDependencies()
       const job = deferred()
       runPublishJob.mockImplementationOnce(() => job.promise)
@@ -253,6 +255,20 @@ describe("createRequestHandler", () => {
       job.resolve(makeSummary("workflow-a"))
       await flush()
       expect(await (await handle(getJobs())).json()).toEqual({ busy: false })
+    })
+
+    test("公開が 30 分を超えて走り続けていれば busy と答えない", async () => {
+      let now = new Date("2026-09-29T00:00:00.000Z")
+      const { handle, runPublishJob } = createDependencies(() => now)
+      const job = deferred()
+      runPublishJob.mockImplementationOnce(() => job.promise)
+      const publishing = handle(postPublish("workflow-a", "partial"))
+      await flush()
+      expect(await (await handle(getJobs())).json()).toEqual({ busy: true })
+      now = new Date("2026-09-29T00:31:00.000Z")
+      expect(await (await handle(getJobs())).json()).toEqual({ busy: false })
+      job.resolve(makeSummary("workflow-a"))
+      await publishing
     })
   })
 

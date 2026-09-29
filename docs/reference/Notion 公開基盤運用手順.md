@@ -31,7 +31,7 @@ production bootstrap だけでは移行完了ではない。コメント、検�
 - 一度公開した slug は publish index が所有し続ける。slug 変更や別 page での再利用は自動では行わない
 - `公開日` は初回公開で 1 回だけ Worker が決める。`更新日` は再公開で本文・title・画像などの内容が
   前回の配信から変わったときだけ Worker が決める（判定は publish index の `sourceHash`）。
-  誤字修正でも動く。full build は Notion へ書き戻さないので `更新日` も動かない
+  誤字修正でも動く。generate は Notion へ書き戻さないので `更新日` も動かない
 - production の render warning は 1 件でも公開を止める
 
 手動の部分公開は Access 配下の `POST /admin/publish`、状態確認は `GET /admin/workflows/:instanceId` を使う。action は request ではなく Notion の最新 state から決まる。
@@ -40,7 +40,7 @@ production bootstrap だけでは移行完了ではない。コメント、検�
 
 publish index の保存は S3 配信のあとに行うため、最後の index 保存だけが失敗すると配信内容と index がずれる。
 公開なら次の公開でそのまま揃うが、非公開では記事の実体が消えたまま index が公開中の記録を保つため、
-次の部分公開で一覧、sitemap、feed にその記事が復活してリンク切れになる。復旧は full build を回すだけでよい。
+次の部分公開で一覧、sitemap、feed にその記事が復活してリンク切れになる。復旧は generate を回すだけでよい。
 
 ### Webhook subscription の初回設定
 
@@ -75,8 +75,8 @@ Nuxt は Notion も Worker も読まない。Container が approved を取得し
   `_internal/published-pages-v1/{pageId}/{contentHash}.json` の snapshot から comments だけを差し替え、
   記事 1 本の HTML / payload（と hash 付き `_nuxt`）だけを置いて invalidation する。集約 route、XML、
   `deployedNotionEdit`、posts の row には触れない
-- 失敗は row の `公開エラー` に残り、`status` は desired state として残る。次の承認操作か full build で収束する
-- **この Container を初めて deploy したあとは full build を 1 回通す。** snapshot が無い記事は
+- 失敗は row の `公開エラー` に残り、`status` は desired state として残る。次の承認操作か generate で収束する
+- **この Container を初めて deploy したあとは generate を 1 回通す。** snapshot が無い記事は
   comment-refresh が「公開済み snapshot がありません」で失敗する
 - 非表示にするときは `status` を `承認待ち` か `スパム` に変える。返信が付いた親だけを非表示にしても
   子は消えず、最も近い表示中の先祖（無ければ root）につなぎ直して描画する。row を削除した場合も
@@ -84,7 +84,7 @@ Nuxt は Notion も Worker も読まない。Container が approved を取得し
 - owner reply は親 row のボタン `返信` で作る（「ページを追加」がテンプレート「管理者の返信」で `投稿者名` /
   `管理者コメント=true` / `from=管理者` / `本文形式=プレーンテキスト` / `status=承認待ち` を埋め、`親コメント=このページ`
   を足して開く）。書き終えたら `status=承認済み` にする。テンプレートとボタンは API で作れないので prd でも UI で作る。
-  `slug` が空なら comment-refresh が `親コメント` を 5 段までたどって決め、row に書き戻す。full build も
+  `slug` が空なら comment-refresh が `親コメント` を 5 段までたどって決め、row に書き戻す。generate も
   親から補う。`本文形式` と `投稿日` が空なら `プレーンテキスト` と作成時刻に倒し、本文が空の承認済み row は描画しない
 - digest は 09:00 JST の Cron が `from=公開フォーム AND 通知日 is empty` を集めて SES で
   `COMMENT_DIGEST_RECIPIENT` に送る。0 件なら送らない。送信後に `通知日` を書く
@@ -145,74 +145,101 @@ Cron（19:00 UTC = 04:00 JST）が `BackupWorkflow` を起動する。Worker だ
 - Worker は `ACCESS_PREVIEW_AUD` と `ACCESS_ADMIN_AUD` を分けて JWT を検証し、issuer は共通の `ACCESS_TEAM_DOMAIN` を使う
 - `mirumi-me-local-x-post` は dev の `POST /_dev/x-post` だけを専用 service token で保護する。production は同 route を 404 にする
 
-## application release と full build
+## application release と generate
 
 `wrangler deploy` は Worker、Workflow、Container のコード配備だけを行う。
-サイト全体の更新には、続けて Workflow の full build が必要。
+今のコードでサイト全体を作り直すには、続けて generate が要る。用語は `docs/reference/用語集.md`。
 
-```bash
-cd server
-bun run deploy:dev
-bunx wrangler workflows trigger mirumi-me-publish-dev \
-  '{"mode":"full","source":"release","requestId":"release-COMMIT_SHA-RUN_ATTEMPT","requestedAt":"ISO_DATETIME","pageIds":[]}' \
-  --env dev \
-  --id release-COMMIT_SHA-RUN_ATTEMPT
-```
+### CI（`deploy.yml`）
 
-初回だけ、上の `mode` を `bootstrap` にする。**これは省略できない。**
-`full` は Notion へ結果を書き戻さない（全件 writeback を避けるための仕様）ため、
-`full` だけで初回を通すとサイトは正しく配信されるのに Notion の `last-deploy` が空のままになり、
+| きっかけ | 出す先 |
+| --- | --- |
+| `main` への push | prd |
+| `dev` への push | dev |
+| `workflow_dispatch`（Actions の画面か `gh workflow run deploy.yml --ref <branch>`） | ref が `main` なら prd、それ以外は dev |
+
+作業ブランチへの push では動かない。dev に出したいときは `git push origin HEAD:dev` する（force push してよい）。
+
+1 回の run は 3 つの job に分かれる。
+
+| job | やること |
+| --- | --- |
+| `plan` | generate が要るかを決める。結論と理由は run の Summary に出る |
+| `deploy` | 走っている publish がないか確認し、`wrangler deploy` して、rollout が落ち着くまで待つ。毎回必ず行う |
+| `generate` | `plan` が要ると決めたときだけ。Workflow を起動して完了まで待ち、失敗したら run が赤くなる |
+
+generate が要るかは、次のように決める。
+
+- 最後に完了した CI の generate（instance ID が `release-<SHA>-<run ID>-<attempt>`）のコミットと、今回のコミットの差分を見る
+- 差分にサイトの生成物に効くファイルが 1 つでもあれば generate する
+    - 効かないものとして扱うのは、docs、`.github`、terraform、tools、エージェントや editor の設定、テスト、Worker でしか動かないサーバーのコード
+    - サーバーのコードが generate の経路に乗っているかは、Container と publish の Workflow の入口から import をたどって決める
+    - それ以外（app、shared、依存、wrangler の設定、Dockerfile など）は効くものとして扱う
+- 基準のコミットが見つからないときは generate する。手元から流した generate と bootstrap はコミットを持たないので基準にならない。
+  完了した instance の記録が保持期間を過ぎたときや、dev の force push でコミットが消えたときも同じ
+- `workflow_dispatch` の `generate` 入力（`auto` / `always` / `skip`、既定は `auto`）で上書きできる
+
+同じ環境への run は 1 本ずつ流れる。generate を待っているあいだに push すると、次の run は待ちに入る。
+待っている run がさらに新しい run に置き換えられても、判定は Cloudflare 側の記録との差分なので変更を取りこぼさない。
+`generate` job を止めても、Cloudflare 側の generate は止まらない。
+
+### 初回は bootstrap
+
+初回だけ、generate ではなく `bootstrap` を流す。**これは省略できない。**
+generate（`mode: "full"`）は Notion へ結果を書き戻さない（全件 writeback を避けるための仕様）ため、
+generate だけで初回を通すとサイトは正しく配信されるのに Notion の `last-deploy` が空のままになり、
 `status` が全件 `⚪ 未公開` に見える。`last-deploy` を初期化するのは `bootstrap` だけ。
 **`bootstrap` は publish index が存在すると実行できない**（`validateBootstrapIndex`）。
-`full` を先に流すと index ができてしまい、以後 `bootstrap` は永久に拒否される。
+generate を先に流すと index ができてしまい、以後 `bootstrap` は永久に拒否される。
 順序を間違えると `last-deploy` を初期化する手段がなくなるので、初回は必ず `bootstrap` から始める。
 例外は同じ `requestedAt` で投げ直したときだけで、これは中断した bootstrap を再開するための経路。
 
-dev CloudFront distribution は常時有効で、CloudFront Function が閲覧を絞る。
-
 `deploy.yml` の trigger は `mode` を `full` で決め打ちしているため、CI から `bootstrap` は流れない。
 初回は CI を有効化する前に手元から 1 回 `bootstrap` を流し、それを見届けてから CI へ切り替える。
+bootstrap はコミットを持たないので、切り替えたあとの最初の run では generate が 1 回余分に走る（害はない）。
 
-### 手元から full build を投げる
+dev CloudFront distribution は常時有効で、CloudFront Function が閲覧を絞る。
+
+### 手元から generate を投げる
 
 コードを変えずにサイト全体を作り直したいときは、npm script を使う。
 
 ```bash
-bun run full-build:dev
-bun run full-build:prd   # yes の入力を求められる
+bun run generate:dev
+bun run generate:prd   # yes の入力を求められる
 ```
 
 `--dry-run` を付けると、投げずに instance ID と payload を表示する。
 初回だけ必要な `bootstrap` は `--mode bootstrap` で流す（`--` の後に渡す）。
 
 ```bash
-bun run full-build:dev -- --mode bootstrap --dry-run
+bun run generate:dev -- --mode bootstrap --dry-run
 ```
 
 スクリプトがやっていること。
 
-- 走っている instance（`running` / `queued` / `waiting` / `paused`）があれば投げずに中止する。
+- 走っている instance（`running` / `queued` / `waiting` / `waitingForPause` / `paused`）があれば投げずに中止する。
   重ねるとキューで待つだけになり、そのあいだ partial publish が 409 で断られる
 - `source` を `release` で固定する。`full` と `bootstrap` はこれ以外だと入力検証で弾かれる
 - instance ID を時刻から作る。同じ ID は二度投げられない
 - wrangler の設定をスクリプト自身の位置から解決する。どのディレクトリから実行しても動く
 
 **prd を手元から投げるのは例外的な操作。**通常は `main` への push で `deploy.yml` が
-deploy のあとに投げる。手動が必要なのは、CI のビルドだけが失敗した場合や、
+deploy のあとに、必要なときだけ投げる。手動が必要なのは、CI の generate だけが失敗した場合や、
 コードを変えずに全記事を作り直したい場合。次の 2 点に注意する。
 
-- **初回は `full` ではなく `bootstrap`**。詳細は上の「application release と full build」を参照。
+- **初回は generate ではなく `bootstrap`**。詳細は上の「application release と generate」を参照。
   順序を間違えると `last-deploy` を初期化する手段がなくなる
 - CI が deploy している最中には投げない。スクリプトは走っている Workflow は見るが、
   進行中の deploy は検知できない
 
-### deploy 直後に build を投げない
+### deploy 直後に generate を投げない
 
 `wrangler deploy` が Container image を差し替えると、Container application の rollout が始まる。
 rollout が走っている間に起動した instance は **`Runtime signalled the container to exit due to a
 new version rollout` で途中で殺される**。Worker 側には `Container error:` とだけ出て、
 Workflow には `Container の publish job が失敗しました: 500` しか残らないので原因が見えにくい。
-`full` は retries 0 なのでそのまま Errored になる。
+generate は retries 0 なのでそのまま Errored になる。
 
 deploy のあとは rollout の完了を待ってから trigger する。
 
@@ -223,7 +250,8 @@ bunx wrangler containers list --env dev
 `LAST MODIFIED` が deploy 時刻より後になり、それ以上動かなくなったら rollout は終わっている
 （image を変えない deploy なら rollout は起きないので待つ必要はない）。
 
-`deploy.yml` では、deploy と trigger の間に `Wait for container rollout`（固定 5 分 + `state` の確認）を挟んである。
+`deploy.yml` では、`deploy` job の最後に `Wait for container rollout`（固定 5 分 + `state` の確認）を挟んである。
+generate しない run でも待つので、CI が緑になった時点で公開を試してよい。
 踏んだときの経緯は `docs/L2/Notion 公開基盤の設計.md` の「deploy 直後の Container rollout」。
 
 ### 複数記事の公開が重なったとき
@@ -237,9 +265,9 @@ publish はすべて単一の Container に集まり、直列に処理される�
 `POST /admin/publish` に pageIds をまとめて渡し、Workflow と Container ジョブを 1 本にする。
 
 - 通常の執筆・コメント承認は気にせず操作してよい。
-  **ただし full build 中だけは 409 で断られる**（後述の「full build 中に触ってはいけないこと」）
+  **ただし generate 中だけは 409 で断られる**（後述の「generate 中に触ってはいけないこと」）
 - 大量にまとめて公開したいときは `POST /admin/publish` に pageIds を複数渡す
-- 全記事へ反映したいときは full build を回す。publish index が埋まっていれば 35 分ほどで終わる
+- 全記事へ反映したいときは generate を回す。publish index が埋まっていれば 35 分ほどで終わる
   （2026-09-25 実測。x-post と bookmark の KV キャッシュが冷えていると 1 時間 30 分かかった）
 - 詰まったときは `wrangler workflows instances list` で走っている instance を確認し、
   1 本ずつ終わらせる。`--status` は `running queued waiting paused` を順に見る。
@@ -251,31 +279,32 @@ publish はすべて単一の Container に集まり、直列に処理される�
 ### partial publish と Nuxt の app manifest
 
 Nuxt の app manifest（`_nuxt/builds/meta/<buildId>.json`）から route が欠けると、その記事へサイト内遷移したときだけ
-本文が空のまま描画される（直接開くと正常なので気づきにくい）。partial の generate はその回の route しか manifest に載せないため、
+本文が空のまま描画される（直接開くと正常なので気づきにくい）。partial の Nuxt generate はその回の route しか manifest に載せないため、
 Container が deploy 前に配信中の manifest と和集合を取っている（`app-manifest.ts`）。この仕組みは配信中の manifest を起点にするので、
-**Container のこの機能を初めて deploy したあとと、manifest が欠けた疑いがあるときは full build を 1 回通す。**
+**Container のこの機能を初めて deploy したあとと、manifest が欠けた疑いがあるときは generate を 1 回通す。**
 
-`routeRules` の `prerender: true` で回避しようとしてはいけない。partial の generate が落ちる。
+`routeRules` の `prerender: true` で回避しようとしてはいけない。partial の Nuxt generate が落ちる。
 なぜ本文が空になるのか、なぜ `prerender: true` だと落ちるのかは `docs/L2/Notion 公開基盤の設計.md` の同名の節。
 
-### full / bootstrap は受け付けと待機を分けている
+### generate / bootstrap は受け付けと待機を分けている
 
-full / bootstrap は 1 時間を超えるので、Container に受け付けさせたあと、Workflow が 1 分おきに状態を聞きにいく形にしてある
+generate / bootstrap は 1 時間を超えるので、Container に受け付けさせたあと、Workflow が 1 分おきに状態を聞きにいく形にしてある
 （partial は 1〜4 分で終わるので、結果をそのまま待つ）。polling は最大 720 回＝12 時間で打ち切る。
-仕組みと理由は `docs/L2/Notion 公開基盤の設計.md` の「full / bootstrap の受け付けと待機」。
+仕組みと理由は `docs/L2/Notion 公開基盤の設計.md` の「generate / bootstrap の受け付けと待機」。
 
-#### full build 中に触ってはいけないこと
+#### generate 中に触ってはいけないこと
 
-走っている full build を壊さないためのガードが Container に入っている（中身は L2 の「full build 中のガード」）。
-**消すと 1 時間以上のビルドが無言で死ぬので注意。**
+走っている generate を壊さないためのガードが Container に入っている（中身は L2 の「generate 中のガード」）。
+**消すと 1 時間以上の generate が無言で死ぬので注意。**
 
-- **full build 中は、partial publish と comment refresh が 409 で断られる。**
+- **generate 中は、partial publish と comment refresh が 409 で断られる。**
   partial 同士は今まで通りキューに積まれる（コメント承認や記事更新を続けて行う通常運用）
 - 14 時間を超えて走り続けているジョブは「ハングした」とみなされ、ガードがすべて外れる
+- 公開とコメント反映のジョブは 30 分が上限。固まった Container は、応答しなくなっていても期限を過ぎたら Worker 側から SIGKILL で止まる（仕組みは L2 の「固まった Container を止める仕組み」）
 
-**手動で deploy するときは、full build が走っていないことを先に確認する。**
-走っている最中に deploy しても上のガードでビルドは死なないが、
-**新しい image はその build に反映されない**（古い image のまま完走する）。
+**手動で deploy するときは、generate が走っていないことを先に確認する。**
+走っている最中に deploy しても上のガードで generate は死なないが、
+**新しい image はその generate に反映されない**（古い image のまま完走する）。
 CI には `Check running publish workflow` step を入れてあるので、CI 経由なら自動で落ちる。
 
 ```bash
@@ -288,30 +317,31 @@ done
 
 #### CloudFront invalidation は 2 回流れる
 
-full / bootstrap では、Container のジョブの末尾と、Workflow の `invalidate-cloudfront` step の 2 か所で invalidation が流れる。
+generate / bootstrap では、Container のジョブの末尾と、Workflow の `invalidate-cloudfront` step の 2 か所で invalidation が流れる。
 意図どおりの動きで、理由は `docs/L2/Notion 公開基盤の設計.md` の「CloudFront invalidation を 2 回流す理由」。
 
-### full / bootstrap build の見かた
+### generate / bootstrap の見かた
 
 - 470 記事で **40 分から 1 時間**かかる。大半は thumbnail を持たない記事の自動生成 Lambda で、
   publish index に載れば次回以降は省略される。**止まって見えても落とさない**
 - 進捗は site bucket の `_internal/jobs/<workflowId>.json` に出る。`phase` は
   prepare / load-articles / build-pages / generate / deploy / done
-- `full` と `bootstrap` は `retries: 0`。数時間をやり直さないための判断なので、
+- generate と bootstrap は `retries: 0`。数時間をやり直さないための判断なので、
   失敗したら原因を直して手動で投げ直す
-- Container の標準出力はどこからも読めない。generate が落ちた原因は例外へ載せて
+- Container の標準出力はどこからも読めない。Nuxt generate が落ちた原因は例外へ載せて
   Workflow まで持ち上げている
 - job が終わったのに Container instance が `running` のままなら、`sleepAfter` は SIGTERM を
   送るだけで PID 1 は既定ではシグナルを無視することを疑う。`wrangler containers instances <id>`
-  で確認できる。気づく手がかりが課金しかないので、build のあとは一度見ておく
+  で確認できる。気づく手がかりが課金しかないので、generate のあとは一度見ておく
+- 固まった Container を期限で止めたときは、Worker のログに `container_destroyed_after_deadline` が出る
 
 本番では workflow 名と env を `mirumi-me-publish-prd` / `prd` に変える。
-GitHub Actions では commit SHA と run attempt を instance ID に含め、Cloudflare deploy token だけを持たせる。
+GitHub Actions では commit SHA と run ID と run attempt を instance ID に含め、Cloudflare deploy token だけを持たせる。
 Notion / AWS の secret は GitHub へ置かない。
 deploy token は対象 account だけに絞り、`Workers Scripts Edit` と Container 配備用の `Containers Edit` を許可する。
 ローカルで使う場合もファイルには保存せず、`CLOUDFLARE_ACCOUNT_ID` と `CLOUDFLARE_API_TOKEN` を必要なプロセスだけへ一時的に渡し、作業後に token を revoke する。
 
-通常 full build は `公開中`の現在本文だけを再生成する。
+通常の generate は `公開中`の現在本文だけを再生成する。
 `公開待ち / 非公開待ち`の route は上書きせず、一覧、sitemap、feed には publish index の最後の公開値を使う。
 
 🚧 現行の `.github/workflows/deploy.yml` からこの方式への切り替えは、production bootstrap と同じ明示 GO のあとに行う。
@@ -462,7 +492,7 @@ Creators API の日本向け credential version `3.3` と media bucket 名は va
 - publish index 更新後に response を失っても、同じ revision の publish / unpublish を再実行できる
 - Notion update の response を失った場合は page を再取得し、期待値が反映済みなら成功扱いにする
 - 失敗時の Notion state は publish index の実配信状態から復元し、index を読めない場合は state を推測しない
-- rollback は Notion の内容を戻して再公開するか、full build を回す。site bucket に S3 versioning は入れていない
+- rollback は Notion の内容を戻して再公開するか、generate を回す。site bucket に S3 versioning は入れていない
 
 ## 本番リリース
 

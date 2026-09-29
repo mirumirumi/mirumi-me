@@ -42,7 +42,7 @@ export const PUBLISH_WORKFLOW_STEP_CONFIGS = {
   },
   // full と bootstrap は全記事の取得に加えて、thumbnail を持たない記事ぶんの自動生成 Lambda を
   // 直列で通すため初回は数時間かかる。受け付けるだけなのでこの step 自体は短く、
-  // 完了を待つのは FULL_BUILD_POLL_LIMIT 側の予算
+  // 完了を待つのは GENERATE_POLL_LIMIT 側の予算
   startPublishSite: {
     retries: { limit: 2, delay: "10 seconds", backoff: "exponential" },
     timeout: "5 minutes",
@@ -252,12 +252,12 @@ const toSuccessfulNotionResults = (summary: PublishJobSummary): Array<NotionPubl
 
 // full / bootstrap は 1 時間以上かかるため、1 つの step で結果を待つと「待っているだけの
 // invocation」が Workers の hang 判定で打ち切られる。受け付けと待機を分けて step.sleep で刻む
-const FULL_BUILD_POLL_INTERVAL: WorkflowDuration = "1 minute"
+const GENERATE_POLL_INTERVAL: WorkflowDuration = "1 minute"
 // publish index が空の初回ビルドは全記事の thumbnail 生成が走るため極端に遅く、
 // dev では 1 回の試行が 4.7 時間走ってまだ終わっていなかった。本番 bootstrap も同じ条件なので、
 // 同期方式のときの step timeout（6 時間）では足りない恐れがある。
 // step.sleep は Workflows の step 上限に数えられず、待っているあいだのコストも無いので長く取る
-const FULL_BUILD_POLL_LIMIT = 720
+const GENERATE_POLL_LIMIT = 720
 
 const runPublishSite = async (
   request: PublishJobRequest,
@@ -273,8 +273,8 @@ const runPublishSite = async (
   await step.do("start-publish-site", PUBLISH_WORKFLOW_STEP_CONFIGS.startPublishSite, async () => {
     await dependencies.startPublishSite(request)
   })
-  for (let attempt = 0; attempt < FULL_BUILD_POLL_LIMIT; attempt++) {
-    await step.sleep(`wait-publish-site-${attempt}`, FULL_BUILD_POLL_INTERVAL)
+  for (let attempt = 0; attempt < GENERATE_POLL_LIMIT; attempt++) {
+    await step.sleep(`wait-publish-site-${attempt}`, GENERATE_POLL_INTERVAL)
     const state = await step.do(
       `poll-publish-site-${attempt}`,
       PUBLISH_WORKFLOW_STEP_CONFIGS.pollPublishSite,
@@ -294,7 +294,7 @@ const runPublishSite = async (
     }
   }
 
-  throw Error(`publish job が ${FULL_BUILD_POLL_LIMIT} 回の polling で終わりませんでした`)
+  throw Error(`publish job が ${GENERATE_POLL_LIMIT} 回の polling で終わりませんでした`)
 }
 
 export const runPublishWorkflow = async ({

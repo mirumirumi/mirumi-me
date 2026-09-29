@@ -453,7 +453,7 @@ describe("runPublishWorkflow", () => {
     ])
   })
 
-  describe("full build の完了待ち", () => {
+  describe("generate の完了待ち", () => {
     const fullParams: PublishWorkflowParams = {
       mode: "full",
       source: "release",
@@ -462,7 +462,7 @@ describe("runPublishWorkflow", () => {
       pageIds: [],
     }
 
-    const runFullBuild = async (step: MemoryStep, dependencies: PublishWorkflowDependencies) => {
+    const runGenerate = async (step: MemoryStep, dependencies: PublishWorkflowDependencies) => {
       return runPublishWorkflow({
         workflowId: "workflow-id",
         params: fullParams,
@@ -471,7 +471,7 @@ describe("runPublishWorkflow", () => {
       })
     }
 
-    const loadedForFullBuild = () => {
+    const loadedForGenerate = () => {
       return {
         revisions: [
           makeRevision({ internalState: "公開中", publishedAt: "2026-08-20T00:00:00.000Z" }),
@@ -483,10 +483,10 @@ describe("runPublishWorkflow", () => {
     test("受け付けと待機を別の step に分ける", async () => {
       const step = new MemoryStep()
       const { dependencies, publishSite, startPublishSite } = createDependencies(
-        loadedForFullBuild(),
+        loadedForGenerate(),
       )
 
-      await runFullBuild(step, dependencies)
+      await runGenerate(step, dependencies)
 
       expect(publishSite).not.toHaveBeenCalled()
       expect(startPublishSite).toHaveBeenCalledTimes(1)
@@ -511,13 +511,13 @@ describe("runPublishWorkflow", () => {
     test("running のあいだは polling を続ける", async () => {
       const step = new MemoryStep()
       const { dependencies, readPublishSiteState, invalidateSite } = createDependencies(
-        loadedForFullBuild(),
+        loadedForGenerate(),
       )
       readPublishSiteState
         .mockResolvedValueOnce({ status: "running" })
         .mockResolvedValueOnce({ status: "running" })
 
-      await runFullBuild(step, dependencies)
+      await runGenerate(step, dependencies)
 
       expect(readPublishSiteState).toHaveBeenCalledTimes(3)
       expect(step.sleeps.map(({ name }) => name)).toEqual([
@@ -539,11 +539,11 @@ describe("runPublishWorkflow", () => {
     test("running のまま上限に達したら打ち切る", async () => {
       const step = new MemoryStep()
       const { dependencies, readPublishSiteState, invalidateSite } = createDependencies(
-        loadedForFullBuild(),
+        loadedForGenerate(),
       )
       readPublishSiteState.mockResolvedValue({ status: "running" })
 
-      await expect(runFullBuild(step, dependencies)).rejects.toThrow(
+      await expect(runGenerate(step, dependencies)).rejects.toThrow(
         "publish job が 720 回の polling で終わりませんでした",
       )
       expect(readPublishSiteState).toHaveBeenCalledTimes(720)
@@ -553,23 +553,23 @@ describe("runPublishWorkflow", () => {
 
     test("failed は Container のメッセージで落とす", async () => {
       const step = new MemoryStep()
-      const { dependencies, invalidateSite } = createDependencies(loadedForFullBuild())
+      const { dependencies, invalidateSite } = createDependencies(loadedForGenerate())
       dependencies.readPublishSiteState = vi.fn(async () => {
         return { status: "failed", message: "generate が失敗しました" } as PublishJobState
       })
 
-      await expect(runFullBuild(step, dependencies)).rejects.toThrow("generate が失敗しました")
+      await expect(runGenerate(step, dependencies)).rejects.toThrow("generate が失敗しました")
       expect(invalidateSite).not.toHaveBeenCalled()
     })
 
     test("unknown は job を見失ったとして落とす", async () => {
       const step = new MemoryStep()
-      const { dependencies } = createDependencies(loadedForFullBuild())
+      const { dependencies } = createDependencies(loadedForGenerate())
       dependencies.readPublishSiteState = vi.fn(async () => {
         return { status: "unknown" } as PublishJobState
       })
 
-      await expect(runFullBuild(step, dependencies)).rejects.toThrow(
+      await expect(runGenerate(step, dependencies)).rejects.toThrow(
         "Container が publish job を見失いました",
       )
     })

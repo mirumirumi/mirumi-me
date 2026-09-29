@@ -130,7 +130,7 @@ describe("createSiteBuildPlan", () => {
     ])
   })
 
-  test("full build は公開本文とサイト共通 route をすべて含める", () => {
+  test("generate は公開本文とサイト共通 route をすべて含める", () => {
     const plan = createSiteBuildPlan({
       workflowId: "workflow-id",
       mode: "full",
