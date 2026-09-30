@@ -6,7 +6,7 @@
           {{ page.title }}
         </h1>
         <div
-          v-if="slug.startsWith('nice-to-meet-you-10') && page.thumbnailUrls"
+          v-if="slug.startsWith('featured-posts') && page.thumbnailUrls"
           class="thumbnail page_transition_target"
           itemprop="image"
           itemscope

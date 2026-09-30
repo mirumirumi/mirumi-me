@@ -114,7 +114,7 @@
         - 投稿は posts、固定ページは pages と、Notion 側でもデータソースを分けて投入する
             - 両者はプロパティ構成がまったく同じなので、変換処理は投入先の指定以外は共通でよい
             - 固定ページは 4 件で、いずれもカテゴリを持たないので `category` は空のまま（移行が完全に完了したら category プロパティ消してもいいね）
-                - 必要なのは about, privacy-policy, profile, nice-to-meet-you-10
+                - 必要なのは about, privacy-policy, profile, featured-posts
     - もちろん WordPress 側のメタデータ類を Notion のプロパティに変換するのも含む
     - `thumbnail` をセットするのは `show_thumbnail_on_frontend` が true の 90 件だけにする
         - 本文タイトル直下の表示は現状と完全に一致する

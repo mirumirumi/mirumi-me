@@ -27,3 +27,20 @@ dev 用データソースを置く。各データソースの ID と dev / prd �
   以前は `== "workers-api"` の完全一致だったが、integration の実際の名前が `mirumi-me` だったため
   🟢 公開中 は一度も表示されていなかった。integration の名前は `workers-api` / `workers-api (dev)` にそろえ、
   式は dev の `(dev)` 付きでも一致するよう部分一致にした
+
+## WordPress 側の変更を Notion の既存データへ追従させない
+
+2026-09-30 決定。移行が終わるまでに WordPress 側で slug の改名や本文の修正をしても、Notion に取り込み済みのデータ（dev / prd とも）は直さない。
+
+- prd：本番リリースの準備で dev のデータソースを複製して作り直し、中身は一度全部消す（手順は `docs/reference/本番リリース手順.md` の「2. prd の準備」）。そのうえで同じ手順書のとおり `fetch` から取り直して投入するので、その時点の WordPress がそのまま反映される
+    - prd に取り込んだことはあるが、かなり前の一度きり
+    - 複製で作り直すのは 2026-09-30 に決定。Notion の設定（formula、ボタン、テンプレート、カラム幅などの見た目の調整）が dev と prd でずれないようにするため。ユーザーが心配していた ID の変化は、data source ID が変わるだけで property ID は維持される（`dev 環境と prd 環境の対照表.md` の `internal-state` の行）。変わる ID の直し先は手順書にまとめた
+    - ユーザーの最初の案は「WP データを移行する直前に複製する」だった。3 のコメントの事前投入より前に倒したのは、あとで作り直すと事前投入したコメントも消えるため
+- dev：前述のとおり prd と同期している必要がない
+
+例：2026-09-30 に固定ページ `nice-to-meet-you-10` を `featured-posts` に改名し、表示名を「はじめましてのおすすめ記事」にした。コードは `shared/src/site-routes.ts` の `FIXED_PAGE_ROUTES` を含めて追従済み。
+
+- dev の pages には旧 slug のページが残っているはず
+- `FIXED_PAGE_ROUTES` にない slug の固定ページは preflight で `unknown-page-route` になる。full generate でもその 1 件が飛ばされるだけで、全体は止まらない
+- そのあいだ dev サイトの `/featured-posts/` は 404 になり、フッターとトップからのリンクも dev では切れる
+- dev の generate を失敗なしで通したい（`本番リリース手順.md` の「1. 事前の確認」など）ときは、dev の pages でそのページの `slug` を `featured-posts` に変えれば足りる

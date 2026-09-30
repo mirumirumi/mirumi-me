@@ -1,7 +1,7 @@
 export const FIXED_PAGE_ROUTES = {
   profile: "/profile/",
   "privacy-policy": "/privacy-policy/",
-  "nice-to-meet-you-10": "/nice-to-meet-you-10/",
+  "featured-posts": "/featured-posts/",
   about: "/about/",
 } as const
 
