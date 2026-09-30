@@ -2,10 +2,10 @@
   <div class="index_view" role="main" itemscope itemtype="https://schema.org/Blog">
     <div class="row page_transition_target">
       <PartsTopPageIndexBlock
-        :blockTitle="'はじめましての 10 記事'"
+        :blockTitle="'はじめましてのおすすめ記事'"
         :indexes="posts.slice(0, 4)"
-        :linkText="'残りの 6 記事'"
-        :linkTo="'/nice-to-meet-you-10'"
+        :linkText="'もっと見る'"
+        :linkTo="'/featured-posts'"
       />
       <PartsTopPageIndexBlock
         :blockTitle="'新しい記事'"

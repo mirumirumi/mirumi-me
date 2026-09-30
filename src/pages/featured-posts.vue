@@ -1,5 +1,5 @@
 <template>
-  <div class="nice-to-meet-you-10_view">
+  <div class="featured-posts_view">
     <ModulesPageBase />
   </div>
 </template>
