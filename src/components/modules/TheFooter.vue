@@ -12,7 +12,7 @@
               <NuxtLink to="/profile/">書いている人</NuxtLink>
             </li>
             <li>
-              <NuxtLink to="/nice-to-meet-you-10/">はじめましての 10 記事</NuxtLink>
+              <NuxtLink to="/featured-posts/">はじめましてのおすすめ記事</NuxtLink>
             </li>
             <li>
               <NuxtLink to="/entry-list/">全記事一覧</NuxtLink>
@@ -129,6 +129,8 @@ const onEnter = () => {
 
           @include mobile {
             width: 12em;
+            // 幅を広げると全体の中央寄せが左にずれるので、12em を超える項目は折り返さずにはみ出させる
+            white-space: nowrap;
           }
         }
 
