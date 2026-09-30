@@ -20,7 +20,7 @@ jobs:
     env:
       ENV_NAME: ${{ github.ref_name == 'deploy/prd/terraform' && 'prd' || 'dev' }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       # ロールは環境ごとに分かれている。dev から本番の DNS や distribution へは到達できない
       - uses: aws-actions/configure-aws-credentials@v5

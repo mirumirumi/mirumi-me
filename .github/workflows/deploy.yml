@@ -36,7 +36,7 @@ jobs:
       generate: ${{ steps.plan.outputs.generate }}
     steps:
       # 基準点のコミットとの差分を取るため、履歴をすべて取る
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -57,7 +57,7 @@ jobs:
     needs: plan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -94,7 +94,7 @@ jobs:
     # この job を止めても Cloudflare 側の generate は止まらない
     timeout-minutes: 200
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:
