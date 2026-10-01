@@ -171,3 +171,21 @@ generate のあいだ、Container は「HTTP を開いたまま待っていな�
     - `convert.ts` が import 時に付けるトークン。WordPress のエディタで変えた表示幅 `[image width="316px"]`（約 1,400 箇所）、本文幅より狭い画像の `align="none"`、`[quoteImage]` の `width`（漫画 17 箇所）、`align="center"` を付けないこと
 - render 側のコードはすべて dev に入っており、Notion に新しく upload した画像では `width` / `height` と新しい key まで end-to-end で確認済み
 - dev で最終形を見るには `normalize-media --apply`（prd と共用の media バケットへ約 12,000 object を書く）と dev の取り込み直しが要るため、圭くんの判断で本番リリースまで持ち越した。本番の手順（`normalize-media --apply` → import → `fix-toc-anchors --apply` → bootstrap）は変わらない
+
+## 記事ごとの失敗の扱い
+
+2026-10-01 に圭くんと決めた。動きは運用手順の「generate / bootstrap の見かた」。
+
+- 前提として、prd では render warning（ブログカードや X ポストを解決できないなど）も、その記事の失敗に格上げしている
+- generate / bootstrap は、1 記事が失敗しても全体を止めない。1 記事のブログカードのために、コードの release や数時間かかる bootstrap をまるごとやり直すのは割に合わないため
+- そのかわり、失敗した記事はどの mode でも Notion の `公開エラー` に出す。以前は partial しか書いておらず、generate / bootstrap の失敗は Workflow の出力に `completed-with-errors` が残るだけだった。CI も Workflow の `complete` しか見ないので、誰も気づけなかった
+    - generate / bootstrap でも、書くのは失敗した記事の `公開エラー` だけ。成功した記事に書かないのは、全件 writeback を避ける従来の方針のまま
+- CI を赤くするのは generate そのものが失敗したときだけにする。記事ごとの失敗で赤くすると、generate は最後まで終わっているのに CI だけ失敗に見えてわかりにくい、という圭くんの意見。気づくための手段は、CI ではなく通知にする（手段は検討中）
+
+## Notion にアップロードした audio / video
+
+2026-10-01 に圭くんと決めた。
+
+- Notion にファイルを直接上げた audio / video ブロックは、Notion がホストするファイルになり、API からは 1 時間ほどで切れる署名付き URL しか取れない。今の同期（`containers/media-sync.ts`）は image しか見ていないので、その URL が HTML に焼き込まれる
+- 公開のときに、新しい本文 animation と同じく変換せずに S3 へコピーすることにした
+- 採らなかった案は「Notion ホストの audio / video を validation error にして、mirumi.media に手で上げて external で貼る」。Notion のタブ 1 枚で書けるようにするという、移行の主目的に反するため

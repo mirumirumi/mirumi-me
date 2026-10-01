@@ -18,7 +18,7 @@ dev / prd のリソースと、共通にしているものの理由をまとめ�
 | KV `CONTENT_CACHE` | 🚧 未作成 | `ab630ddb…` | 分離 | prd の namespace ID 未設定のままだと deploy が通らない |
 | R2 `BACKUP` | `mirumi-me-backup-prd` | `mirumi-me-backup-dev` | 分離 | 定期バックアップの staging 兼 1 つ目の保管先 |
 | Analytics Engine | `mirumi_me_pv_prd` | `mirumi_me_pv_dev` | 分離 | 🚧 write / read の実装はこれから |
-| Rate limit namespace | `913240002` | `913240001` | 分離 | |
+| Rate limit namespace | `913240002`（API 全般）/ `913240004`（コメント投稿） | `913240001` / `913240003` | 分離 | |
 | Access `mirumi-me-preview` | 共通 AUD | 共通 AUD | 共通 | 同一人物・同一ポリシーのため 1 アプリで dev / prd 両方の `/preview` を保護 |
 | Access `mirumi-me-admin` | 共通 AUD | 共通 AUD | 共通 | 同上 |
 | Access `mirumi-me-local-x-post` | なし | 専用 AUD | dev のみ | prd では同 route を 404 にする |
@@ -48,8 +48,8 @@ dev / prd のリソースと、共通にしているものの理由をまとめ�
 | リソース | prd | dev | 区分 | メモ |
 | --- | --- | --- | --- | --- |
 | ワークスペース | `mirumi.me` | prd と同じ | 共通 | MCP も `ntn` も同時に 1 ワークスペースしか見られないため、分けると接続の張り替えが常時発生する |
-| posts / pages data source | `399e5acd…` / `53765425…` | `3c065425…` / `dc065425…` | 分離 | 同一ワークスペース内で `(dev)` として分ける |
-| comments data source | `201f8de6…` | `3d365425…` | 分離 | |
+| posts / pages data source | `399e5acd…` / `53765425…` | `3c065425…` / `dc065425…` | 分離 | 同一ワークスペース内で `(dev)` として分ける。🚧 prd は dev を複製して作り直すので ID が変わる（`本番リリース手順.md` の 2） |
+| comments data source | `201f8de6…` | `3d365425…` | 分離 | 🚧 prd は posts / pages と同じく作り直す |
 | categories data source | `b2786440…` | prd と同じ | 共通 | 15 件で変化が少なく、dev 側に複製する利点がない |
 | `NOTION_TOKEN` | 共通 | 分離 | 分離 | dev の integration は dev の 3 データソースと共用 categories にしか接続していない |
 | `NOTION_WEBHOOK_SECRET` | 分離 | 分離 | 分離 | |

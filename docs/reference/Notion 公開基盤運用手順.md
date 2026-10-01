@@ -16,8 +16,8 @@
 production bootstrap だけでは移行完了ではない。コメント、検索、PV、管理拡張、バックアップなど
 `docs/L1/Notion 移行 やること.md` の必須項目を完了し、runtime の WordPress 依存をすべて撤去したあとに WordPress を完全廃止する。
 
-移行期間中は検索、PV、いいねが WordPress に依存する。
-コメントはコードとしては新基盤へ切り替え済みで、Notion の comments schema 作成と既存コメントの import が残る。
+移行期間中は検索と PV が WordPress に依存する（いいねは廃止して UI も削除済み）。
+コメントは dev では新基盤で動いていて、prd の comments の用意と既存コメントの import が残る（`本番リリース手順.md` の 2 と 3）。
 コメント feed は移行せず廃止する。
 
 ## 記事の公開と非公開
@@ -328,6 +328,12 @@ generate / bootstrap では、Container のジョブの末尾と、Workflow の 
   prepare / load-articles / build-pages / generate / deploy / done
 - generate と bootstrap は `retries: 0`。数時間をやり直さないための判断なので、
   失敗したら原因を直して手動で投げ直す
+- 記事ごとの失敗（render warning を含む）では全体を止めない。失敗した記事だけを飛ばして最後まで走り、
+  Workflow は ✅ Completed、出力の `status` が `completed-with-errors` になる
+    - generate では、失敗した記事は前の版のまま配信が続く。bootstrap では publish index に載らないので一覧、sitemap、feed から外れ、S3 には旧 WordPress 版の HTML が残る
+    - CI が赤くなるのは generate そのものが失敗したときだけで、記事ごとの失敗では赤くならない
+    - 🚧 失敗した記事には、partial と同じく `公開エラー` を書き戻す（今は partial でしか書かない）。成功した記事には何も書かない
+    - 🚧 失敗した記事があったら通知する（手段は検討中）
 - Container の標準出力はどこからも読めない。Nuxt generate が落ちた原因は例外へ載せて
   Workflow まで持ち上げている
 - job が終わったのに Container instance が `running` のままなら、`sleepAfter` は SIGTERM を
@@ -398,6 +404,7 @@ MIRUMI_BUILD_MANIFEST_DIR=/tmp/mirumi-build/JOB/manifest bun run dev
 - S3 の object は immutable として扱う。publish のたびに記事内の画像を走査し、同じ key がすでにあれば PUT を省略する。既存 object の metadata（変換契約、用途、寸法、bytes の hash）が食い違えば失敗させる
 - 本文 animation は変換せず byte-for-byte で S3 へコピーし、`srcset` を付けない。key は `{assetHash}-{cleanStem}-{width}x{height}.{元の拡張子}` で、`width` / `height` だけ出す
 - animated thumbnail は現在 validation error
+- 🚧 Notion にアップロードした本文の audio / video も、変換せず byte-for-byte で S3 へコピーする。今は image しか同期しておらず、1 時間ほどで切れる署名付き URL のまま HTML に入る（WordPress から移した audio / video は `mirumi.media` の external URL なので影響しない）
 - thumbnail が canonical でなければ publish 時にホストを問わず取り込んで正規化する。Notion upload も WordPress 時代の `mirumi.media` 直下の画像も同じ経路を通る
 
 ### 既存 WordPress 画像の最終移行
