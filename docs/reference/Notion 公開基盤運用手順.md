@@ -332,8 +332,9 @@ generate / bootstrap では、Container のジョブの末尾と、Workflow の 
   Workflow は ✅ Completed、出力の `status` が `completed-with-errors` になる
     - generate では、失敗した記事は前の版のまま配信が続く。bootstrap では publish index に載らないので一覧、sitemap、feed から外れ、S3 には旧 WordPress 版の HTML が残る
     - CI が赤くなるのは generate そのものが失敗したときだけで、記事ごとの失敗では赤くならない
-    - 🚧 失敗した記事には、partial と同じく `公開エラー` を書き戻す（今は partial でしか書かない）。成功した記事には何も書かない
-    - 🚧 失敗した記事があったら通知する（手段は検討中）
+    - 🚧 失敗した記事には、partial と同じく `公開エラー` を書き戻す（今は partial でしか書かない）
+    - 🚧 generate で成功した記事のうち、`公開エラー` が残っているものは消す。成功した記事への書き込みはこれだけ
+    - 🚧 失敗した記事があったら Slack に通知する。generate / bootstrap そのものが失敗したときも通知する
 - Container の標準出力はどこからも読めない。Nuxt generate が落ちた原因は例外へ載せて
   Workflow まで持ち上げている
 - job が終わったのに Container instance が `running` のままなら、`sleepAfter` は SIGTERM を
@@ -349,6 +350,8 @@ deploy token は対象 account だけに絞り、`Workers Scripts Edit` と Cont
 
 通常の generate は `公開中`の現在本文だけを再生成する。
 `公開待ち / 非公開待ち`の route は上書きせず、一覧、sitemap、feed には publish index の最後の公開値を使う。
+
+🚧 `公開中` でも、未公開の編集がある記事（status が 🟡。`last-edited-by` が integration でない）は generate で飛ばし、配信中の版と publish index の値をそのまま残す。今は 🟡 の記事も Notion の今の本文で作り直しているので、generate を流すと書きかけの編集まで公開される（`更新日` も動かない）。bootstrap では飛ばさない
 
 🚧 現行の `.github/workflows/deploy.yml` からこの方式への切り替えは、production bootstrap と同じ明示 GO のあとに行う。
 

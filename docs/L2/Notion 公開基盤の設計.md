@@ -180,7 +180,20 @@ generate のあいだ、Container は「HTTP を開いたまま待っていな�
 - generate / bootstrap は、1 記事が失敗しても全体を止めない。1 記事のブログカードのために、コードの release や数時間かかる bootstrap をまるごとやり直すのは割に合わないため
 - そのかわり、失敗した記事はどの mode でも Notion の `公開エラー` に出す。以前は partial しか書いておらず、generate / bootstrap の失敗は Workflow の出力に `completed-with-errors` が残るだけだった。CI も Workflow の `complete` しか見ないので、誰も気づけなかった
     - generate / bootstrap でも、書くのは失敗した記事の `公開エラー` だけ。成功した記事に書かないのは、全件 writeback を避ける従来の方針のまま
-- CI を赤くするのは generate そのものが失敗したときだけにする。記事ごとの失敗で赤くすると、generate は最後まで終わっているのに CI だけ失敗に見えてわかりにくい、という圭くんの意見。気づくための手段は、CI ではなく通知にする（手段は検討中）
+- CI を赤くするのは generate そのものが失敗したときだけにする。記事ごとの失敗で赤くすると、generate は最後まで終わっているのに CI だけ失敗に見えてわかりにくい、という圭くんの意見。気づくための手段は、CI ではなく Slack への通知にする
+    - Slack は、WordPress 時代の 1 記事だけ generate する CI（`generate-only-specified-post.yaml`）で通知に使っていたもの。メール（コメントの digest と同じ SES）も候補だったが、圭くんが Slack を選んだ
+- generate で成功した記事に `公開エラー` が残っていたら消す。外部サービスの一時的な障害やコードの不具合で多くの記事が失敗しても、次の generate が通れば 🔴 が自然に消えるようにするため。1 本ずつ `公開` を押させない
+    - これが安全なのは、下の「generate で 🟡 の記事を飛ばす」が前提。generate が扱う記事に未公開の編集はないので、書き込んで `last-edited-by` が `workers-api` になり 🟢 になっても、表示は事実どおり
+    - 🟡 を飛ばす前の generate でこれをやると、書きかけの編集がある記事まで 🟢 に見えてしまう
+
+## generate で 🟡 の記事を飛ばす
+
+2026-10-01 に見つけて、圭くんと L1 どおりに直すと決めた。
+
+- L1 の generate の節は「編集したがまだ公開していない記事はフェッチから除外し、配信中のものを残す（次に公開するまで旧アプリケーションの状態で配信されるのは許容）」
+- 実装は `公開待ち` / `非公開待ち` だけを除外し、`公開中` の記事は 🟡 も含めて Notion の今の本文で作り直していた（`lib/publishing.ts` の `resolvePublishAction`、`containers/publish-job.ts` の `loadPublishArticle`）。`main` への push で CI の generate が走ると、書きかけの編集が `更新日` も動かないまま公開されていた
+- 🟡 の判定は status の formula と同じく `last-edited-by` で行う。integration 以外が最後に編集した記事が 🟡
+- bootstrap では飛ばさない。import した記事の `last-edited-by` は import に使った integration で、`fix-toc-anchors` も bootstrap の前に書き込むので、🟡 と区別できないため
 
 ## Notion にアップロードした audio / video
 
