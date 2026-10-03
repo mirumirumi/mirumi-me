@@ -515,6 +515,19 @@ dev で見えない理由と、本番まで持ち越した経緯は `docs/L2/Not
 - API failure や JavaScript 無効時も fallback card を維持する
 - 商品が返らない場合は画像を追加せず、`title` を表示名にした静的 card を維持する
 
+## コールアウト（ボックス）
+
+コールアウトのアイコンで、ボックスの種類が決まる。
+
+| アイコン | ボックス |
+| --- | --- |
+| 💡 | info ボックス（`/callout` で作ったときの既定のアイコン） |
+| ♻️ | 追記ボックス。段落の先頭の「追記 (日付) ：」を強調する |
+| 🚨 | 警告ボックス |
+| Notion のアイコンの square-alternate（lightgray） | 枠ボックス（`shared/src/content.ts` の `WAKU_CALLOUT_ICON`） |
+| 上の 3 つ以外の絵文字 | 枠ボックス。本文の先頭にその絵文字を出す |
+| それ以外（ほかの Notion のアイコン、色違い、アイコンなし、カスタム絵文字や画像） | render warning。中身は枠ボックスで出す |
+
 ## 必須設定
 
 `server/wrangler.jsonc` の vars に加え、dev / prd へ次の secret を登録する。

@@ -9,6 +9,7 @@ import type {
   TableBlock,
   TableRowBlock,
 } from "./content"
+import { WAKU_CALLOUT_ICON } from "./content"
 import { isNotionHostedFile, resolveMediaDimensions, resolveResponsiveBodyImage } from "./media"
 import type { StaticXPostData } from "./x-post"
 import { findXPostLinkMatch } from "./x-post"
@@ -276,25 +277,38 @@ const markRewriteDates = (html: string): string => {
   return html.replaceAll(REWRITE_DATE, '$1<span class="rewrite-date">$2</span>')
 }
 
+const BOX_CLASSES: Readonly<Record<string, string>> = {
+  "💡": "box-common box-info",
+  "♻️": "box-common box-rewrite",
+  "🚨": "box-common box-alert",
+}
+
 const renderCallout = (
   block: Extract<ContentBlock, { type: "callout" }>,
   context: RenderContext,
 ): string => {
-  const className =
-    block.icon === "💡"
-      ? "box-common box-info"
-      : block.icon === "♻️"
-        ? "box-common box-rewrite"
-        : block.icon === "🚨"
-          ? "box-common box-alert"
-          : "waku-common"
-  const icon = block.icon && !["💡", "♻️", "🚨"].includes(block.icon) ? `${block.icon} ` : ""
+  const emoji = block.icon?.type === "emoji" ? block.icon.emoji : null
+  const boxClass = emoji ? BOX_CLASSES[emoji] : undefined
+  // 枠ボックスはアイコンを 1 つに決めて、Notion 上の見た目をそろえる。違うアイコンでも中身は落とさず枠で出す
+  const isWaku =
+    block.icon?.type === "icon" &&
+    block.icon.name === WAKU_CALLOUT_ICON.name &&
+    block.icon.color === WAKU_CALLOUT_ICON.color
+  const warning =
+    emoji || isWaku
+      ? ""
+      : addWarning(
+          context,
+          `コールアウトのアイコンが不明です。枠ボックスにするなら Notion のアイコンの ${WAKU_CALLOUT_ICON.name}（${WAKU_CALLOUT_ICON.color}）にしてください（block: ${block.id}）`,
+        )
+  // 💡 ♻️ 🚨 以外の絵文字は、枠の本文の先頭に出す
+  const icon = emoji && !boxClass ? `${emoji} ` : ""
   // waku-common で ol だけを囲むような、本文を持たないコールアウトでは空の段落を出さない
   const richText = renderRichText(block.richText, context)
   const body = icon || richText ? `<p>${icon}${richText}</p>` : ""
   const inner = `${body}${renderChildren(block, context)}`
 
-  return `<div class="${className}">${block.icon === "♻️" ? markRewriteDates(inner) : inner}</div>`
+  return `${warning}<div class="${boxClass ?? "waku-common"}">${emoji === "♻️" ? markRewriteDates(inner) : inner}</div>`
 }
 
 // 入れ子のリンクは HTML として不正なので、カード全体を 1 つの `a` にしたまま

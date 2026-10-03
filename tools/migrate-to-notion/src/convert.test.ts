@@ -449,6 +449,23 @@ describe("convertWordPressContent", () => {
     expect(converted.warnings).toEqual([])
   })
 
+  test("枠ボックスには、絵文字ではなく枠用の Notion のアイコンを付ける", () => {
+    const converted = convertWordPressContent(
+      makeRecord(`
+        <div class="waku-common"><p>枠</p></div>
+        <div class="box-common box-alert"><p>警告</p></div>
+      `),
+    )
+
+    // icon を省略すると Notion が 💡 を付けて info ボックスになってしまう
+    expect(
+      converted.children.map((block) => ("callout" in block ? block.callout.icon : undefined)),
+    ).toEqual([
+      { type: "icon", icon: { name: "square-alternate", color: "lightgray" } },
+      { type: "emoji", emoji: "🚨" },
+    ])
+  })
+
   test("インライン要素の内側にある空白と改行を保持する", () => {
     const converted = convertWordPressContent(
       makeRecord(`

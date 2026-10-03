@@ -30,9 +30,19 @@ export interface HeadingBlock extends ContentBlockBase {
   richText: Array<RichText>
 }
 
+// Notion の callout の icon。絵文字と Notion のアイコンのほかに、カスタム絵文字や画像もある
+export type CalloutIcon =
+  | { type: "emoji"; emoji: string }
+  | { type: "icon"; name: string; color: string }
+  | { type: "other"; originalType: string }
+
+// 枠ボックス（waku-common）の目印。Notion の API では callout の icon を外せず、省略すると 💡 が付いて
+// info ボックスと区別できなくなるため、絵文字ではない Notion のアイコンを 1 つ決めて使う
+export const WAKU_CALLOUT_ICON = { name: "square-alternate", color: "lightgray" } as const
+
 export interface CalloutBlock extends ContentBlockBase {
   type: "callout"
-  icon: string | null
+  icon: CalloutIcon | null
   richText: Array<RichText>
 }
 

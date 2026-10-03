@@ -15,7 +15,13 @@ import {
 } from "@notionhq/client"
 import { z } from "zod"
 
-import type { ArticleCategory, ArticleContent, ContentBlock, RichText } from "./content"
+import type {
+  ArticleCategory,
+  ArticleContent,
+  CalloutIcon,
+  ContentBlock,
+  RichText,
+} from "./content"
 
 export const NOTION_API_VERSION = "2026-03-11"
 const NOTION_MAX_RETRIES = 5
@@ -205,12 +211,19 @@ const getFile = (property: PageProperty | undefined): { url: string; name: strin
   }
 }
 
-const getCalloutIcon = (block: BlockObjectResponse): string | null => {
-  if (block.type !== "callout" || !block.callout.icon || block.callout.icon.type !== "emoji") {
+const getCalloutIcon = (block: BlockObjectResponse): CalloutIcon | null => {
+  if (block.type !== "callout" || !block.callout.icon) {
     return null
   }
+  const icon = block.callout.icon
+  if (icon.type === "emoji") {
+    return { type: "emoji", emoji: icon.emoji }
+  }
+  if (icon.type === "icon") {
+    return { type: "icon", name: icon.icon.name, color: icon.icon.color }
+  }
 
-  return block.callout.icon.emoji
+  return { type: "other", originalType: icon.type }
 }
 
 const normalizeBlock = (

@@ -9,6 +9,7 @@ import type { BlockObjectRequest, CreatePageParameters } from "@notionhq/client"
 import { HTMLElement, Node, NodeType, parse } from "node-html-parser"
 
 import { canonicalizeAmazonShortcode } from "shared/amazon"
+import { WAKU_CALLOUT_ICON } from "shared/content"
 import { BODY_CONTENT_WIDTH } from "shared/media"
 
 import { CATEGORY_PAGE_IDS, PAGES_DATA_SOURCE_ID, POSTS_DATA_SOURCE_ID } from "./config"
@@ -992,7 +993,7 @@ const calloutBlock = (element: HTMLElement, context: ConversionContext): BlockOb
     ? element.childNodes.filter((node) => node !== firstParagraph)
     : element.childNodes
   const children = convertNodes(remainingNodes, context)
-  const icon = element.classList.contains("box-info")
+  const emoji = element.classList.contains("box-info")
     ? "💡"
     : element.classList.contains("box-rewrite")
       ? "♻️"
@@ -1005,7 +1006,10 @@ const calloutBlock = (element: HTMLElement, context: ConversionContext): BlockOb
     type: "callout",
     callout: {
       rich_text: richText,
-      ...(icon ? { icon: { type: "emoji", emoji: icon } } : {}),
+      // icon を省略すると Notion が 💡 を付けるので、枠ボックスにも必ず目印のアイコンを付ける
+      icon: emoji
+        ? { type: "emoji", emoji }
+        : { type: "icon", icon: { name: WAKU_CALLOUT_ICON.name, color: WAKU_CALLOUT_ICON.color } },
       ...(0 < children.length ? { children } : {}),
     },
   } as BlockObjectRequest

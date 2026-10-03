@@ -181,6 +181,60 @@ describe("fetchNotionArticle", () => {
       }),
     )
   })
+
+  test("callout の icon を絵文字・Notion のアイコン・それ以外に分けて保持する", async () => {
+    const page = {
+      object: "page",
+      id: "page-id",
+      url: "https://notion.so/page-id",
+      properties: {},
+    } as unknown as PageObjectResponse
+    const callout = (id: string, icon: unknown) => ({
+      object: "block",
+      id,
+      type: "callout",
+      has_children: false,
+      in_trash: false,
+      callout: { rich_text: [], color: "default", icon },
+    })
+    const client = {
+      pages: { retrieve: vi.fn(async () => page) },
+      blocks: {
+        children: {
+          list: vi.fn(async () => ({
+            object: "list",
+            results: [
+              callout("emoji", { type: "emoji", emoji: "💡" }),
+              callout("icon", {
+                type: "icon",
+                icon: { name: "square-alternate", color: "lightgray" },
+              }),
+              callout("none", null),
+              callout("custom", {
+                type: "custom_emoji",
+                custom_emoji: { id: "x", name: "x", url: "" },
+              }),
+            ],
+            next_cursor: null,
+            has_more: false,
+            type: "block",
+            block: {},
+          })),
+        },
+      },
+    } as unknown as Client
+
+    const article = await fetchNotionArticle(client, page.id)
+
+    expect(
+      article.blocks.map((block) => (block.type === "callout" ? block.icon : undefined)),
+    ).toEqual([
+      { type: "emoji", emoji: "💡" },
+      { type: "icon", name: "square-alternate", color: "lightgray" },
+      null,
+      { type: "other", originalType: "custom_emoji" },
+    ])
+  })
 })
 
 describe("fetchNotionPageRevision", () => {

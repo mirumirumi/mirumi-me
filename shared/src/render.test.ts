@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 
-import type { ArticleContent, ContentBlock, RichText } from "./content"
+import type { ArticleContent, CalloutIcon, ContentBlock, RichText } from "./content"
 import { renderArticleContent } from "./render"
 
 const text = (content: string, overrides: Partial<RichText> = {}): RichText => ({
@@ -381,7 +381,7 @@ describe("renderArticleContent", () => {
         {
           id: "rewrite",
           type: "callout",
-          icon: "♻️",
+          icon: { type: "emoji", emoji: "♻️" },
           richText: [text("追記 (2020/5/21) ：衝撃的なこと言います。")],
           children: [
             {
@@ -401,7 +401,7 @@ describe("renderArticleContent", () => {
         {
           id: "info",
           type: "callout",
-          icon: "💡",
+          icon: { type: "emoji", emoji: "💡" },
           richText: [text("追記 (2020/5/21) ：これは追記ブロックではない。")],
           children: [],
         },
@@ -434,7 +434,7 @@ describe("renderArticleContent", () => {
         {
           id: "callout",
           type: "callout",
-          icon: null,
+          icon: { type: "icon", name: "square-alternate", color: "lightgray" },
           richText: [],
           children: [
             { id: "item", type: "numbered_list_item", richText: [text("項目")], children: [] },
@@ -446,6 +446,38 @@ describe("renderArticleContent", () => {
     expect(result.html).toContain("<blockquote><p>一段落目</p><p>二段落目</p></blockquote>")
     expect(result.html).toContain('<div class="waku-common"><ol><li>項目</li></ol></div>')
     expect(result.html).not.toContain("<p></p>")
+  })
+
+  test("枠ボックスは決めた Notion のアイコンのときだけにし、ほかのアイコンは警告しつつ枠で出す", () => {
+    const callout = (id: string, icon: CalloutIcon | null): ContentBlock => ({
+      id,
+      type: "callout",
+      icon,
+      richText: [text(id)],
+      children: [],
+    })
+    const result = renderArticleContent(
+      article([
+        callout("waku", { type: "icon", name: "square-alternate", color: "lightgray" }),
+        callout("other-emoji", { type: "emoji", emoji: "📦" }),
+        callout("no-icon", null),
+        callout("other-icon", { type: "icon", name: "square", color: "gray" }),
+        callout("other-color", { type: "icon", name: "square-alternate", color: "gray" }),
+        callout("custom-emoji", { type: "other", originalType: "custom_emoji" }),
+      ]),
+    )
+
+    expect(result.html).toContain('<div class="waku-common"><p>waku</p></div>')
+    // 💡 ♻️ 🚨 以外の絵文字は、枠の本文の先頭に出す
+    expect(result.html).toContain('<div class="waku-common"><p>📦 other-emoji</p></div>')
+    // 警告しても中身は落とさない
+    expect(result.html).toContain('<div class="waku-common"><p>no-icon</p></div>')
+    expect(result.warnings).toEqual(
+      ["no-icon", "other-icon", "other-color", "custom-emoji"].map(
+        (id) =>
+          `コールアウトのアイコンが不明です。枠ボックスにするなら Notion のアイコンの square-alternate（lightgray）にしてください（block: ${id}）`,
+      ),
+    )
   })
 
   test("見出し ID と開いた状態のもくじを最初の見出し直前に生成する", () => {
