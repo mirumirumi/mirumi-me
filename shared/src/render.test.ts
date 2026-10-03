@@ -633,6 +633,33 @@ describe("renderArticleContent", () => {
     expect(result.warnings).toEqual(["X ポストを解決できませんでした（block: x-post）"])
   })
 
+  test("Notion にアップロードしたファイルの embed は iframe にせず警告にする", () => {
+    const result = renderArticleContent(
+      article([
+        {
+          id: "html-block",
+          type: "embed",
+          url: "https://prod-files-secure-apne1.s3.ap-northeast-1.amazonaws.com/space/file/block.html?X-Amz-Expires=3600&X-Amz-Signature=x",
+          caption: [],
+          children: [],
+        },
+        {
+          id: "external",
+          type: "embed",
+          url: "https://example.com/widget",
+          caption: [],
+          children: [],
+        },
+      ]),
+    )
+
+    expect(result.html).not.toContain("prod-files-secure")
+    expect(result.html).toContain('<iframe src="https://example.com/widget"')
+    expect(result.warnings).toEqual([
+      "Notion にアップロードしたファイルの埋め込み（HTML ブロックなど）にはまだ対応していません（block: html-block）",
+    ])
+  })
+
   test("解決済み Bookmark と X ポストを既存 class の card にする", () => {
     const blocks = [
       {

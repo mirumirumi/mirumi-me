@@ -1,31 +1,14 @@
 import { createHash } from "node:crypto"
 
 import type { ArticleContent, ContentBlock } from "shared/content"
+import { isNotionHostedFile } from "shared/media"
 
 // 記事本文の hash。Container の公開処理と、Workflow が Notion へ書き戻す直前の確認で同じものを使う
-
-// Notion のアップロード先はワークスペースのデータ保管リージョンで変わる。mirumi.me のワークスペースは
-// prod-files-secure-apne1.s3.ap-northeast-1 で、us-west-2 だけを見ていると同期されず署名付き URL のまま公開される
-const NOTION_FILE_BUCKET_HOST = /^prod-files-secure(?:-[a-z0-9]+)?\.s3\.[a-z0-9-]+\.amazonaws\.com$/
-
-export const isNotionHostedImage = (value: string): boolean => {
-  try {
-    const { hostname } = new URL(value)
-
-    return (
-      hostname === "file.notion.so" ||
-      hostname.endsWith(".notionusercontent.com") ||
-      NOTION_FILE_BUCKET_HOST.test(hostname)
-    )
-  } catch {
-    return false
-  }
-}
 
 // Notion ホストのファイル URL は取得のたびに署名が変わるため、比較には path だけを使う。
 // 外部 URL のクエリ（YouTube の v= など）は内容そのものなので残す
 const stableNotionFileUrl = (value: string): string => {
-  if (!isNotionHostedImage(value)) {
+  if (!isNotionHostedFile(value)) {
     return value
   }
   const url = new URL(value)

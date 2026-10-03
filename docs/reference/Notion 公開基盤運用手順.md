@@ -40,6 +40,7 @@ production bootstrap だけでは移行完了ではない。コメント、検�
   前回の配信から変わったときだけ Worker が決める（判定は publish index の `sourceHash`）。
   誤字修正でも動く。generate が Notion に書くのは `公開エラー` だけなので、`更新日` は動かない
 - production の render warning は 1 件でも公開を止める
+    - Notion にアップロードしたファイルを持つ embed（`/html` の HTML ブロック、PDF の埋め込みなど）は render warning になる。dev とプレビューでは、その場所に 🚨 の箱が出る
 
 手動の部分公開は Access 配下の `POST /admin/publish`、状態確認は `GET /admin/workflows/:instanceId` を使う。action は request ではなく Notion の最新 state から決まる。
 

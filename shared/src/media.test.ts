@@ -2,11 +2,34 @@ import { describe, expect, test } from "vitest"
 
 import {
   BODY_IMAGE_SIZES,
+  isNotionHostedFile,
   resolveCardImageUrl,
   resolveMediaDimensions,
   resolveResponsiveBodyImage,
   resolveThumbnailUrls,
 } from "./media"
+
+describe("notion hosted file", () => {
+  test("Notion の一時 URL だけを識別する", () => {
+    expect(
+      isNotionHostedFile(
+        "https://prod-files-secure.s3.us-west-2.amazonaws.com/path/image.png?signature=x",
+      ),
+    ).toEqual(true)
+    // ワークスペースのデータ保管リージョンによってバケットが変わる（mirumi.me は東京）
+    expect(
+      isNotionHostedFile(
+        "https://prod-files-secure-apne1.s3.ap-northeast-1.amazonaws.com/space/file/image.png?X-Amz-Signature=x",
+      ),
+    ).toEqual(true)
+    expect(isNotionHostedFile("https://file.notion.so/image.png")).toEqual(true)
+    expect(isNotionHostedFile("https://mirumi.media/image.png")).toEqual(false)
+    expect(
+      isNotionHostedFile("https://other-bucket.s3.ap-northeast-1.amazonaws.com/a.png"),
+    ).toEqual(false)
+    expect(isNotionHostedFile("https://example.com/image.png")).toEqual(false)
+  })
+})
 
 describe("body image media", () => {
   test("canonical fallback URL から存在する標準 variant を組み立てる", () => {

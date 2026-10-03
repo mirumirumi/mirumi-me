@@ -2,33 +2,7 @@ import { describe, expect, test } from "vitest"
 
 import type { ArticleContent } from "shared/content"
 
-import {
-  createArticleSourceHash,
-  createFetchedArticleHash,
-  isNotionHostedImage,
-} from "./article-hash"
-
-describe("isNotionHostedImage", () => {
-  test("Notion の一時 URL だけを識別する", () => {
-    expect(
-      isNotionHostedImage(
-        "https://prod-files-secure.s3.us-west-2.amazonaws.com/path/image.png?signature=x",
-      ),
-    ).toEqual(true)
-    // ワークスペースのデータ保管リージョンによってバケットが変わる（mirumi.me は東京）
-    expect(
-      isNotionHostedImage(
-        "https://prod-files-secure-apne1.s3.ap-northeast-1.amazonaws.com/space/file/image.png?X-Amz-Signature=x",
-      ),
-    ).toEqual(true)
-    expect(isNotionHostedImage("https://file.notion.so/image.png")).toEqual(true)
-    expect(isNotionHostedImage("https://mirumi.media/image.png")).toEqual(false)
-    expect(
-      isNotionHostedImage("https://other-bucket.s3.ap-northeast-1.amazonaws.com/a.png"),
-    ).toEqual(false)
-    expect(isNotionHostedImage("https://example.com/image.png")).toEqual(false)
-  })
-})
+import { createArticleSourceHash, createFetchedArticleHash } from "./article-hash"
 
 describe("createArticleSourceHash", () => {
   const article: ArticleContent = {

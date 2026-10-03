@@ -1,7 +1,6 @@
 import type { ArticleContent, ContentBlock } from "shared/content"
-import { resolveThumbnailUrls } from "shared/media"
+import { isNotionHostedFile, resolveThumbnailUrls } from "shared/media"
 
-import { isNotionHostedImage } from "../lib/article-hash"
 import type { ThumbnailUrls } from "../lib/publishing"
 import type { MediaNormalizer } from "./images"
 
@@ -89,7 +88,7 @@ const syncBlocks = async (
   normalizedByUrl: Map<string, Promise<string>>,
 ) => {
   for (const block of blocks) {
-    if (block.type === "image" && isNotionHostedImage(block.url)) {
+    if (block.type === "image" && isNotionHostedFile(block.url)) {
       let normalized = normalizedByUrl.get(block.url)
       if (!normalized) {
         normalized = downloader(block.url).then(async (bytes) => {

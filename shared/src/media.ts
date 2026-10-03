@@ -1,6 +1,25 @@
 export const MEDIA_HOSTNAME = "mirumi.media"
 const BODY_IMAGE_WIDTHS = [800, 1_200, 1_600]
 
+// Notion のアップロード先はワークスペースのデータ保管リージョンで変わる。mirumi.me のワークスペースは
+// prod-files-secure-apne1.s3.ap-northeast-1 で、us-west-2 だけを見ていると同期されず署名付き URL のまま公開される
+const NOTION_FILE_BUCKET_HOST = /^prod-files-secure(?:-[a-z0-9]+)?\.s3\.[a-z0-9-]+\.amazonaws\.com$/
+
+// Notion にアップロードされたファイルの URL。API からは 1 時間ほどで切れる署名付き URL しか取れない
+export const isNotionHostedFile = (value: string): boolean => {
+  try {
+    const { hostname } = new URL(value)
+
+    return (
+      hostname === "file.notion.so" ||
+      hostname.endsWith(".notionusercontent.com") ||
+      NOTION_FILE_BUCKET_HOST.test(hostname)
+    )
+  } catch {
+    return false
+  }
+}
+
 // desktop の本文の最大幅。これ以上の画像はどれも同じ全幅で表示される
 export const BODY_CONTENT_WIDTH = 785
 

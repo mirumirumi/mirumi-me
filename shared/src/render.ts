@@ -9,7 +9,7 @@ import type {
   TableBlock,
   TableRowBlock,
 } from "./content"
-import { resolveMediaDimensions, resolveResponsiveBodyImage } from "./media"
+import { isNotionHostedFile, resolveMediaDimensions, resolveResponsiveBodyImage } from "./media"
 import type { StaticXPostData } from "./x-post"
 import { findXPostLinkMatch } from "./x-post"
 
@@ -395,6 +395,14 @@ const renderMedia = (
     return `<p><video controls preload="metadata" src="${escapedUrl}"></video>${captionHtml}</p>`
   }
   if (block.type === "embed") {
+    // HTML ブロックや PDF など、Notion にアップロードしたファイルの embed は署名付き URL しか取れず、
+    // そのまま iframe にすると公開の 1 時間ほどあとに黙って 403 になる。対応するまでは警告にして公開を止める
+    if (isNotionHostedFile(url)) {
+      return addWarning(
+        context,
+        `Notion にアップロードしたファイルの埋め込み（HTML ブロックなど）にはまだ対応していません（block: ${block.id}）`,
+      )
+    }
     const hostname = new URL(url).hostname
     if (
       hostname === "x.com" ||
