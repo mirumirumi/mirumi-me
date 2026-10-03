@@ -11,6 +11,8 @@ interface CreateSiteBuildPlanInput {
   generatedAt: string
   summaries: Array<BuildPageSummary>
   changedPages: Array<PreparedPageRevision>
+  // generate で、Notion からではなく最後に公開した版（published-pages snapshot）から作り直す page
+  snapshotPages: Array<{ pageId: string; route: string }>
 }
 
 const paginatedRoutes = (baseRoute: string, count: number): Array<string> => {
@@ -70,14 +72,18 @@ export const createSiteBuildPlan = ({
   generatedAt,
   summaries,
   changedPages,
+  snapshotPages,
 }: CreateSiteBuildPlanInput): BuildPlan => {
-  const contentRoutes = changedPages.flatMap((page): Array<string> => {
-    if (page.action !== "publish" || !page.route) {
-      return []
-    }
+  const contentRoutes = [
+    ...changedPages.flatMap((page): Array<string> => {
+      if (page.action !== "publish" || !page.route) {
+        return []
+      }
 
-    return [page.route]
-  })
+      return [page.route]
+    }),
+    ...snapshotPages.map(({ route }) => route),
+  ]
   const hasPostChange = changedPages.some(({ revision }) => revision.kind === "post")
   const routes = [
     ...contentRoutes,
@@ -85,15 +91,16 @@ export const createSiteBuildPlan = ({
     ...(mode === "full" || mode === "bootstrap" ? FULL_STATIC_ROUTES : []),
   ]
   const uniqueRoutes = [...new Set(routes)]
-  const pageIdsByRoute = Object.fromEntries(
-    changedPages.flatMap((page): Array<[string, string]> => {
+  const pageIdsByRoute = Object.fromEntries([
+    ...changedPages.flatMap((page): Array<[string, string]> => {
       if (page.action !== "publish" || !page.route) {
         return []
       }
 
       return [[page.route, page.revision.pageId]]
     }),
-  )
+    ...snapshotPages.map(({ pageId, route }): [string, string] => [route, pageId]),
+  ])
 
   return {
     schemaVersion: 1,

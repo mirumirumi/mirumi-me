@@ -5,8 +5,9 @@ import type { SiteObjectStore } from "./aws"
 
 // Nuxt の app manifest（`_nuxt/builds/latest.json` と `builds/meta/<buildId>.json`）は、client が
 // 遷移先の route を prerender 済みとみなして `_payload.json` を読むかどうかの根拠になる。
-// partial publish の generate はその回に生成した route しか `prerendered` に載せないため、そのまま
-// deploy すると他の記事へのサイト内遷移で payload を読まず、静的サイトにはない API を叩いて落ちる。
+// Nuxt generate はその回に生成した route しか `prerendered` に載せないため、そのまま deploy すると、
+// 今回作らなかった記事（partial publish のほかの記事、generate で失敗した記事や飛ばした記事）への
+// サイト内遷移で payload を読まず、静的サイトにはない API を叩いて落ちる。
 // 直前まで配信していた manifest との和集合を取り、サイト全体の route を載せてから deploy する
 
 const LATEST_KEY = "_nuxt/builds/latest.json"

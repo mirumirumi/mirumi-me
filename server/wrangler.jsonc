@@ -56,7 +56,8 @@
           "THUMBNAIL_FUNCTION_URL", // わけてる
           "AWS_ACCESS_KEY_ID", // dev/prd で同じ
           "AWS_SECRET_ACCESS_KEY", // dev/prd で同じ
-          "XAI_API_KEY" // dev/prd で同じ
+          "XAI_API_KEY", // dev/prd で同じ
+          "SLACK_WEBHOOK_URL" // 公開の失敗などの通知先。dev/prd で同じ
         ]
       },
       "observability": {
@@ -208,7 +209,8 @@
           "THUMBNAIL_FUNCTION_URL",
           "AWS_ACCESS_KEY_ID",
           "AWS_SECRET_ACCESS_KEY",
-          "XAI_API_KEY"
+          "XAI_API_KEY",
+          "SLACK_WEBHOOK_URL"
         ]
       },
       "observability": {

@@ -174,26 +174,85 @@ generate のあいだ、Container は「HTTP を開いたまま待っていな�
 
 ## 記事ごとの失敗の扱い
 
-2026-10-01 に圭くんと決めた。動きは運用手順の「generate / bootstrap の見かた」。
+2026-10-01 に圭くんと決め、2026-10-02 の見直しで穴を塞いで実装した。動きは運用手順の「generate / bootstrap の見かた」と「generate が作り直す記事」。
 
 - 前提として、prd では render warning（ブログカードや X ポストを解決できないなど）も、その記事の失敗に格上げしている
 - generate / bootstrap は、1 記事が失敗しても全体を止めない。1 記事のブログカードのために、コードの release や数時間かかる bootstrap をまるごとやり直すのは割に合わないため
 - そのかわり、失敗した記事はどの mode でも Notion の `公開エラー` に出す。以前は partial しか書いておらず、generate / bootstrap の失敗は Workflow の出力に `completed-with-errors` が残るだけだった。CI も Workflow の `complete` しか見ないので、誰も気づけなかった
-    - generate / bootstrap でも、書くのは失敗した記事の `公開エラー` だけ。成功した記事に書かないのは、全件 writeback を避ける従来の方針のまま
-- CI を赤くするのは generate そのものが失敗したときだけにする。記事ごとの失敗で赤くすると、generate は最後まで終わっているのに CI だけ失敗に見えてわかりにくい、という圭くんの意見。気づくための手段は、CI ではなく Slack への通知にする
+    - 成功した記事に書かないのは、全件 writeback を避ける従来の方針のまま。例外は下の「generate が書いた 公開エラー を消す」だけ
+- CI を赤くするのは generate そのものが失敗したときだけにする。記事ごとの失敗で赤くすると、generate は最後まで終わっているのに CI だけ失敗に見えてわかりにくい、という圭くんの意見。気づくための手段は、CI ではなく Slack への通知にする（未実装）
     - Slack は、WordPress 時代の 1 記事だけ generate する CI（`generate-only-specified-post.yaml`）で通知に使っていたもの。メール（コメントの digest と同じ SES）も候補だったが、圭くんが Slack を選んだ
-- generate で成功した記事に `公開エラー` が残っていたら消す。外部サービスの一時的な障害やコードの不具合で多くの記事が失敗しても、次の generate が通れば 🔴 が自然に消えるようにするため。1 本ずつ `公開` を押させない
-    - これが安全なのは、下の「generate で 🟡 の記事を飛ばす」が前提。generate が扱う記事に未公開の編集はないので、書き込んで `last-edited-by` が `workers-api` になり 🟢 になっても、表示は事実どおり
-    - 🟡 を飛ばす前の generate でこれをやると、書きかけの編集がある記事まで 🟢 に見えてしまう
 
-## generate で 🟡 の記事を飛ばす
+### 公開エラー はどこで書いたかを文面に残す
 
-2026-10-01 に見つけて、圭くんと L1 どおりに直すと決めた。
+- generate が書く 公開エラー は「generate で失敗しました: 」、bootstrap は「bootstrap で失敗しました: 」で始める（`lib/publishing.ts` の `*_PUBLISH_ERROR_PREFIX`）。公開ボタン（partial）は今までの文面のまま
+- generate は、自分が書いた 公開エラー だけを、その記事を作り直せたときに消す。外部サービスの一時的な障害やコードの不具合で多くの記事が失敗しても、次の generate が通れば 🔴 が自然に消えるようにするため。1 本ずつ `公開` を押させない
+- 公開ボタンが書いた 公開エラー は消さないし、その記事は generate で Notion の本文から作り直さない（最後に公開した版から作り直す）。partial の失敗の書き戻しは `internal-state = 公開中` と 公開エラー を書くので、最後の書き手は integration になるが、本文には公開できなかった編集が残っている。これを generate が Notion の本文から作り直すと、失敗した編集が黙って公開され、`非公開` が失敗した記事は 🟢 に戻されて非公開にしたかったことが消える（2026-10-02 の見直しで見つけた穴）
+- 文面で見分けるのは、別の property を足すと dev / prd の schema と複製の手順が増えるため。圭くんが 公開エラー を手で書き換えることは想定していない
+- generate の失敗では `internal-state` や日付に触らない。generate は公開状態を変えないので
+- bootstrap の失敗は partial の失敗と同じ規則で、publish index に無く `last-deploy` も無いので `下書き` に戻る。generate は `公開中` しか扱わないので触らない。直して `公開` を押せば、Notion の 公開日 のまま公開される
 
-- L1 の generate の節は「編集したがまだ公開していない記事はフェッチから除外し、配信中のものを残す（次に公開するまで旧アプリケーションの状態で配信されるのは許容）」
+### generate が Notion に書くのは、誰も触っていない記事だけ
+
+- generate は 1 時間近く走るので、そのあいだに圭くんが記事を編集したり、公開ボタンを押して 409 で失敗したりしうる。そこへ generate が 公開エラー を書く・消すと、最後の書き手が integration になり、人の編集（🟡）や公開ボタンの失敗（🔴）が上書きされて見えなくなる
+- そこで、書く直前に page を取り直し、Workflow が読み込んだときの revision と比べて変わっていない page にだけ書く（`workflows/workflow.ts` の `writeNotionResultsIfUnchanged`）。取り直してから書くまでの短い競合の窓は、partial の書き戻しと同じく許容する
+- 比べるのは `last_edited_time`、`last_edited_by`、`internal-state`、`公開エラー`（`lib/publishing.ts` の `isPageRevisionUnchanged`）。`last_edited_time` は分単位なので、同じ分のうちの人の編集は `last_edited_by` で、同じ分のうちの integration の書き込み（409 の失敗の書き戻し）は `公開エラー` で見分ける
+
+## generate で 🟡 の記事を Notion から作り直さない
+
+2026-10-01 に見つけて、圭くんと L1 どおりに直すと決め、2026-10-02 に実装した。同じ日のうちに、飛ばすのではなく最後に公開した版から作り直す形（下の「最後に公開した版から作り直す」）に変え、L1 も直した。
+
+- L1 の generate の節（変更前）は「編集したがまだ公開していない記事はフェッチから除外し、配信中のものを残す（次に公開するまで旧アプリケーションの状態で配信されるのは許容）」
 - 実装は `公開待ち` / `非公開待ち` だけを除外し、`公開中` の記事は 🟡 も含めて Notion の今の本文で作り直していた（`lib/publishing.ts` の `resolvePublishAction`、`containers/publish-job.ts` の `loadPublishArticle`）。`main` への push で CI の generate が走ると、書きかけの編集が `更新日` も動かないまま公開されていた
-- 🟡 の判定は status の formula と同じく `last-edited-by` で行う。integration 以外が最後に編集した記事が 🟡
-- bootstrap では飛ばさない。import した記事の `last-edited-by` は import に使った integration で、`fix-toc-anchors` も bootstrap の前に書き込むので、🟡 と区別できないため
+- 判定は Workflow の `load-request` で行う（`lib/publishing.ts` の `selectGenerateRevisions`）。外した記事は Container に渡さない
+    - 🟡：`last_edited_by` が、この環境の token の bot（`users.me`）でない。status の formula は integration の名前（`workers-api` を含むか）で見ているが、コードは名前の変更に影響されない ID で比べる。dev / prd の integration はそれぞれの環境のデータソースにしか接続していないので、ほかの bot が書くことはない
+    - 公開ボタンの失敗で 公開エラー が残っている記事も外す（上の「公開エラー はどこで書いたかを文面に残す」）
+- bootstrap では外さない。import した直後の本文をそのまま公開するのが bootstrap の役目のため。2026-10-02 に dev を数えたところ、import も復元も dev の integration で行っていたので、全 472 件の `last_edited_by` が `workers-api (dev)` だった（テストの名残で公開ボタンの 公開エラー が残っている 3 件は外される）
+
+### 最後に公開した版から作り直す
+
+- 最初は L1 どおり、外した記事を前のアプリの HTML のまま残していた。次の 3 つが理由で、圭くんと相談して作り直す形に変えた
+    - 見た目の更新や機能の追加が、その記事には `公開` を押すまで届かない。🟡 は `めも` を書いただけでもつくので、気づかないうちに増えていく
+    - 新しいアプリのページからサイト内遷移すると、Nuxt は HTML を読まずにその記事の `_payload.json` だけを取り、新しいアプリの部品で描画する。ページのデータの形を変えたリリースのあとは、古い payload で表示が壊れうる。直接開くと壊れないので気づきにくい
+    - コメント反映の失敗の逃げ道だった「次の generate で収束する」が、🟡 の記事に効かなくなる
+- generate では、publish index で公開中なのに Notion の今の本文から作り直さなかった記事を、すべて最後に公開した版（`_internal/published-pages-v1` の snapshot）から作り直す（`containers/publish-job.ts` の `selectSnapshotRebuildPages`）。🟡 や公開ボタンの失敗で外した記事のほか、`公開待ち` / `非公開待ち`、generate の途中で触られた記事、Notion の本文で失敗した記事も含む。サイト全体を「今のアプリ + publish index のとおりの内容」にそろえるのが generate の役目、と整理した
+- やり方はコメント反映と同じで、本文は snapshot の `contentHtml` をそのまま使い、コメントだけを今の承認済みに差し替える（`containers/comment-refresh-job.ts` の `replaceSnapshotComments`）。publish index では `contentHash` と `deployedAt` だけを進め、`deployedNotionEdit` と `sourceHash` は動かさない。Notion には何も書かない
+- 本文の HTML は snapshot を作ったときの `render.ts` のものなので、本文の描画の修正はこれらの記事には届かない（`公開` を押せば届く）。CSS やアプリの部品の変更は届く
+- データの形を変えるときに古い形も読めるようにする場所は、snapshot を読む `parseBuildPage` の 1 か所になる。ブラウザの部品で古い payload を気にしなくてよい
+- 作り直せない記事は前のアプリの HTML のまま残し、Container の結果の `stale`（Workflow の出力の `stalePageIds`）に出す
+    - snapshot が無い、読めない（形が古いなど）
+    - 今のアプリがその route を持たない。`resolvePublicRoute(kind, slug)` が publish index の route と一致しない記事で、固定ページの改名（2026-09-30 の `nice-to-meet-you-10` → `featured-posts`）が実例。作ろうとすると Nuxt generate ごと落ちうるので外す
+- 作り直せない記事のことは Notion に書かない。外した記事（🟡 など）に generate が 公開エラー を書くと、最後の書き手が integration になり、次の generate がその記事を「きれい」とみなして未公開の編集を公開してしまうため。**generate が Notion に書くのは、読み込んだ時点できれいだった記事だけ**、を崩さない
+
+### generate の途中で触られた記事
+
+- Workflow が revision を読むのは `load-request` で、Container が本文を取るのは、そのあと順に 1 本ずつ。あいだに人が編集すると、「読み込んだ時点ではきれい」だった記事の本文に、公開していない編集が混ざりうる
+- 以前はこれを、deploy の直前に全ページを取り直す `confirmFreshness` で防いでいた。ただし 1 ページでも変わっていたら job ごと失敗させるので、1 時間近い generate が、そのあいだの執筆や公開ボタンひとつで丸ごとやり直しになっていた（retries は 0）
+- そこで generate では、本文を取った直後に page ごとに取り直して比べ、変わっていたらその記事は Notion の本文を使わず、最後に公開した版から作り直す（`containers/publish-job.ts` の `PageChangedDuringGenerateError`、Container の結果の `skipped`）。取り終えたあとの編集は本文に入らないので、確かめるのは取った直後の 1 回で足りる。最後の `confirmFreshness` は generate では行わない
+- partial と bootstrap は今までどおり、最後の `confirmFreshness` で job ごと止める。partial は公開しようとしている本文そのものが変わるため。bootstrap は切り替えの当日で記事を触らない前提のため
+- この確認のぶん、Notion への request は 1 ページにつき増えるが、最後の `confirmFreshness` をやめたぶんで相殺される
+
+### generate と app manifest
+
+- Nuxt generate はその回に作った route しか app manifest に載せない。以前の generate は manifest の和集合を取っていなかったので、generate で失敗した記事や `公開待ち` で外した記事へサイト内遷移すると、本文が空になっていた（2026-10-02 に見つけた。それまでは失敗も外れる記事もほぼ無かったので表に出なかった）
+- 今は外した記事も最後に公開した版から作り直すので、manifest に載らないのは作り直せなかった記事（`stale`）だけになった。それでも消さないよう、generate も partial と同じく配信中の manifest と和集合を取る。bootstrap の配信中の manifest は WordPress 時代の Nuxt が作ったものなので取らない
+
+### Worker と Container の約束を変えたことによる rollout 中の失敗
+
+- revision に `lastEditedBy` と `publishError` を足したので、deploy の直後の rollout が終わるまでは、古い image の Container が新しい Worker からの request を strict な schema で弾きうる。そのあいだに公開ボタンを押すと 🔴 になる（押し直せば通る）
+- 逆向き（新しい DO が古い Container の結果を読む）は、`skipped` と `stale` を省略可能にして吸収してある（`containers/container.ts`）
+
+## 公開ボタンの同じ分のうちの編集
+
+2026-10-02 に見つけて、圭くんの OK で直した。
+
+- partial の `confirmFreshness` は、Container が本文を取ったあとに page を取り直し、`last_edited_time` と `internal-state` が読み込んだときと同じかを見ていた。`last_edited_time` は分単位なので、公開ボタンを押した同じ分のうちに本文を直すと、時刻も編集者（圭くん）も同じままになる
+- 本文を取ったあとの直しなら公開されず、書き戻しで 🟢 になって隠れていた。「公開を押してすぐ誤字に気づいて直す」で起きる
+- partial では、最後に本文も取り直し、取ったときと同じかを比べる（`containers/publish-job.ts` の `createFetchedArticleHash`）。変わっていたら今までどおり「build 中に Notion page が変更されました」で job を止め、🔴 になる。押し直せば通る
+    - 1 記事なので取り直しは数秒。bootstrap は全記事の取り直しになるうえ、記事を触らない前提なので行わない
+    - `sourceHash` ではなく別の hash にしたのは、`sourceHash` が 公開日 と 更新日 を含まないため。ボタンを押した直後に 公開日 を直した場合も止めたい
+    - Notion ホストのファイル URL は取得のたびに署名が変わるので、比べるときは path だけを使う（`sourceHash` と同じ）
+- revision の比較には `last_edited_by` と 公開エラー も足した（上の「generate が Notion に書くのは、誰も触っていない記事だけ」と同じ `isPageRevisionUnchanged`）
 
 ## Notion にアップロードした audio / video
 

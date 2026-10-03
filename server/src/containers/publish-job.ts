@@ -7,6 +7,7 @@ import type { BuildComment } from "shared/comments"
 import type { ArticleContent, ContentBlock } from "shared/content"
 import { createNotionClient, fetchNotionArticle, fetchNotionPageRevision } from "shared/notion"
 import { renderArticleContent } from "shared/render"
+import { resolvePublicRoute } from "shared/site-routes"
 
 import type {
   DeployedPage,
@@ -19,6 +20,7 @@ import type {
 } from "../lib/publishing"
 import {
   createPageSummariesManifestFromDeployment,
+  isPageRevisionUnchanged,
   omitIgnoredFixedPages,
   overlayDeploymentState,
   preparePageRevision,
@@ -30,6 +32,7 @@ import {
 import { completeAppManifest } from "./app-manifest"
 import { S3DeploymentIndexStore, S3MediaObjectStore, S3SiteObjectStore } from "./aws"
 import { generateSite } from "./build"
+import { replaceSnapshotComments } from "./comment-refresh-job"
 import { NotionPublishCommentSource, type PublishCommentSource } from "./comments"
 import type { ContainerConfig } from "./config"
 import { SiteDeployer } from "./deploy"
@@ -58,14 +61,21 @@ const RETIRED_CONTENT_ROUTES = ["/what-is-this-blog/"]
 
 // Notion ホストのファイル URL は取得のたびに署名が変わるため、比較には path だけを使う。
 // 外部 URL のクエリ（YouTube の v= など）は内容そのものなので残す
+const stableNotionFileUrl = (value: string): string => {
+  if (!isNotionHostedImage(value)) {
+    return value
+  }
+  const url = new URL(value)
+  url.search = ""
+
+  return url.href
+}
+
 const stableBlockUrls = (blocks: Array<ContentBlock>): Array<ContentBlock> => {
   return blocks.map((block) => {
     const children = stableBlockUrls(block.children)
-    if ("url" in block && isNotionHostedImage(block.url)) {
-      const url = new URL(block.url)
-      url.search = ""
-
-      return { ...block, url: url.href, children }
+    if ("url" in block) {
+      return { ...block, url: stableNotionFileUrl(block.url), children }
     }
 
     return { ...block, children }
@@ -79,6 +89,19 @@ export const createArticleSourceHash = (article: ArticleContent): string => {
     ...article,
     publishedAt: null,
     updatedAt: null,
+    blocks: stableBlockUrls(article.blocks),
+  }
+
+  return createHash("sha256").update(JSON.stringify(source)).digest("hex")
+}
+
+// 公開ボタンの build 中に本文が直されていないかを、取り直した本文と比べて確かめるための hash。
+// last_edited_time は分単位で、ボタンを押した同じ分のうちの編集を見分けられないため。
+// sourceHash と違い、公開日や更新日の property を直しても変わる
+export const createFetchedArticleHash = (article: ArticleContent): string => {
+  const source = {
+    ...article,
+    thumbnailUrl: article.thumbnailUrl && stableNotionFileUrl(article.thumbnailUrl),
     blocks: stableBlockUrls(article.blocks),
   }
 
@@ -225,6 +248,40 @@ export const preparePages = (
   return { pages, failed }
 }
 
+// generate はサイト全体を今のアプリで作り直す。Notion の今の本文から作り直さなかった公開中の page
+// （未公開の編集がある、公開待ち、途中で触られた、失敗した）は、最後に公開した版（snapshot）から作り直す。
+// 今のアプリがその route を持たない page（固定ページの改名など）は作れないので、前のアプリの HTML のまま残す
+export const selectSnapshotRebuildPages = (
+  state: SiteDeploymentState,
+  freshPageIds: Set<string>,
+): { pages: Array<DeployedPage>; stale: Array<string> } => {
+  const pages: Array<DeployedPage> = []
+  const stale: Array<string> = []
+  for (const page of Object.values(state.pages)) {
+    if (page.status !== "published" || freshPageIds.has(page.pageId)) {
+      continue
+    }
+    if (resolvePublicRoute(page.kind, page.slug) === page.route) {
+      pages.push(page)
+    } else {
+      stale.push(page.pageId)
+    }
+  }
+
+  return { pages, stale }
+}
+
+// generate に渡されるのは、Workflow が読み込んだ時点で未公開の変更がない記事だけ。本文を取り終えるまでに
+// 誰かが触っていたら、取った本文に公開していない編集が混ざりうるので、作り直さずに配信中の版を残す
+class PageChangedDuringGenerateError extends Error {}
+
+const notionDataSources = (config: ContainerConfig) => {
+  return {
+    posts: config.notionPostsDataSourceId,
+    pages: config.notionPagesDataSourceId,
+  }
+}
+
 interface PreparedPublishArticle {
   prepared: PreparedPageRevision
   media: SyncedArticleMedia
@@ -233,6 +290,8 @@ interface PreparedPublishArticle {
   updatedAt: string | null
   // その時点の approved comments。sourceHash には含めない（コメントの増減で 更新日 を動かさない）
   comments: Array<BuildComment>
+  // 取ったときの本文の hash。公開ボタンの build の最後に、取り直した本文と比べる
+  fetchedHash: string
 }
 
 const loadPublishArticle = async (
@@ -245,6 +304,18 @@ const loadPublishArticle = async (
 ): Promise<PreparedPublishArticle> => {
   const notion = createNotionClient(config.notionToken)
   const fetched = await fetchNotionArticle(notion, prepared.revision.pageId)
+  // 取り終えたあとの編集は本文に入らないので、確かめるのはここで一度だけでよい
+  if (params.mode === "full") {
+    const current = await fetchNotionPageRevision(
+      notion,
+      prepared.revision.pageId,
+      notionDataSources(config),
+    )
+    if (!isPageRevisionUnchanged(prepared.revision, current)) {
+      throw new PageChangedDuringGenerateError(prepared.revision.pageId)
+    }
+  }
+  const fetchedHash = createFetchedArticleHash(fetched)
   const article = {
     ...fetched,
     title: prepared.revision.title,
@@ -284,6 +355,7 @@ const loadPublishArticle = async (
     sourceHash,
     updatedAt,
     comments,
+    fetchedHash,
   }
 }
 
@@ -359,19 +431,30 @@ const createInternalBookmarkSources = (
   return [...sources.values()]
 }
 
-const confirmFreshness = async (pages: Array<PreparedPageRevision>, config: ContainerConfig) => {
+const confirmFreshness = async (
+  pages: Array<PreparedPageRevision>,
+  articleById: Map<string, PreparedPublishArticle>,
+  mode: PublishJobRequest["params"]["mode"],
+  config: ContainerConfig,
+) => {
   const notion = createNotionClient(config.notionToken)
-  const dataSources = {
-    posts: config.notionPostsDataSourceId,
-    pages: config.notionPagesDataSourceId,
-  }
   for (const page of pages) {
-    const current = await fetchNotionPageRevision(notion, page.revision.pageId, dataSources)
-    if (
-      current.lastEditedTime !== page.revision.lastEditedTime ||
-      current.internalState !== page.revision.internalState
-    ) {
+    const current = await fetchNotionPageRevision(
+      notion,
+      page.revision.pageId,
+      notionDataSources(config),
+    )
+    if (!isPageRevisionUnchanged(page.revision, current)) {
       throw Error(`build 中に Notion page が変更されました: ${page.revision.pageId}`)
+    }
+    // ボタンを押した同じ分のうちの編集は revision では見分けられないので、公開ボタンでは本文も取り直す。
+    // 1 記事なので数秒で済む。bootstrap は全記事の取り直しになるうえ、記事を触らない前提なので行わない
+    const source = articleById.get(page.revision.pageId)
+    if (mode === "partial" && source) {
+      const refetched = await fetchNotionArticle(notion, page.revision.pageId)
+      if (createFetchedArticleHash(refetched) !== source.fetchedHash) {
+        throw Error(`build 中に Notion page が変更されました: ${page.revision.pageId}`)
+      }
     }
   }
 }
@@ -406,6 +489,8 @@ export const runContainerPublishJob = async (
       buildHash: buildHash(deploymentState, request.workflowId),
       pages: [],
       failed: prepared.failed,
+      skipped: [],
+      stale: [],
       updatedPaths: [],
     }
   }
@@ -422,6 +507,7 @@ export const runContainerPublishJob = async (
     await commentSource.preloadAll()
   }
   const failed = [...prepared.failed]
+  const skipped: Array<string> = []
   const publishArticles: Array<PreparedPublishArticle> = []
   const loadedPages: Array<PreparedPageRevision> = []
   // 1 page の失敗で batch 全体を落とすと、どの page が原因か Notion 側に出せなくなる
@@ -444,6 +530,10 @@ export const runContainerPublishJob = async (
       )
       loadedPages.push(page)
     } catch (err) {
+      if (err instanceof PageChangedDuringGenerateError) {
+        skipped.push(page.revision.pageId)
+        continue
+      }
       failed.push(toPageFailure(page, err))
     }
   }
@@ -505,17 +595,70 @@ export const runContainerPublishJob = async (
       failed.push(toPageFailure(page, err))
     }
   }
-  if (builtPages.length === 0) {
+  const snapshotPages: Array<BuildPage> = []
+  const rebuiltSnapshots: Array<DeployedPage> = []
+  const stale: Array<string> = []
+  if (request.params.mode === "full") {
+    const freshPageIds = new Set(
+      builtPages.flatMap((page) => (page.action === "publish" ? [page.revision.pageId] : [])),
+    )
+    const selected = selectSnapshotRebuildPages(deploymentState, freshPageIds)
+    stale.push(...selected.stale)
+    const snapshotReader = new PublishedPageSnapshotStore(
+      new S3SiteObjectStore(awsConfig, config.siteBucketName),
+    )
+    for (const deployed of selected.pages) {
+      try {
+        const snapshot = await snapshotReader.load(deployed.pageId, deployed.contentHash)
+        if (!snapshot) {
+          stale.push(deployed.pageId)
+          continue
+        }
+        // 本文は Notion を読み直さないので未公開の編集は混ざらない。コメントだけはコメント反映と同じく今の承認済みにする
+        const buildPage =
+          deployed.kind === "post"
+            ? replaceSnapshotComments(snapshot, await commentSource.loadForSlug(deployed.slug))
+            : snapshot
+        const hash = createBuildPageContentHash(buildPage)
+        snapshotPages.push(buildPage)
+        if (hash !== deployed.contentHash) {
+          publishedSnapshots.push({ page: buildPage, contentHash: hash })
+        }
+        // 記事本文の版（deployedNotionEdit / sourceHash）は動かさず、配信物の hash と時刻だけを進める
+        rebuiltSnapshots.push({
+          ...deployed,
+          contentHash: hash,
+          deployedAt: request.params.requestedAt,
+        })
+      } catch (err) {
+        console.warn(
+          JSON.stringify({
+            event: "snapshot_rebuild_failed",
+            pageId: deployed.pageId,
+            message: err instanceof Error ? err.message : String(err),
+          }),
+        )
+        stale.push(deployed.pageId)
+      }
+    }
+  }
+  if (builtPages.length === 0 && snapshotPages.length === 0) {
     return {
       workflowId: request.workflowId,
       buildHash: buildHash(deploymentState, request.workflowId),
       pages: [],
       failed,
+      skipped,
+      stale,
       updatedPaths: [],
     }
   }
 
-  const nextState = overlayDeploymentState(deploymentState, snapshots, request.params.requestedAt)
+  const nextState = overlayDeploymentState(
+    deploymentState,
+    [...snapshots, ...rebuiltSnapshots],
+    request.params.requestedAt,
+  )
   const previousSummaries = createPageSummariesManifestFromDeployment(
     Object.values(deploymentState.pages),
   )
@@ -526,17 +669,22 @@ export const runContainerPublishJob = async (
     generatedAt: request.params.requestedAt,
     summaries: summaries.pages,
     changedPages: builtPages,
+    snapshotPages: rebuiltSnapshots.map(({ pageId, route }) => ({ pageId, route })),
   })
   await progress.report("generate", 0, plan.routes.length)
   const generated = await generateSite({
     workflowId: request.workflowId,
     plan,
-    pages: buildPages,
+    pages: [...buildPages, ...snapshotPages],
     deploymentState: nextState,
     workersApiOrigin: config.workersApiOrigin,
     appEnv: config.appEnv,
   })
-  await confirmFreshness(builtPages, config)
+  // generate は本文を取った直後に page ごとに確かめ済み。ここで 1 page の編集を理由に全体を止めると、
+  // 1 時間かかる generate が、そのあいだの執筆や公開ボタンひとつで丸ごとやり直しになる
+  if (request.params.mode !== "full") {
+    await confirmFreshness(builtPages, publishArticleById, request.params.mode, config)
+  }
   const deletedContentRoutes = findUnpublishedContentRoutes(builtPages)
   const deletedRoutes = [
     ...new Set([
@@ -546,7 +694,10 @@ export const runContainerPublishJob = async (
     ]),
   ]
   const siteStore = new S3SiteObjectStore(awsConfig, config.siteBucketName)
-  if (plan.mode === "partial") {
+  // generate も、失敗した記事と飛ばした記事は作り直さないので manifest に載らない。載っていない route へ
+  // サイト内遷移すると本文が空になるため、配信中の manifest から引き継ぐ。bootstrap の配信中の manifest は
+  // WordPress 時代の Nuxt が作ったものなので引き継がない
+  if (plan.mode !== "bootstrap") {
     await completeAppManifest(generated.outputDirectory, siteStore, deletedRoutes)
   }
   await progress.report("deploy", 0, plan.routes.length)
@@ -568,6 +719,8 @@ export const runContainerPublishJob = async (
     buildHash: buildHash(nextState, request.workflowId),
     pages: results,
     failed,
+    skipped,
+    stale,
     updatedPaths,
   }
 }

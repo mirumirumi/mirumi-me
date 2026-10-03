@@ -8,9 +8,10 @@ import type {
   PublishJobSummary,
   PublishWorkflowParams,
 } from "../lib/publishing"
+import { BOOTSTRAP_PUBLISH_ERROR_PREFIX, GENERATE_PUBLISH_ERROR_PREFIX } from "../lib/publishing"
 import {
-  BOOTSTRAP_WRITEBACK_CHUNK_SIZE,
   type LoadedPublishRequest,
+  NOTION_WRITEBACK_CHUNK_SIZE,
   PUBLISH_WORKFLOW_STEP_CONFIGS,
   type PublishWorkflowDependencies,
   type PublishWorkflowStepExecutor,
@@ -53,11 +54,13 @@ describe("runPublishWorkflow", () => {
       slug: "article-slug",
       internalState: "公開待ち",
       lastEditedTime: "2026-08-24T01:00:00.000Z",
+      lastEditedBy: "00000000-0000-0000-0000-0000000000aa",
       lastDeploy: null,
       lastNotionEdit: "2026-08-24T01:00:00.000Z",
       publishedAt: null,
       updatedAt: null,
       category: { name: "技術", slug: "tech" },
+      publishError: "",
       ...overrides,
     }
   }
@@ -77,6 +80,8 @@ describe("runPublishWorkflow", () => {
         },
       ],
       failed: [],
+      skipped: [],
+      stale: [],
       updatedPaths: ["/article-slug/", "/article-slug/index.html"],
       ...overrides,
     }
@@ -94,6 +99,7 @@ describe("runPublishWorkflow", () => {
       return [] as Array<DeploymentPageState>
     })
     const writeNotionResults = vi.fn(async () => undefined)
+    const writeNotionResultsIfUnchanged = vi.fn(async () => undefined)
 
     return {
       dependencies: {
@@ -104,6 +110,7 @@ describe("runPublishWorkflow", () => {
         invalidateSite,
         loadDeploymentPages,
         writeNotionResults,
+        writeNotionResultsIfUnchanged,
       } satisfies PublishWorkflowDependencies,
       loadRequest,
       publishSite,
@@ -112,6 +119,7 @@ describe("runPublishWorkflow", () => {
       invalidateSite,
       loadDeploymentPages,
       writeNotionResults,
+      writeNotionResultsIfUnchanged,
     }
   }
 
@@ -120,6 +128,7 @@ describe("runPublishWorkflow", () => {
     const { dependencies, publishSite, writeNotionResults } = createDependencies({
       revisions: [makeRevision()],
       failed: [],
+      skippedPageIds: [],
     })
 
     expect(
@@ -135,6 +144,8 @@ describe("runPublishWorkflow", () => {
       publishedPageIds: ["00000000-0000-0000-0000-000000000001"],
       unpublishedPageIds: [],
       failed: [],
+      skippedPageIds: [],
+      stalePageIds: [],
     })
     expect(step.calls).toEqual([
       { name: "load-request", config: PUBLISH_WORKFLOW_STEP_CONFIGS.loadRequest },
@@ -178,6 +189,7 @@ describe("runPublishWorkflow", () => {
         }),
       ],
       failed: [],
+      skippedPageIds: [],
     })
     const bootstrapParams: PublishWorkflowParams = {
       mode: "bootstrap",
@@ -214,7 +226,7 @@ describe("runPublishWorkflow", () => {
 
   test("bootstrap の Notion 書き戻しは chunk ごとに別 step へ分ける", async () => {
     const pageIds = Array.from(
-      { length: BOOTSTRAP_WRITEBACK_CHUNK_SIZE + 1 },
+      { length: NOTION_WRITEBACK_CHUNK_SIZE + 1 },
       (_, index) => `00000000-0000-0000-0000-${String(index + 1).padStart(12, "0")}`,
     )
     const step = new MemoryStep()
@@ -228,6 +240,7 @@ describe("runPublishWorkflow", () => {
         }),
       ),
       failed: [],
+      skippedPageIds: [],
     })
     readPublishSiteState.mockResolvedValue({
       status: "done",
@@ -262,8 +275,71 @@ describe("runPublishWorkflow", () => {
       "write-bootstrap-notion-result-1",
     ])
     expect(writeNotionResults).toHaveBeenCalledTimes(2)
-    expect(writeNotionResults.mock.calls.at(0)?.at(0)).toHaveLength(BOOTSTRAP_WRITEBACK_CHUNK_SIZE)
+    expect(writeNotionResults.mock.calls.at(0)?.at(0)).toHaveLength(NOTION_WRITEBACK_CHUNK_SIZE)
     expect(writeNotionResults.mock.calls.at(1)?.at(0)).toHaveLength(1)
+  })
+
+  test("bootstrap で失敗した記事は 下書き に戻して、bootstrap で書いたとわかる 公開エラー を書く", async () => {
+    const failedPageId = "00000000-0000-0000-0000-000000000002"
+    const step = new MemoryStep()
+    const { dependencies, readPublishSiteState, loadDeploymentPages, writeNotionResults } =
+      createDependencies({
+        revisions: [
+          makeRevision({ internalState: "公開中", publishedAt: "2026-08-20T00:00:00.000Z" }),
+          makeRevision({
+            pageId: failedPageId,
+            slug: "failed-article",
+            internalState: "公開中",
+            publishedAt: "2026-08-20T00:00:00.000Z",
+          }),
+        ],
+        failed: [],
+        skippedPageIds: [],
+      })
+    readPublishSiteState.mockResolvedValue({
+      status: "done",
+      summary: makeSummary({
+        failed: [
+          {
+            pageId: failedPageId,
+            code: "publish-failed",
+            message: "production render warning: ブックマークを解決できませんでした",
+          },
+        ],
+      }),
+    })
+    loadDeploymentPages.mockResolvedValueOnce([{ pageId: failedPageId, status: "missing" }])
+
+    await runPublishWorkflow({
+      workflowId: "workflow-id",
+      params: {
+        mode: "bootstrap",
+        source: "release",
+        requestId: "bootstrap-request",
+        requestedAt: params.requestedAt,
+        pageIds: [],
+      },
+      step,
+      dependencies,
+    })
+
+    expect(writeNotionResults).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          status: "published",
+          pageId: "00000000-0000-0000-0000-000000000001",
+        }),
+        {
+          status: "failed",
+          pageId: failedPageId,
+          internalState: "下書き",
+          deployedAt: null,
+          publishedAt: null,
+          error: `${BOOTSTRAP_PUBLISH_ERROR_PREFIX}: production render warning: ブックマークを解決できませんでした（Workflow: workflow-id）`,
+        },
+      ],
+      350,
+    )
   })
 
   test("論理エラーの page を除外して正常な page だけ Container へ渡す", async () => {
@@ -273,6 +349,7 @@ describe("runPublishWorkflow", () => {
       createDependencies({
         revisions: [makeRevision(), makeRevision({ pageId: invalidPageId, title: "" })],
         failed: [],
+        skippedPageIds: [],
       })
     loadDeploymentPages.mockResolvedValueOnce([
       {
@@ -296,6 +373,8 @@ describe("runPublishWorkflow", () => {
       publishedPageIds: ["00000000-0000-0000-0000-000000000001"],
       unpublishedPageIds: [],
       failed: [{ pageId: invalidPageId, code: "missing-title" }],
+      skippedPageIds: [],
+      stalePageIds: [],
     })
     expect(publishSite.mock.calls.at(0)?.at(0)?.pages).toHaveLength(1)
     expect(writeNotionResults).toHaveBeenCalledWith([
@@ -326,6 +405,7 @@ describe("runPublishWorkflow", () => {
             message: "公開対象の page が見つかりません",
           },
         ],
+        skippedPageIds: [],
       })
     loadDeploymentPages.mockResolvedValueOnce([
       {
@@ -352,6 +432,8 @@ describe("runPublishWorkflow", () => {
           code: "page-not-found",
         },
       ],
+      skippedPageIds: [],
+      stalePageIds: [],
     })
     expect(publishSite).not.toHaveBeenCalled()
     expect(writeNotionResults).toHaveBeenCalledWith([
@@ -368,6 +450,7 @@ describe("runPublishWorkflow", () => {
       createDependencies({
         revisions: [makeRevision()],
         failed: [],
+        skippedPageIds: [],
       })
     const publishError = Error("container unavailable")
     publishSite.mockRejectedValueOnce(publishError)
@@ -403,7 +486,7 @@ describe("runPublishWorkflow", () => {
   test("CloudFront 失敗時は index 上の実配信状態を書き戻す", async () => {
     const step = new MemoryStep()
     const { dependencies, invalidateSite, loadDeploymentPages, writeNotionResults } =
-      createDependencies({ revisions: [makeRevision()], failed: [] })
+      createDependencies({ revisions: [makeRevision()], failed: [], skippedPageIds: [] })
     const invalidationError = Error("cloudfront unavailable")
     invalidateSite.mockRejectedValueOnce(invalidationError)
     loadDeploymentPages.mockResolvedValueOnce([
@@ -433,7 +516,7 @@ describe("runPublishWorkflow", () => {
   test("index を読めない失敗は Notion state を推測しない", async () => {
     const step = new MemoryStep()
     const { dependencies, publishSite, loadDeploymentPages, writeNotionResults } =
-      createDependencies({ revisions: [makeRevision()], failed: [] })
+      createDependencies({ revisions: [makeRevision()], failed: [], skippedPageIds: [] })
     const publishError = Error("container unavailable")
     publishSite.mockRejectedValueOnce(publishError)
     loadDeploymentPages.mockRejectedValueOnce(Error("index unavailable"))
@@ -477,6 +560,7 @@ describe("runPublishWorkflow", () => {
           makeRevision({ internalState: "公開中", publishedAt: "2026-08-20T00:00:00.000Z" }),
         ],
         failed: [],
+        skippedPageIds: [],
       }
     }
 
@@ -571,6 +655,195 @@ describe("runPublishWorkflow", () => {
 
       await expect(runGenerate(step, dependencies)).rejects.toThrow(
         "Container が publish job を見失いました",
+      )
+    })
+  })
+
+  describe("generate の記事ごとの結果", () => {
+    const fullParams: PublishWorkflowParams = {
+      mode: "full",
+      source: "release",
+      requestId: "release-request",
+      requestedAt: params.requestedAt,
+      pageIds: [],
+    }
+    const secondPageId = "00000000-0000-0000-0000-000000000002"
+
+    const published = (overrides: Partial<PageRevision> = {}) => {
+      return makeRevision({
+        internalState: "公開中",
+        publishedAt: "2026-08-20T00:00:00.000Z",
+        ...overrides,
+      })
+    }
+
+    test("Workflow と Container が飛ばした記事を結果に出す", async () => {
+      const step = new MemoryStep()
+      const { dependencies, readPublishSiteState } = createDependencies({
+        revisions: [published(), published({ pageId: secondPageId, slug: "second" })],
+        failed: [],
+        skippedPageIds: ["00000000-0000-0000-0000-000000000003"],
+      })
+      readPublishSiteState.mockResolvedValue({
+        status: "done",
+        summary: makeSummary({ skipped: [secondPageId] }),
+      })
+
+      expect(
+        await runPublishWorkflow({
+          workflowId: "workflow-id",
+          params: fullParams,
+          step,
+          dependencies,
+        }),
+      ).toEqual({
+        workflowId: "workflow-id",
+        status: "completed",
+        publishedPageIds: ["00000000-0000-0000-0000-000000000001"],
+        unpublishedPageIds: [],
+        failed: [],
+        skippedPageIds: ["00000000-0000-0000-0000-000000000003", secondPageId],
+        stalePageIds: [],
+      })
+    })
+
+    test("最後に公開した版からも作り直せなかった記事を結果に出す", async () => {
+      const step = new MemoryStep()
+      const { dependencies, readPublishSiteState } = createDependencies({
+        revisions: [published()],
+        failed: [],
+        skippedPageIds: [],
+      })
+      readPublishSiteState.mockResolvedValue({
+        status: "done",
+        summary: makeSummary({ stale: [secondPageId] }),
+      })
+
+      expect(
+        await runPublishWorkflow({
+          workflowId: "workflow-id",
+          params: fullParams,
+          step,
+          dependencies,
+        }),
+      ).toEqual(expect.objectContaining({ status: "completed", stalePageIds: [secondPageId] }))
+    })
+
+    test("失敗した記事には generate で書いたとわかる 公開エラー だけを、触られていない記事にだけ書く", async () => {
+      const step = new MemoryStep()
+      const revisions = [published()]
+      const {
+        dependencies,
+        readPublishSiteState,
+        writeNotionResults,
+        writeNotionResultsIfUnchanged,
+      } = createDependencies({ revisions, failed: [], skippedPageIds: [] })
+      readPublishSiteState.mockResolvedValue({
+        status: "done",
+        summary: makeSummary({
+          pages: [],
+          failed: [
+            {
+              pageId: "00000000-0000-0000-0000-000000000001",
+              code: "publish-failed",
+              message: "production render warning: ブックマークを解決できませんでした",
+            },
+          ],
+        }),
+      })
+
+      await runPublishWorkflow({
+        workflowId: "workflow-id",
+        params: fullParams,
+        step,
+        dependencies,
+      })
+
+      expect(writeNotionResults).not.toHaveBeenCalled()
+      expect(writeNotionResultsIfUnchanged).toHaveBeenCalledWith(
+        [
+          {
+            status: "failed",
+            pageId: "00000000-0000-0000-0000-000000000001",
+            internalState: null,
+            deployedAt: null,
+            publishedAt: null,
+            error: `${GENERATE_PUBLISH_ERROR_PREFIX}: production render warning: ブックマークを解決できませんでした（Workflow: workflow-id）`,
+          },
+        ],
+        revisions,
+        350,
+      )
+      expect(step.calls.at(-1)).toEqual({
+        name: "write-generate-notion-result-0",
+        config: PUBLISH_WORKFLOW_STEP_CONFIGS.writeGenerateNotionResult,
+      })
+    })
+
+    test("generate が書いた 公開エラー は成功したら消し、ほかの成功した記事には何も書かない", async () => {
+      const step = new MemoryStep()
+      const revisions = [
+        published({
+          publishError: `${GENERATE_PUBLISH_ERROR_PREFIX}: 前回の理由（Workflow: old）`,
+        }),
+        published({ pageId: secondPageId, slug: "second" }),
+      ]
+      const { dependencies, readPublishSiteState, writeNotionResultsIfUnchanged } =
+        createDependencies({ revisions, failed: [], skippedPageIds: [] })
+      readPublishSiteState.mockResolvedValue({
+        status: "done",
+        summary: makeSummary({
+          pages: revisions.map(({ pageId }) => ({
+            pageId,
+            action: "publish",
+            deployedAt: "2026-08-24T02:05:00.000Z",
+            publishedAt: "2026-08-20T00:00:00.000Z",
+            contentHash: "content-hash",
+            updatedAt: null,
+          })),
+        }),
+      })
+
+      await runPublishWorkflow({
+        workflowId: "workflow-id",
+        params: fullParams,
+        step,
+        dependencies,
+      })
+
+      expect(writeNotionResultsIfUnchanged).toHaveBeenCalledWith(
+        [{ status: "error-cleared", pageId: "00000000-0000-0000-0000-000000000001" }],
+        revisions,
+        350,
+      )
+    })
+
+    test("Container に渡す前に落ちた記事にも 公開エラー を書く", async () => {
+      const step = new MemoryStep()
+      const revisions = [published({ title: "" })]
+      const { dependencies, startPublishSite, writeNotionResultsIfUnchanged } = createDependencies({
+        revisions,
+        failed: [],
+        skippedPageIds: [],
+      })
+
+      await runPublishWorkflow({
+        workflowId: "workflow-id",
+        params: fullParams,
+        step,
+        dependencies,
+      })
+
+      expect(startPublishSite).not.toHaveBeenCalled()
+      expect(writeNotionResultsIfUnchanged).toHaveBeenCalledWith(
+        [
+          expect.objectContaining({
+            status: "failed",
+            error: `${GENERATE_PUBLISH_ERROR_PREFIX}: title が空です（Workflow: workflow-id）`,
+          }),
+        ],
+        revisions,
+        350,
       )
     })
   })

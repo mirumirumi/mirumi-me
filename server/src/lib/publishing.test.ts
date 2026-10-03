@@ -4,14 +4,21 @@ import type { DeployedPage, PageRevision, SiteDeploymentState } from "./publishi
 import {
   createEmptyDeploymentState,
   createPageSummariesManifestFromDeployment,
+  GENERATE_PUBLISH_ERROR_PREFIX,
+  isGeneratePublishError,
+  isPageRevisionUnchanged,
   omitIgnoredFixedPages,
   overlayDeploymentState,
   preparePageRevision,
   resolvePublishAction,
+  selectGenerateRevisions,
   validatePageRevisionMetadata,
 } from "./publishing"
 
 describe("publishing lifecycle", () => {
+  const PUBLISHER_USER_ID = "00000000-0000-0000-0000-0000000000aa"
+  const PERSON_USER_ID = "00000000-0000-0000-0000-0000000000bb"
+
   const makeRevision = (overrides: Partial<PageRevision> = {}): PageRevision => {
     return {
       pageId: "00000000-0000-0000-0000-000000000001",
@@ -20,11 +27,13 @@ describe("publishing lifecycle", () => {
       slug: "article-slug",
       internalState: "公開待ち",
       lastEditedTime: "2026-08-24T01:00:00.000Z",
+      lastEditedBy: PUBLISHER_USER_ID,
       lastDeploy: null,
       lastNotionEdit: null,
       publishedAt: null,
       updatedAt: null,
       category: { name: "技術", slug: "tech" },
+      publishError: "",
       ...overrides,
     }
   }
@@ -68,6 +77,94 @@ describe("publishing lifecycle", () => {
       expect(resolvePublishAction("公開中", "full")).toEqual("publish")
       expect(resolvePublishAction("公開中", "bootstrap")).toEqual("publish")
       expect(resolvePublishAction("非公開", "full")).toEqual("noop")
+    })
+  })
+
+  describe("isGeneratePublishError", () => {
+    test("generate が書いた 公開エラー だけを見分ける", () => {
+      expect(
+        isGeneratePublishError(`${GENERATE_PUBLISH_ERROR_PREFIX}: 理由（Workflow: id）`),
+      ).toEqual(true)
+      expect(isGeneratePublishError("公開処理に失敗しました: 理由（Workflow: id）")).toEqual(false)
+      expect(isGeneratePublishError("")).toEqual(false)
+    })
+  })
+
+  describe("selectGenerateRevisions", () => {
+    const published = (pageId: string, overrides: Partial<PageRevision> = {}) => {
+      return makeRevision({ pageId, internalState: "公開中", ...overrides })
+    }
+
+    test("最後に公開した本文から誰も触っていない記事だけを作り直す", () => {
+      const clean = published("00000000-0000-0000-0000-000000000001")
+      const edited = published("00000000-0000-0000-0000-000000000002", {
+        lastEditedBy: PERSON_USER_ID,
+      })
+
+      expect(selectGenerateRevisions([clean, edited], PUBLISHER_USER_ID)).toEqual({
+        revisions: [clean],
+        skippedPageIds: [edited.pageId],
+      })
+    })
+
+    test("公開ボタンでの失敗が残る記事は、最後の書き手が integration でも飛ばす", () => {
+      const failed = published("00000000-0000-0000-0000-000000000001", {
+        publishError: "公開処理に失敗しました: 理由（Workflow: id）",
+      })
+
+      expect(selectGenerateRevisions([failed], PUBLISHER_USER_ID)).toEqual({
+        revisions: [],
+        skippedPageIds: [failed.pageId],
+      })
+    })
+
+    test("generate が書いた 公開エラー は本文がきれいなままなので作り直す", () => {
+      const failed = published("00000000-0000-0000-0000-000000000001", {
+        publishError: `${GENERATE_PUBLISH_ERROR_PREFIX}: 理由（Workflow: id）`,
+      })
+
+      expect(selectGenerateRevisions([failed], PUBLISHER_USER_ID)).toEqual({
+        revisions: [failed],
+        skippedPageIds: [],
+      })
+    })
+
+    test("公開中でない記事はもともと作り直さないので、飛ばした記事に数えない", () => {
+      const waiting = makeRevision({ internalState: "公開待ち", lastEditedBy: PERSON_USER_ID })
+
+      expect(selectGenerateRevisions([waiting], PUBLISHER_USER_ID)).toEqual({
+        revisions: [waiting],
+        skippedPageIds: [],
+      })
+    })
+  })
+
+  describe("isPageRevisionUnchanged", () => {
+    test("読み込んだときと同じなら触られていない", () => {
+      expect(isPageRevisionUnchanged(makeRevision(), makeRevision())).toEqual(true)
+    })
+
+    test("last_edited_time は分単位なので、同じ分のうちの編集は編集者の違いで見分ける", () => {
+      expect(
+        isPageRevisionUnchanged(makeRevision(), makeRevision({ lastEditedBy: PERSON_USER_ID })),
+      ).toEqual(false)
+    })
+
+    test("時刻、internal-state、公開エラー のどれかが変われば触られている", () => {
+      const expected = makeRevision()
+
+      expect(
+        isPageRevisionUnchanged(
+          expected,
+          makeRevision({ lastEditedTime: "2026-08-24T01:01:00.000Z" }),
+        ),
+      ).toEqual(false)
+      expect(isPageRevisionUnchanged(expected, makeRevision({ internalState: "公開中" }))).toEqual(
+        false,
+      )
+      expect(isPageRevisionUnchanged(expected, makeRevision({ publishError: "失敗" }))).toEqual(
+        false,
+      )
     })
   })
 

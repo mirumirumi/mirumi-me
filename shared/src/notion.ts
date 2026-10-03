@@ -34,11 +34,14 @@ export interface PageRevision {
   slug: string
   internalState: InternalState | null
   lastEditedTime: string
+  // 最後に編集した user（bot を含む）の ID。last_edited_time は分単位なので、同じ分のうちの編集はこれで見分ける
+  lastEditedBy: string
   lastDeploy: string | null
   lastNotionEdit: string | null
   publishedAt: string | null
   updatedAt: string | null
   category: ArticleCategory | null
+  publishError: string
 }
 
 export interface NotionPageIndexItem {
@@ -59,11 +62,13 @@ const pageRevisionSchema: z.ZodType<PageRevision> = z.strictObject({
   slug: z.string(),
   internalState: z.enum(INTERNAL_STATES).nullable(),
   lastEditedTime: notionDateSchema,
+  lastEditedBy: z.string().min(1),
   lastDeploy: notionDateSchema.nullable(),
   lastNotionEdit: notionDateSchema.nullable(),
   publishedAt: notionDateSchema.nullable(),
   updatedAt: notionDateSchema.nullable(),
   category: notionCategorySchema.nullable(),
+  publishError: z.string(),
 })
 const notionPageIndexSchema: z.ZodType<Array<NotionPageIndexItem>> = z.array(
   z.strictObject({
@@ -539,11 +544,13 @@ const normalizePageIndexItem = async (
       slug: getPlainTextProperty(properties.slug),
       internalState: getInternalStateProperty(properties["internal-state"]),
       lastEditedTime: page.last_edited_time,
+      lastEditedBy: page.last_edited_by.id,
       lastDeploy: getDateProperty(properties["last-deploy"]),
       lastNotionEdit: getLastEditedTimeProperty(properties["last-notion-edit"]),
       publishedAt: getDateProperty(properties.公開日),
       updatedAt: getDateProperty(properties.更新日),
       category,
+      publishError: getPlainTextProperty(properties.公開エラー),
     },
     thumbnailUrl: thumbnail?.url ?? null,
     thumbnailName: thumbnail?.name ?? null,
@@ -643,6 +650,11 @@ export type NotionPublishResult =
       publishedAt: string | null
       error: string
     }
+  // generate が前に書いた 公開エラー を、作り直せたので消す。ほかの property には触らない
+  | {
+      status: "error-cleared"
+      pageId: string
+    }
 
 const richTextProperty = (content: string) => {
   return {
@@ -676,7 +688,7 @@ export const createNotionPublishUpdate = (result: NotionPublishResult): UpdatePa
     }
   } else if (result.status === "unpublished") {
     properties["internal-state"] = { type: "select", select: { name: "非公開" } }
-  } else if (result.internalState) {
+  } else if (result.status === "failed" && result.internalState) {
     properties["internal-state"] = {
       type: "select",
       select: { name: result.internalState },
@@ -714,6 +726,9 @@ export const isNotionPublishResultApplied = (
   }
   if (result.status === "unpublished") {
     return state === "非公開" && error === ""
+  }
+  if (result.status === "error-cleared") {
+    return error === ""
   }
 
   return (

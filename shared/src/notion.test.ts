@@ -7,6 +7,7 @@ import {
   fetchNotionArticle,
   fetchNotionBlockTree,
   fetchNotionPageIndex,
+  fetchNotionPageRevision,
   forEachNotionDataSourcePage,
   isNotionPublishResultApplied,
   parseNotionPageIndex,
@@ -61,11 +62,13 @@ describe("parseNotionPageIndex", () => {
           slug: "article",
           internalState: "公開中",
           lastEditedTime: "2026-08-28T00:00:00.000Z",
+          lastEditedBy: "user-id",
           lastDeploy: null,
           lastNotionEdit: null,
           publishedAt: "2026-08-24T00:00:00.000Z",
           updatedAt: null,
           category: { name: "技術", slug: "tech" },
+          publishError: "",
         },
         thumbnailUrl: "https://file.notion.so/signed-url",
         thumbnailName: "thumbnail.png",
@@ -174,6 +177,53 @@ describe("fetchNotionArticle", () => {
       expect.objectContaining({
         thumbnailUrl: "https://file.notion.so/signed-url?signature=x",
         thumbnailName: "My Cover.png",
+      }),
+    )
+  })
+})
+
+describe("fetchNotionPageRevision", () => {
+  test("最後の編集者と 公開エラー を revision に持つ", async () => {
+    const text = (content: string) => ({
+      type: "text",
+      plain_text: content,
+      href: null,
+      text: { content, link: null },
+      annotations: {
+        bold: false,
+        italic: false,
+        strikethrough: false,
+        underline: false,
+        code: false,
+        color: "default",
+      },
+    })
+    const page = {
+      object: "page",
+      id: "page-id",
+      url: "https://notion.so/page-id",
+      parent: { type: "data_source_id", data_source_id: "posts-source" },
+      last_edited_time: "2026-10-02T00:00:00.000Z",
+      last_edited_by: { object: "user", id: "bot-user-id" },
+      properties: {
+        title: { type: "title", title: [text("記事")] },
+        slug: { type: "rich_text", rich_text: [text("article")] },
+        "internal-state": { type: "select", select: { name: "公開中" } },
+        公開エラー: { type: "rich_text", rich_text: [text("公開処理に"), text("失敗しました")] },
+      },
+    } as unknown as PageObjectResponse
+    const client = { pages: { retrieve: vi.fn(async () => page) } } as unknown as Client
+
+    expect(
+      await fetchNotionPageRevision(client, page.id, {
+        posts: "posts-source",
+        pages: "pages-source",
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        lastEditedTime: "2026-10-02T00:00:00.000Z",
+        lastEditedBy: "bot-user-id",
+        publishError: "公開処理に失敗しました",
       }),
     )
   })
@@ -329,6 +379,15 @@ describe("createNotionPublishUpdate", () => {
             },
           ],
         },
+      },
+    })
+  })
+
+  test("generate が自分で書いた 公開エラー を消すときは 公開エラー だけを書く", () => {
+    expect(createNotionPublishUpdate({ status: "error-cleared", pageId: "page-id" })).toEqual({
+      page_id: "page-id",
+      properties: {
+        公開エラー: { type: "rich_text", rich_text: [] },
       },
     })
   })

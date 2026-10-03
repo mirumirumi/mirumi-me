@@ -27,7 +27,8 @@ production bootstrap だけでは移行完了ではない。コメント、検�
 - `公開待ち` → Webhook → 公開成功後に `公開中`
 - `非公開待ち` → Webhook → 非公開成功後に `非公開`
 - Webhook は同じ event ID の重複配送を正常系として扱う
-- build 中に page が再編集された場合は S3 更新前に中止する
+- build 中に page が再編集された場合は S3 更新前に中止する。`last_edited_time` は分単位で、ボタンを押した同じ分のうちの編集は
+  見分けられないので、本文も取り直して比べる（変わっていたら「build 中に Notion page が変更されました」で 🔴。押し直せば通る）
 - 一度公開した slug は publish index が所有し続ける。slug 変更や別 page での再利用は自動では行わない
 - `公開日` は初回公開で 1 回だけ Worker が決める。`更新日` は再公開で本文・title・画像などの内容が
   前回の配信から変わったときだけ Worker が決める（判定は publish index の `sourceHash`）。
@@ -81,7 +82,7 @@ Nuxt は Notion も Worker も読まない。Container が approved を取得し
 - 非表示にするときは `status` を `承認待ち` か `スパム` に変える。返信が付いた親だけを非表示にしても
   子は消えず、最も近い表示中の先祖（無ければ root）につなぎ直して描画する。row を削除した場合も
   子は root へ繰り上がるが、slug を追えず refresh は動かないので、削除ではなく `ゴミ箱` にする
-- owner reply は親 row のボタン `返信` で作る（「ページを追加」がテンプレート「管理者の返信」で `投稿者名` /
+- owner reply は親 row のボタン `返信` で作る（「ページを追加」がテンプレート「みるみ」（comments の既定のテンプレート）で `投稿者名` /
   `管理者コメント=true` / `from=管理者` / `本文形式=プレーンテキスト` / `status=承認待ち` を埋め、`親コメント=このページ`
   を足して開く）。書き終えたら `status=承認済み` にする。テンプレートとボタンは API で作れない。prd は dev の comments を複製して作るので、そのとき一緒に入る（`本番リリース手順.md` の「2. prd の準備」）。
   `slug` が空なら comment-refresh が `親コメント` を 5 段までたどって決め、row に書き戻す。generate も
@@ -279,8 +280,9 @@ publish はすべて単一の Container に集まり、直列に処理される�
 ### partial publish と Nuxt の app manifest
 
 Nuxt の app manifest（`_nuxt/builds/meta/<buildId>.json`）から route が欠けると、その記事へサイト内遷移したときだけ
-本文が空のまま描画される（直接開くと正常なので気づきにくい）。partial の Nuxt generate はその回の route しか manifest に載せないため、
-Container が deploy 前に配信中の manifest と和集合を取っている（`app-manifest.ts`）。この仕組みは配信中の manifest を起点にするので、
+本文が空のまま描画される（直接開くと正常なので気づきにくい）。Nuxt generate はその回の route しか manifest に載せないため、
+Container が deploy 前に配信中の manifest と和集合を取っている（`app-manifest.ts`）。partial だけでなく generate も同じで、
+generate で作り直せなかった記事（`stalePageIds`）の route を消さないため（bootstrap だけは取らない）。この仕組みは配信中の manifest を起点にするので、
 **Container のこの機能を初めて deploy したあとと、manifest が欠けた疑いがあるときは generate を 1 回通す。**
 
 `routeRules` の `prerender: true` で回避しようとしてはいけない。partial の Nuxt generate が落ちる。
@@ -330,10 +332,11 @@ generate / bootstrap では、Container のジョブの末尾と、Workflow の 
   失敗したら原因を直して手動で投げ直す
 - 記事ごとの失敗（render warning を含む）では全体を止めない。失敗した記事だけを飛ばして最後まで走り、
   Workflow は ✅ Completed、出力の `status` が `completed-with-errors` になる
-    - generate では、失敗した記事は前の版のまま配信が続く。bootstrap では publish index に載らないので一覧、sitemap、feed から外れ、S3 には旧 WordPress 版の HTML が残る
     - CI が赤くなるのは generate そのものが失敗したときだけで、記事ごとの失敗では赤くならない
-    - 🚧 失敗した記事には、partial と同じく `公開エラー` を書き戻す（今は partial でしか書かない）
-    - 🚧 generate で成功した記事のうち、`公開エラー` が残っているものは消す。成功した記事への書き込みはこれだけ
+    - generate で失敗した記事は、前の版のまま配信が続き、`公開エラー` に「generate で失敗しました: 〜」とだけ書く（`internal-state` や日付には触らない）。次の generate で作り直せたら、generate が自分で消す
+    - bootstrap で失敗した記事は、publish index に載らないので一覧、sitemap、feed から外れ、S3 には旧 WordPress 版の HTML が残る。`internal-state` を `下書き` に戻し、`公開エラー` に「bootstrap で失敗しました: 〜」と書く。直して `公開` を押せば、Notion の `公開日` のまま公開される
+    - 公開ボタン（partial）で書いた `公開エラー` は、generate では消さない（下の「generate が作り直す記事」）
+    - generate が Notion に書くのは、読み込んだときから誰も触っていない記事だけ。途中で編集された記事は、その編集を 🟢 / 🔴 で上書きしないよう書かずに飛ばす（Worker のログに `notion_result_skipped`）
     - 🚧 失敗した記事があったら Slack に通知する。generate / bootstrap そのものが失敗したときも通知する
 - Container の標準出力はどこからも読めない。Nuxt generate が落ちた原因は例外へ載せて
   Workflow まで持ち上げている
@@ -348,10 +351,25 @@ Notion / AWS の secret は GitHub へ置かない。
 deploy token は対象 account だけに絞り、`Workers Scripts Edit` と Container 配備用の `Containers Edit` を許可する。
 ローカルで使う場合もファイルには保存せず、`CLOUDFLARE_ACCOUNT_ID` と `CLOUDFLARE_API_TOKEN` を必要なプロセスだけへ一時的に渡し、作業後に token を revoke する。
 
-通常の generate は `公開中`の現在本文だけを再生成する。
-`公開待ち / 非公開待ち`の route は上書きせず、一覧、sitemap、feed には publish index の最後の公開値を使う。
+### generate が作り直す記事
 
-🚧 `公開中` でも、未公開の編集がある記事（status が 🟡。`last-edited-by` が integration でない）は generate で飛ばし、配信中の版と publish index の値をそのまま残す。今は 🟡 の記事も Notion の今の本文で作り直しているので、generate を流すと書きかけの編集まで公開される（`更新日` も動かない）。bootstrap では飛ばさない
+generate は、publish index で公開中の記事をすべて、今のアプリで作り直す。本文をどこから取るかは記事によって違う。
+
+- Notion の今の本文：`公開中` で、最後に公開した本文から誰も触っていない記事
+- 最後に公開したときの内容（`_internal/published-pages-v1` の snapshot。コメント反映と同じもの）：それ以外の公開中の記事。未公開の編集は出ない。コメントだけは今の承認済みに差し替える
+    - `公開待ち` / `非公開待ち` の記事
+    - 未公開の編集がある記事（status が 🟡。`last-edited-by` がこの環境の integration でない）。Workflow の出力の `skippedPageIds` に出る
+    - 公開ボタン（partial）の失敗で `公開エラー` が残っている記事。書き戻しで最後の書き手は integration になるが、公開できなかった編集が本文に残っているため。これも `skippedPageIds` に出る
+    - generate の途中で触られた記事。本文を取った直後に page ごとに確かめ、変わっていたら切り替える。generate 全体は止めない（partial と bootstrap は今までどおり、build 中に触られたら job ごと止める）。これも `skippedPageIds` に出る
+    - Notion の本文では失敗した記事（失敗の扱いは上の「generate / bootstrap の見かた」）
+
+一覧、sitemap、feed には publish index の最後の公開値を使う。最後に公開したときの内容から作り直しても、`公開日`、`更新日`、Notion の status は変わらない。
+
+snapshot が無い、読めない、今のアプリがその route を持たない（固定ページの改名など）記事は作り直せないので、前のアプリの HTML のまま残し、Workflow の出力の `stalePageIds` に出す。サイト内遷移の一覧（app manifest）からは消さない。
+
+bootstrap は import した直後の本文をそのまま公開するので、どれも切り替えない。**bootstrap のあいだは記事を触らない**（触ると job ごと止まる）。
+
+内容を変えていない 🟡（`めも` だけ直した、など）は、`公開` を押せば `更新日` を動かさずに 🟢 に戻る。
 
 🚧 現行の `.github/workflows/deploy.yml` からこの方式への切り替えは、production bootstrap と同じ明示 GO のあとに行う。
 
@@ -480,6 +498,7 @@ dev で見えない理由と、本番まで持ち越した経緯は `docs/L2/Not
 - AWS: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `THUMBNAIL_FUNCTION_URL`
 - バックアップ vars: `BACKUP_BUCKET_NAME`（S3）。R2 は `r2_buckets` の `BACKUP`
 - X: `XAI_API_KEY`
+- Slack: `SLACK_WEBHOOK_URL`（公開の失敗などの通知先。dev / prd で同じ URL）
 - KV: dev / prd の `CONTENT_CACHE` namespace ID
 
 AWS credential は site / media bucket と対象 CloudFront distribution だけへ絞る。

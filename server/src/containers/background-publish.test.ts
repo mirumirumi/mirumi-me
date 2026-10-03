@@ -21,7 +21,15 @@ describe("BackgroundPublishJobs", () => {
   }
 
   const makeSummary = (workflowId: string): PublishJobSummary => {
-    return { workflowId, buildHash: "build-hash", pages: [], failed: [], updatedPaths: [] }
+    return {
+      workflowId,
+      buildHash: "build-hash",
+      pages: [],
+      failed: [],
+      skipped: [],
+      stale: [],
+      updatedPaths: [],
+    }
   }
 
   describe("start", () => {

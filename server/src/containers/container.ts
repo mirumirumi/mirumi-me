@@ -64,6 +64,9 @@ const publishJobSummarySchema = z
       ]),
     ),
     failed: z.array(publishFailureSchema),
+    // deploy 直後の rollout 中は、まだ skipped / stale を返さない古い Container image が答えることがある
+    skipped: z.array(z.guid()).default([]),
+    stale: z.array(z.guid()).default([]),
     updatedPaths: z.array(z.string().startsWith("/").max(1_000)),
   })
   .strict()

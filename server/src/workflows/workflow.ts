@@ -17,6 +17,7 @@ import { isIgnoredFixedPageSlug } from "shared/site-routes"
 
 import type {
   DeploymentPageState,
+  PageRevision,
   PublishFailure,
   PublishJobRequest,
   PublishJobState,
@@ -24,6 +25,7 @@ import type {
   PublishWorkflowParams,
   PublishWorkflowResult,
 } from "../lib/publishing"
+import { isPageRevisionUnchanged, selectGenerateRevisions } from "../lib/publishing"
 import {
   type LoadedPublishRequest,
   type PublishWorkflowStepExecutor,
@@ -130,7 +132,7 @@ const loadPartialRequest = async (
     }
   }
 
-  return { revisions, failed }
+  return { revisions, failed, skippedPageIds: [] }
 }
 
 const loadRequest = async (
@@ -142,12 +144,19 @@ const loadRequest = async (
     return loadPartialRequest(params, token, dataSources)
   }
 
-  const revisions = await fetchNotionPageRevisions(createNotionClient(token), dataSources)
-
-  return {
-    revisions: revisions.filter((revision) => !isIgnoredFixedPageSlug(revision.slug)),
-    failed: [],
+  const client = createNotionClient(token)
+  const revisions = (await fetchNotionPageRevisions(client, dataSources)).filter(
+    (revision) => !isIgnoredFixedPageSlug(revision.slug),
+  )
+  // bootstrap は import した直後の本文をそのまま公開するので、未公開の変更を見ない
+  if (params.mode === "bootstrap") {
+    return { revisions, failed: [], skippedPageIds: [] }
   }
+  // 公開の書き戻しは、この token の bot として記録される
+  const publisher = await client.users.me({})
+  const selected = selectGenerateRevisions(revisions, publisher.id)
+
+  return { revisions: selected.revisions, failed: [], skippedPageIds: selected.skippedPageIds }
 }
 
 const publishSite = async (
@@ -227,6 +236,40 @@ const writeNotionResults = async (
   }
 }
 
+const writeNotionResultsIfUnchanged = async (
+  results: Array<NotionPublishResult>,
+  expectedRevisions: Array<PageRevision>,
+  env: CloudflareBindings,
+  delayMs: number,
+) => {
+  const { token, dataSources } = getNotionConfig(env)
+  const client = createNotionClient(token)
+  const expectedByPage = new Map(expectedRevisions.map((revision) => [revision.pageId, revision]))
+  for (let index = 0; index < results.length; index++) {
+    if (0 < index) {
+      await new Promise<void>((resolve) => setTimeout(resolve, delayMs))
+    }
+    const result = results[index]!
+    const expected = expectedByPage.get(result.pageId)
+    try {
+      // 取り直してから書くまでの短い競合の窓は、partial の書き戻しと同じく許容する。
+      // step の retry で、書き戻し済みの page が自分の書き込みで変わって見えても、飛ばせば足りる
+      const current = await fetchNotionPageRevision(client, result.pageId, dataSources)
+      if (!expected || !isPageRevisionUnchanged(expected, current)) {
+        console.info(JSON.stringify({ event: "notion_result_skipped", pageId: result.pageId }))
+        continue
+      }
+      await writeNotionPublishResult(client, result)
+    } catch (err) {
+      if (isNotionObjectNotFound(err) || err instanceof InvalidNotionPageRevisionError) {
+        continue
+      }
+
+      throw err
+    }
+  }
+}
+
 const createStepExecutor = (step: WorkflowStep): PublishWorkflowStepExecutor => {
   return {
     do: (name, config, callback) => step.do(name, config, callback),
@@ -259,6 +302,8 @@ export class PublishWorkflow extends WorkflowEntrypoint<CloudflareBindings, Publ
         loadDeploymentPages: async (pageIds) => loadDeploymentPages(pageIds, this.env),
         writeNotionResults: async (results, delayMs) =>
           writeNotionResults(results, this.env, delayMs),
+        writeNotionResultsIfUnchanged: async (results, expectedRevisions, delayMs) =>
+          writeNotionResultsIfUnchanged(results, expectedRevisions, this.env, delayMs),
       },
     })
   }

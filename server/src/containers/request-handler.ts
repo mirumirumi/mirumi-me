@@ -22,11 +22,13 @@ const revisionSchema = z.strictObject({
   slug: z.string(),
   internalState: z.enum(["下書き", "公開待ち", "公開中", "非公開待ち", "非公開"]).nullable(),
   lastEditedTime: dateSchema,
+  lastEditedBy: z.string().min(1),
   lastDeploy: dateSchema.nullable(),
   lastNotionEdit: dateSchema.nullable(),
   publishedAt: dateSchema.nullable(),
   updatedAt: dateSchema.nullable(),
   category: categorySchema.nullable(),
+  publishError: z.string(),
 })
 const publishRequestSchema: z.ZodType<PublishJobRequest> = z.strictObject({
   workflowId: z.string().min(1).max(200),

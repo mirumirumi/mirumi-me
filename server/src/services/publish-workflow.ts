@@ -11,7 +11,12 @@ import type {
   PublishWorkflowParams,
   PublishWorkflowResult,
 } from "../lib/publishing"
-import { validatePageRevisionMetadata } from "../lib/publishing"
+import {
+  BOOTSTRAP_PUBLISH_ERROR_PREFIX,
+  GENERATE_PUBLISH_ERROR_PREFIX,
+  isGeneratePublishError,
+  validatePageRevisionMetadata,
+} from "../lib/publishing"
 
 type WorkflowDurationUnit = "second" | "minute" | "hour" | "day" | "week" | "month" | "year"
 type WorkflowDuration = `${number} ${WorkflowDurationUnit}` | `${number} ${WorkflowDurationUnit}s`
@@ -25,7 +30,10 @@ interface WorkflowStepConfig {
   timeout: WorkflowDuration
 }
 
-export const BOOTSTRAP_WRITEBACK_CHUNK_SIZE = 50
+// bootstrap と generate の Notion 書き戻しは件数が多くなりうるので、この件数ごとに別の step に分ける
+export const NOTION_WRITEBACK_CHUNK_SIZE = 50
+// 書き戻しの request の間隔。Notion API の平均 3 request/秒に収める
+const NOTION_WRITEBACK_DELAY_MS = 350
 
 export const PUBLISH_WORKFLOW_STEP_CONFIGS = {
   loadRequest: {
@@ -68,6 +76,10 @@ export const PUBLISH_WORKFLOW_STEP_CONFIGS = {
     retries: { limit: 5, delay: "10 seconds", backoff: "exponential" },
     timeout: "10 minutes",
   },
+  writeGenerateNotionResult: {
+    retries: { limit: 5, delay: "10 seconds", backoff: "exponential" },
+    timeout: "10 minutes",
+  },
 } as const satisfies Record<string, WorkflowStepConfig>
 
 export interface WorkflowStepExecutor {
@@ -86,6 +98,9 @@ export interface PublishWorkflowStepExecutor extends WorkflowStepExecutor {
 export interface LoadedPublishRequest {
   revisions: Array<PageRevision>
   failed: Array<PublishFailure>
+  // generate が未公開の変更を見つけて、Notion の本文では作り直さない page。Container は publish index から
+  // 最後に公開した版で作り直す。partial と bootstrap では常に空
+  skippedPageIds: Array<string>
 }
 
 export interface PublishWorkflowDependencies {
@@ -96,6 +111,13 @@ export interface PublishWorkflowDependencies {
   invalidateSite(summary: PublishJobSummary): Promise<void>
   loadDeploymentPages(pageIds: Array<string>): Promise<Array<DeploymentPageState>>
   writeNotionResults(results: Array<NotionPublishResult>, delayMs?: number): Promise<void>
+  // 読み込んだときの revision から誰も触っていない page にだけ書く。generate は Notion の状態を変えないので、
+  // 途中で人が編集した page に書くと、その編集が 🟢 / 🔴 で上書きされて見えなくなる
+  writeNotionResultsIfUnchanged(
+    results: Array<NotionPublishResult>,
+    expectedRevisions: Array<PageRevision>,
+    delayMs: number,
+  ): Promise<void>
 }
 
 interface RunPublishWorkflowOptions {
@@ -174,6 +196,98 @@ const toFailedNotionResults = (
   })
 }
 
+const toGenerateNotionResults = (
+  failures: Array<PublishFailure>,
+  summary: PublishJobSummary | null,
+  revisions: Array<PageRevision>,
+  workflowId: string,
+): Array<NotionPublishResult> => {
+  const messagesByPage = new Map<string, Array<string>>()
+  for (const failure of failures) {
+    const messages = messagesByPage.get(failure.pageId) ?? []
+    messages.push(failure.message)
+    messagesByPage.set(failure.pageId, messages)
+  }
+  // generate は公開状態を変えないので、配信状態や日付には触らず 公開エラー だけを書く
+  const failed = [...messagesByPage].map(([pageId, messages]): NotionPublishResult => {
+    return {
+      status: "failed",
+      pageId,
+      internalState: null,
+      deployedAt: null,
+      publishedAt: null,
+      error: `${GENERATE_PUBLISH_ERROR_PREFIX}: ${messages.join(" / ")}（Workflow: ${workflowId}）`,
+    }
+  })
+  const revisionByPage = new Map(revisions.map((revision) => [revision.pageId, revision]))
+  const cleared = (summary?.pages ?? []).flatMap((page): Array<NotionPublishResult> => {
+    const publishError = revisionByPage.get(page.pageId)?.publishError ?? ""
+    if (page.action !== "publish" || !isGeneratePublishError(publishError)) {
+      return []
+    }
+
+    return [{ status: "error-cleared", pageId: page.pageId }]
+  })
+
+  return [...failed, ...cleared]
+}
+
+// bootstrap で失敗した page は publish index に載らないので、toFailedNotionResults が 下書き に戻す。
+// 直して公開ボタンを押せば、Notion の 公開日 のまま公開できる
+const toBootstrapFailedNotionResults = (
+  failures: Array<PublishFailure>,
+  workflowId: string,
+  revisions: Array<PageRevision>,
+  deploymentPages: Array<DeploymentPageState>,
+): Array<NotionPublishResult> => {
+  return toFailedNotionResults(failures, workflowId, revisions, deploymentPages).map((result) => {
+    return result.status === "failed"
+      ? { ...result, error: `${BOOTSTRAP_PUBLISH_ERROR_PREFIX}: ${result.error}` }
+      : result
+  })
+}
+
+const writeBootstrapNotionResults = async (
+  results: Array<NotionPublishResult>,
+  step: WorkflowStepExecutor,
+  dependencies: PublishWorkflowDependencies,
+) => {
+  // step の再試行は先頭からやり直すため、chunk に分けて書き戻し済みのぶんを捨てない
+  for (let index = 0; index < results.length; index += NOTION_WRITEBACK_CHUNK_SIZE) {
+    const chunk = results.slice(index, index + NOTION_WRITEBACK_CHUNK_SIZE)
+    await step.do(
+      `write-bootstrap-notion-result-${index / NOTION_WRITEBACK_CHUNK_SIZE}`,
+      PUBLISH_WORKFLOW_STEP_CONFIGS.writeBootstrapNotionResult,
+      async () => {
+        await dependencies.writeNotionResults(chunk, NOTION_WRITEBACK_DELAY_MS)
+      },
+    )
+  }
+}
+
+const writeGenerateNotionResults = async (
+  results: Array<NotionPublishResult>,
+  revisions: Array<PageRevision>,
+  step: WorkflowStepExecutor,
+  dependencies: PublishWorkflowDependencies,
+) => {
+  // step の再試行は先頭からやり直すため、chunk に分けて書き戻し済みのぶんを捨てない
+  for (let index = 0; index < results.length; index += NOTION_WRITEBACK_CHUNK_SIZE) {
+    const chunk = results.slice(index, index + NOTION_WRITEBACK_CHUNK_SIZE)
+    await step.do(
+      `write-generate-notion-result-${index / NOTION_WRITEBACK_CHUNK_SIZE}`,
+      PUBLISH_WORKFLOW_STEP_CONFIGS.writeGenerateNotionResult,
+      async () => {
+        await dependencies.writeNotionResultsIfUnchanged(
+          chunk,
+          revisions,
+          NOTION_WRITEBACK_DELAY_MS,
+        )
+      },
+    )
+  }
+}
+
 const loadFailureDeploymentPages = async (
   failures: Array<PublishFailure>,
   step: WorkflowStepExecutor,
@@ -208,6 +322,7 @@ const validateJobSummary = (
   const resultPageIds = [
     ...summary.pages.map((page) => page.pageId),
     ...summary.failed.map((page) => page.pageId),
+    ...summary.skipped,
   ]
   if (
     resultPageIds.length !== expectedPageIds.size ||
@@ -222,6 +337,7 @@ const createResult = (
   workflowId: string,
   summary: PublishJobSummary | null,
   failures: Array<PublishFailure>,
+  loaded: LoadedPublishRequest,
 ): PublishWorkflowResult => {
   return {
     workflowId,
@@ -231,6 +347,8 @@ const createResult = (
     unpublishedPageIds:
       summary?.pages.filter((page) => page.action === "unpublish").map((page) => page.pageId) ?? [],
     failed: failures.map(({ pageId, code }) => ({ pageId, code })),
+    skippedPageIds: [...loaded.skippedPageIds, ...(summary?.skipped ?? [])],
+    stalePageIds: summary?.stale ?? [],
   }
 }
 
@@ -341,9 +459,32 @@ export const runPublishWorkflow = async ({
           )
         },
       )
+    } else if (params.mode === "bootstrap") {
+      const deploymentPages = await loadFailureDeploymentPages(
+        preflightFailures,
+        step,
+        dependencies,
+      )
+      await writeBootstrapNotionResults(
+        toBootstrapFailedNotionResults(
+          preflightFailures,
+          workflowId,
+          loaded.revisions,
+          deploymentPages,
+        ),
+        step,
+        dependencies,
+      )
+    } else if (params.mode === "full") {
+      await writeGenerateNotionResults(
+        toGenerateNotionResults(preflightFailures, null, loaded.revisions, workflowId),
+        loaded.revisions,
+        step,
+        dependencies,
+      )
     }
 
-    return createResult(workflowId, null, preflightFailures)
+    return createResult(workflowId, null, preflightFailures, loaded)
   }
 
   let summary: PublishJobSummary
@@ -425,19 +566,23 @@ export const runPublishWorkflow = async ({
       },
     )
   } else if (params.mode === "bootstrap") {
-    const successResults = toSuccessfulNotionResults(summary)
-    // step の再試行は先頭からやり直すため、chunk に分けて書き戻し済みのぶんを捨てない
-    for (let index = 0; index < successResults.length; index += BOOTSTRAP_WRITEBACK_CHUNK_SIZE) {
-      const chunk = successResults.slice(index, index + BOOTSTRAP_WRITEBACK_CHUNK_SIZE)
-      await step.do(
-        `write-bootstrap-notion-result-${index / BOOTSTRAP_WRITEBACK_CHUNK_SIZE}`,
-        PUBLISH_WORKFLOW_STEP_CONFIGS.writeBootstrapNotionResult,
-        async () => {
-          await dependencies.writeNotionResults(chunk, 350)
-        },
-      )
-    }
+    const deploymentPages = await loadFailureDeploymentPages(failures, step, dependencies)
+    await writeBootstrapNotionResults(
+      [
+        ...toSuccessfulNotionResults(summary),
+        ...toBootstrapFailedNotionResults(failures, workflowId, loaded.revisions, deploymentPages),
+      ],
+      step,
+      dependencies,
+    )
+  } else {
+    await writeGenerateNotionResults(
+      toGenerateNotionResults(failures, summary, loaded.revisions, workflowId),
+      loaded.revisions,
+      step,
+      dependencies,
+    )
   }
 
-  return createResult(workflowId, summary, failures)
+  return createResult(workflowId, summary, failures, loaded)
 }

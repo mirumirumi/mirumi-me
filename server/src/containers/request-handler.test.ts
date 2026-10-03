@@ -44,6 +44,8 @@ describe("createRequestHandler", () => {
       buildHash: "build-hash",
       pages: [],
       failed: [],
+      skipped: [],
+      stale: [],
       updatedPaths: ["/*"],
     }
   }
@@ -70,11 +72,13 @@ describe("createRequestHandler", () => {
             slug: "article-slug",
             internalState: "公開待ち",
             lastEditedTime: "2026-09-25T00:00:00.000Z",
+            lastEditedBy: "00000000-0000-0000-0000-0000000000aa",
             lastDeploy: null,
             lastNotionEdit: "2026-09-25T00:00:00.000Z",
             publishedAt: null,
             updatedAt: null,
             category: { name: "技術", slug: "tech" },
+            publishError: "",
           },
           action: "publish",
           route: "/article-slug/",

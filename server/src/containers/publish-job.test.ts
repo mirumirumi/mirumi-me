@@ -12,10 +12,12 @@ import type {
 import { createEmptyDeploymentState } from "../lib/publishing"
 import {
   createArticleSourceHash,
+  createFetchedArticleHash,
   createPublishedPageSnapshot,
   createUnpublishedPageSnapshot,
   preparePages,
   resolveUpdatedAt,
+  selectSnapshotRebuildPages,
   validateBootstrapIndex,
 } from "./publish-job"
 
@@ -28,11 +30,13 @@ describe("publish job snapshots", () => {
       slug: "article",
       internalState: "公開待ち",
       lastEditedTime: "2026-08-24T00:00:00.000Z",
+      lastEditedBy: "00000000-0000-0000-0000-0000000000aa",
       lastDeploy: null,
       lastNotionEdit: null,
       publishedAt: null,
       updatedAt: null,
       category: { name: "技術", slug: "tech" },
+      publishError: "",
     },
     action: "publish",
     route: "/article/",
@@ -199,6 +203,57 @@ describe("publish job snapshots", () => {
     })
   })
 
+  describe("createFetchedArticleHash", () => {
+    const article: ArticleContent = {
+      id: "00000000-0000-0000-0000-000000000001",
+      title: "記事",
+      slug: "article",
+      thumbnailUrl:
+        "https://prod-files-secure.s3.us-west-2.amazonaws.com/ws/file/cover.png?X-Amz-Signature=aaa",
+      thumbnailName: "cover.png",
+      publishedAt: "2026-08-24T01:00:00.000Z",
+      updatedAt: null,
+      category: { name: "技術", slug: "tech" },
+      customCss: "",
+      toc: { hidden: false, closed: false },
+      blocks: [
+        {
+          id: "00000000-0000-0000-0000-000000000010",
+          type: "image",
+          url: "https://prod-files-secure.s3.us-west-2.amazonaws.com/ws/file/body.png?X-Amz-Signature=aaa",
+          caption: [],
+          children: [],
+        },
+      ],
+    }
+
+    test("取り直して署名だけが変わっても同じになる", () => {
+      const resigned: ArticleContent = {
+        ...article,
+        thumbnailUrl:
+          "https://prod-files-secure.s3.us-west-2.amazonaws.com/ws/file/cover.png?X-Amz-Signature=bbb",
+        blocks: [
+          {
+            ...article.blocks[0]!,
+            url: "https://prod-files-secure.s3.us-west-2.amazonaws.com/ws/file/body.png?X-Amz-Signature=bbb",
+          } as ArticleContent["blocks"][number],
+        ],
+      }
+      expect(createFetchedArticleHash(resigned)).toEqual(createFetchedArticleHash(article))
+    })
+
+    test("本文だけでなく、公開日や更新日を直しても変わる", () => {
+      const base = createFetchedArticleHash(article)
+      expect(createFetchedArticleHash({ ...article, blocks: [] })).not.toEqual(base)
+      expect(
+        createFetchedArticleHash({ ...article, publishedAt: "2026-08-25T01:00:00.000Z" }),
+      ).not.toEqual(base)
+      expect(
+        createFetchedArticleHash({ ...article, updatedAt: "2026-08-25T01:00:00.000Z" }),
+      ).not.toEqual(base)
+    })
+  })
+
   describe("resolveUpdatedAt", () => {
     const requestedAt = "2026-09-19T10:00:00.000Z"
     const publishedAt = "2026-08-24T01:00:00.000Z"
@@ -317,6 +372,52 @@ describe("publish job snapshots", () => {
       const result = preparePages(makeRequest(["article", "other-article"]), emptyState())
       expect(result.pages).toHaveLength(2)
       expect(result.failed).toEqual([])
+    })
+  })
+
+  describe("selectSnapshotRebuildPages", () => {
+    const deployed = (pageId: string, overrides: Partial<DeployedPage> = {}): DeployedPage => {
+      return {
+        ...createPublishedPageSnapshot(prepared, page, "2026-08-24T02:00:00.000Z", "hash", "src"),
+        pageId,
+        ...overrides,
+      }
+    }
+    const stateOf = (pages: Array<DeployedPage>): SiteDeploymentState => {
+      return {
+        ...createEmptyDeploymentState("2026-08-24T02:00:00.000Z"),
+        pages: Object.fromEntries(pages.map((item) => [item.pageId, item])),
+      }
+    }
+
+    test("Notion から作り直さなかった公開中の page を、最後に公開した版で作り直す", () => {
+      const fresh = deployed("00000000-0000-0000-0000-000000000001")
+      const kept = deployed("00000000-0000-0000-0000-000000000002", {
+        slug: "kept",
+        route: "/kept/",
+      })
+      const unpublished = deployed("00000000-0000-0000-0000-000000000003", {
+        slug: "gone",
+        route: "/gone/",
+        status: "unpublished",
+      })
+
+      expect(
+        selectSnapshotRebuildPages(stateOf([fresh, kept, unpublished]), new Set([fresh.pageId])),
+      ).toEqual({ pages: [kept], stale: [] })
+    })
+
+    test("今のアプリが同じ route を持たない page は作り直さずに残す", () => {
+      const renamed = deployed("00000000-0000-0000-0000-000000000002", {
+        kind: "page",
+        slug: "nice-to-meet-you-10",
+        route: "/nice-to-meet-you-10/",
+      })
+
+      expect(selectSnapshotRebuildPages(stateOf([renamed]), new Set())).toEqual({
+        pages: [],
+        stale: [renamed.pageId],
+      })
     })
   })
 })

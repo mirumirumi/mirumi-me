@@ -64,6 +64,7 @@ dev / prd のリソースと、共通にしているものの理由をまとめ�
 | `AMAZON_ASSOCIATE_TAG` | `milmemo-22` | 同じ | 共通 | 同上 |
 | `AMAZON_CARD_SIGNING_SECRET` | 分離 | 分離 | 分離 | 署名 token が環境をまたがないようにする |
 | xAI API key | 共通 | 共通 | 共通 | アカウントに 1 つ。dev の呼び出しも課金対象 |
+| Slack の通知先（`SLACK_WEBHOOK_URL`） | 共通 | 共通 | 共通 | Incoming Webhook 1 本。通知の本文に環境名を入れて区別する |
 | Turnstile | site key ハードコード | prd と同じ | 共通 | ウィジェットのホスト名に `mirumi.me`、dev の CloudFront domain、`localhost` を登録済み |
 | GA4 | `G-Y7HSDMHBW5` | 読み込まない | 実質分離 | `APP_ENV=prd` の build でだけ計測タグを差し込む |
 | AdSense | `ca-pub-2873410957106428` | `ca-google`（テスト ID） | 実質分離 | 枠は prd と同じだけ出してレイアウトを揃え、本番アカウントへは記録させない |
@@ -76,3 +77,4 @@ dev / prd のリソースと、共通にしているものの理由をまとめ�
 | GitHub Actions deploy | `main` push | `dev` push | 分離 | `ENV_NAME` が ref 名から切り替わる。`workflow_dispatch` は ref が `main` なら prd、それ以外は dev |
 | `CLOUDFLARE_API_TOKEN` | 共通 | 共通 | 共通 | deploy 権限のみのトークン 1 本 |
 | ローカル `app/.env` | 使わない | dev を参照 | dev のみ | Notion token と Access service token |
+| site-admin-extension の `.env.local` | 🚧 prd の posts / pages を読む | dev の posts / pages を読む | 分離 | Cloudflare の API token（ユーザートークン、Account Analytics: Read）と、読み取りだけの Notion integration の token。integration は 2026-10-02 時点で dev にだけ接続 |

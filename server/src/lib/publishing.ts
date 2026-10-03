@@ -174,6 +174,11 @@ export interface PublishJobSummary {
   buildHash: string
   pages: Array<PublishJobPageResult>
   failed: Array<PublishFailure>
+  // generate の途中で Notion 側が触られたので、Notion の本文では作り直さなかった page。
+  // 最後に公開した版（snapshot）から作り直すので、未公開の編集は出ない
+  skipped: Array<string>
+  // generate で、最後に公開した版からも作り直せず、前のアプリの HTML のまま残した page
+  stale: Array<string>
   updatedPaths: Array<string>
 }
 
@@ -196,6 +201,10 @@ export interface PublishWorkflowResult {
   publishedPageIds: Array<string>
   unpublishedPageIds: Array<string>
   failed: Array<PublishWorkflowFailure>
+  // generate が未公開の変更を見つけて、Notion の本文では作り直さなかった page（最後に公開した版で作り直す）
+  skippedPageIds: Array<string>
+  // generate で、最後に公開した版からも作り直せず、前のアプリの HTML のまま残した page
+  stalePageIds: Array<string>
 }
 
 const isValidDate = (value: string): boolean => {
@@ -229,6 +238,50 @@ export const resolvePublishAction = (
   }
 
   return "noop"
+}
+
+// 公開エラー をどこで書いたかを文面の先頭で残す。generate は自分で書いたものだけを、作り直せたときに消す
+export const GENERATE_PUBLISH_ERROR_PREFIX = "generate で失敗しました"
+export const BOOTSTRAP_PUBLISH_ERROR_PREFIX = "bootstrap で失敗しました"
+
+export const isGeneratePublishError = (error: string): boolean => {
+  return error.startsWith(GENERATE_PUBLISH_ERROR_PREFIX)
+}
+
+// generate が Notion の今の本文で作り直してよいのは、最後に公開した本文から誰も触っていない記事だけ。
+// 公開ボタンが失敗した記事は、書き戻しで最後の書き手が integration になるが、公開できなかった編集が本文に残っている
+const hasUnpublishedChanges = (revision: PageRevision, publisherUserId: string): boolean => {
+  if (revision.lastEditedBy !== publisherUserId) {
+    return true
+  }
+
+  return revision.publishError !== "" && !isGeneratePublishError(revision.publishError)
+}
+
+export const selectGenerateRevisions = (
+  revisions: Array<PageRevision>,
+  publisherUserId: string,
+): { revisions: Array<PageRevision>; skippedPageIds: Array<string> } => {
+  const selected: Array<PageRevision> = []
+  const skippedPageIds: Array<string> = []
+  for (const revision of revisions) {
+    if (revision.internalState === "公開中" && hasUnpublishedChanges(revision, publisherUserId)) {
+      skippedPageIds.push(revision.pageId)
+    } else {
+      selected.push(revision)
+    }
+  }
+
+  return { revisions: selected, skippedPageIds }
+}
+
+export const isPageRevisionUnchanged = (expected: PageRevision, current: PageRevision): boolean => {
+  return (
+    expected.lastEditedTime === current.lastEditedTime &&
+    expected.lastEditedBy === current.lastEditedBy &&
+    expected.internalState === current.internalState &&
+    expected.publishError === current.publishError
+  )
 }
 
 export const createEmptyDeploymentState = (updatedAt: string): SiteDeploymentState => {

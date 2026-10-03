@@ -45,11 +45,13 @@ describe("createSiteBuildPlan", () => {
       slug: "new-post",
       internalState: "公開待ち",
       lastEditedTime: "2026-08-24T00:00:00.000Z",
+      lastEditedBy: "00000000-0000-0000-0000-0000000000aa",
       lastDeploy: null,
       lastNotionEdit: null,
       publishedAt: null,
       updatedAt: null,
       category: { name: "技術", slug: "tech" },
+      publishError: "",
     },
     action: "publish",
     route: "/new-post/",
@@ -65,6 +67,7 @@ describe("createSiteBuildPlan", () => {
         generatedAt: "2026-08-24T01:00:00.000Z",
         summaries,
         changedPages: [changedPost],
+        snapshotPages: [],
       }),
     ).toEqual({
       schemaVersion: 1,
@@ -89,6 +92,23 @@ describe("createSiteBuildPlan", () => {
     })
   })
 
+  test("generate は最後に公開した版で作り直す page の route も入れる", () => {
+    const plan = createSiteBuildPlan({
+      workflowId: "workflow-id",
+      mode: "full",
+      generatedAt: "2026-08-24T01:00:00.000Z",
+      summaries,
+      changedPages: [changedPost],
+      snapshotPages: [{ pageId: "00000000-0000-0000-0001-000000000000", route: "/old-post-0/" }],
+    })
+
+    expect(plan.routes.slice(0, 2)).toEqual(["/new-post/", "/old-post-0/"])
+    expect(plan.pageIdsByRoute).toEqual({
+      "/new-post/": "00000000-0000-0000-0000-000000000001",
+      "/old-post-0/": "00000000-0000-0000-0001-000000000000",
+    })
+  })
+
   test("記事の非公開では対象 route を生成対象に戻さない", () => {
     const plan = createSiteBuildPlan({
       workflowId: "workflow-id",
@@ -96,6 +116,7 @@ describe("createSiteBuildPlan", () => {
       generatedAt: "2026-08-24T01:00:00.000Z",
       summaries: summaries.slice(1),
       changedPages: [{ ...changedPost, action: "unpublish" }],
+      snapshotPages: [],
     })
 
     expect(plan.routes).not.toContain("/new-post/")
@@ -123,6 +144,7 @@ describe("createSiteBuildPlan", () => {
         generatedAt: "2026-08-24T01:00:00.000Z",
         summaries,
         changedPages: [changedPage],
+        snapshotPages: [],
       }).routes,
     ).toEqual(["/profile/"])
     expect(findUnpublishedContentRoutes([{ ...changedPage, action: "unpublish" }])).toEqual([
@@ -150,6 +172,7 @@ describe("createSiteBuildPlan", () => {
           route: "/profile/",
         },
       ],
+      snapshotPages: [],
     })
 
     expect(plan.routes).toContain("/new-post/")
