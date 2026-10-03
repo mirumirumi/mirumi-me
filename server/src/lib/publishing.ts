@@ -422,12 +422,9 @@ export const preparePageRevision = (
       issues.push(issue(revision, "route-collision", "route は別の page が所有しています"))
     }
   }
-  const isUnpublishRetry =
-    deployed?.status === "unpublished" && deployed.deployedNotionEdit === revision.lastEditedTime
-  if (
-    action === "unpublish" &&
-    (!deployed || (deployed.status !== "published" && !isUnpublishRetry))
-  ) {
+  // すでに非公開の page をもう一度非公開にするのは失敗にしない（応答が失われたあとのやり直しも、
+  // 非公開の記事でうっかりボタンを押したときも同じ）。一度も公開していない page だけを断る
+  if (action === "unpublish" && !deployed) {
     issues.push(issue(revision, "not-published", "未公開の page は非公開にできません"))
   }
 

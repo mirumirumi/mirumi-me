@@ -260,6 +260,16 @@ export const handleNotionWebhook = async (
       pages: pagesDataSourceId,
     })
     if (revision.internalState !== "公開待ち" && revision.internalState !== "非公開待ち") {
+      // 公開ボタンを押したのに Workflow が始まらないとき、どこで捨てたかを追えるようにする
+      console.info(
+        JSON.stringify({
+          event: "notion_webhook_state_not_pending",
+          eventId: webhook.event.id,
+          pageId,
+          internalState: revision.internalState,
+        }),
+      )
+
       return c.json({ status: "ignored" })
     }
 
@@ -268,6 +278,11 @@ export const handleNotionWebhook = async (
       pageId,
       requestedAt: webhook.event.timestamp,
     })
+    if (!started.created) {
+      console.info(
+        JSON.stringify({ event: "notion_webhook_duplicate", eventId: webhook.event.id, pageId }),
+      )
+    }
 
     return c.json({
       status: started.created ? "accepted" : "duplicate",

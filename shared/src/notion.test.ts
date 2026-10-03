@@ -8,6 +8,7 @@ import {
   fetchNotionBlockTree,
   fetchNotionPageIndex,
   fetchNotionPageRevision,
+  fetchStuckPublishRevisions,
   forEachNotionDataSourcePage,
   isNotionPublishResultApplied,
   parseNotionPageIndex,
@@ -253,6 +254,66 @@ describe("fetchNotionPageIndex", () => {
   })
 })
 
+describe("fetchStuckPublishRevisions", () => {
+  test("公開待ち / 非公開待ち のまま、指定した時刻より前から触られていない page を探す", async () => {
+    const page = {
+      object: "page",
+      id: "page-id",
+      url: "https://notion.so/page-id",
+      in_trash: false,
+      parent: { type: "data_source_id", data_source_id: "posts-source" },
+      last_edited_time: "2026-10-03T06:00:00.000Z",
+      last_edited_by: { object: "user", id: "user-id" },
+      properties: {
+        "internal-state": { type: "select", select: { name: "公開待ち" } },
+      },
+    }
+    const query = vi.fn(async (parameters: { data_source_id: string }) => {
+      return {
+        object: "list",
+        results: parameters.data_source_id === "posts-source" ? [page] : [],
+        next_cursor: null,
+        has_more: false,
+      }
+    })
+    const client = { dataSources: { query } } as unknown as Client
+
+    expect(
+      await fetchStuckPublishRevisions(
+        client,
+        { posts: "posts-source", pages: "pages-source" },
+        "2026-10-03T07:00:00.000Z",
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        pageId: "page-id",
+        kind: "post",
+        internalState: "公開待ち",
+        lastEditedTime: "2026-10-03T06:00:00.000Z",
+      }),
+    ])
+    expect(query).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data_source_id: "posts-source",
+        filter: {
+          and: [
+            {
+              or: [
+                { property: "internal-state", select: { equals: "公開待ち" } },
+                { property: "internal-state", select: { equals: "非公開待ち" } },
+              ],
+            },
+            {
+              timestamp: "last_edited_time",
+              last_edited_time: { before: "2026-10-03T07:00:00.000Z" },
+            },
+          ],
+        },
+      }),
+    )
+  })
+})
+
 describe("forEachNotionDataSourcePage", () => {
   test("ページングをたどりながら full page だけを順に渡す", async () => {
     const page = (id: string) => ({
@@ -420,7 +481,11 @@ describe("createNotionPublishUpdate", () => {
 })
 
 describe("writeNotionPublishResult", () => {
-  const makePage = (state: "下書き" | "公開中" | "非公開", error: string): PageObjectResponse => {
+  const makePage = (
+    state: "下書き" | "公開中" | "非公開",
+    error: string,
+    dates?: { lastDeploy: string; publishedAt: string },
+  ): PageObjectResponse => {
     return {
       object: "page",
       id: "page-id",
@@ -442,11 +507,11 @@ describe("writeNotionPublishResult", () => {
         },
         "last-deploy": {
           type: "date",
-          date: { start: "2026-08-24T02:00:00.000Z" },
+          date: { start: dates?.lastDeploy ?? "2026-08-24T02:00:00.000Z" },
         },
         公開日: {
           type: "date",
-          date: { start: "2026-08-24T01:00:00.000Z" },
+          date: { start: dates?.publishedAt ?? "2026-08-24T01:00:00.000Z" },
         },
         公開エラー: {
           type: "rich_text",
@@ -488,6 +553,25 @@ describe("writeNotionPublishResult", () => {
     expect(isNotionPublishResultApplied(page, result)).toEqual(true)
     expect(await writeNotionPublishResult(client, result)).toEqual(page)
     expect(retrieve).toHaveBeenCalledWith({ page_id: "page-id" })
+  })
+
+  test("Notion が日時を分に切り捨てて別の形式で返しても、同じ分なら書けているとみなす", () => {
+    const page = makePage("公開中", "", {
+      lastDeploy: "2026-08-24T02:00:00.000+00:00",
+      publishedAt: "2026-08-24T01:00:00.000+00:00",
+    })
+    const result = {
+      status: "published",
+      pageId: "page-id",
+      deployedAt: "2026-08-24T02:00:42.123Z",
+      publishedAt: "2026-08-24T10:00:59.000+09:00",
+      updatedAt: null,
+    } as const
+
+    expect(isNotionPublishResultApplied(page, result)).toEqual(true)
+    expect(
+      isNotionPublishResultApplied(page, { ...result, deployedAt: "2026-08-24T02:01:00.000Z" }),
+    ).toEqual(false)
   })
 
   test("再取得値が期待値と違うときは元の更新エラーを保つ", async () => {

@@ -612,6 +612,44 @@ export const fetchNotionPageRevisions = async (
   return (await fetchNotionPageIndex(client, dataSources)).map(({ revision }) => revision)
 }
 
+// 公開ボタンを押したのに処理が始まらず（Webhook の取りこぼしなど）、公開待ち / 非公開待ち のまま止まっている page
+export const fetchStuckPublishRevisions = async (
+  client: Client,
+  dataSources: NotionDataSourceIds,
+  before: string,
+): Promise<Array<PageRevision>> => {
+  const revisions: Array<PageRevision> = []
+  for (const [kind, dataSourceId] of [
+    ["post", dataSources.posts],
+    ["page", dataSources.pages],
+  ] as const) {
+    const responses = await collectPaginatedAPI(client.dataSources.query, {
+      data_source_id: dataSourceId,
+      page_size: 100,
+      result_type: "page",
+      filter: {
+        and: [
+          {
+            or: [
+              { property: "internal-state", select: { equals: "公開待ち" } },
+              { property: "internal-state", select: { equals: "非公開待ち" } },
+            ],
+          },
+          { timestamp: "last_edited_time", last_edited_time: { before } },
+        ],
+      },
+    })
+    for (const response of responses) {
+      if (!isFullPage(response) || response.in_trash) {
+        continue
+      }
+      revisions.push((await normalizePageIndexItem(client, response, kind)).revision)
+    }
+  }
+
+  return revisions
+}
+
 // data source の row を API 応答のまま 1 件ずつ visit に渡す。全件を配列に溜めないので、
 // 数千 row の comments を Worker のメモリに載せずに流せる。partial object は properties を持たないため飛ばす
 export const forEachNotionDataSourcePage = async (
@@ -708,6 +746,16 @@ export const createNotionPublishUpdate = (result: NotionPublishResult): UpdatePa
   return { page_id: result.pageId, properties }
 }
 
+// Notion の date property は秒を切り捨て、書いたのとは別の形式（+00:00 など）で返すので、文字列ではなく分の単位で比べる
+const isSameNotionMinute = (stored: string | null, expected: string): boolean => {
+  if (!stored) {
+    return false
+  }
+  const toMinute = (value: string) => Math.floor(Date.parse(value) / 60_000)
+
+  return toMinute(stored) === toMinute(expected)
+}
+
 export const isNotionPublishResultApplied = (
   page: PageObjectResponse,
   result: NotionPublishResult,
@@ -718,9 +766,10 @@ export const isNotionPublishResultApplied = (
   if (result.status === "published") {
     return (
       state === "公開中" &&
-      getDateProperty(properties["last-deploy"]) === result.deployedAt &&
-      getDateProperty(properties.公開日) === result.publishedAt &&
-      (!result.updatedAt || getDateProperty(properties.更新日) === result.updatedAt) &&
+      isSameNotionMinute(getDateProperty(properties["last-deploy"]), result.deployedAt) &&
+      isSameNotionMinute(getDateProperty(properties.公開日), result.publishedAt) &&
+      (!result.updatedAt ||
+        isSameNotionMinute(getDateProperty(properties.更新日), result.updatedAt)) &&
       error === ""
     )
   }
@@ -733,8 +782,10 @@ export const isNotionPublishResultApplied = (
 
   return (
     (!result.internalState || state === result.internalState) &&
-    (!result.deployedAt || getDateProperty(properties["last-deploy"]) === result.deployedAt) &&
-    (!result.publishedAt || getDateProperty(properties.公開日) === result.publishedAt) &&
+    (!result.deployedAt ||
+      isSameNotionMinute(getDateProperty(properties["last-deploy"]), result.deployedAt)) &&
+    (!result.publishedAt ||
+      isSameNotionMinute(getDateProperty(properties.公開日), result.publishedAt)) &&
     error === result.error.slice(0, 2_000)
   )
 }

@@ -19,6 +19,7 @@ import type {
 } from "../lib/comment-refresh"
 import { type LoadedComment, runCommentRefreshWorkflow } from "../services/comment-refresh-workflow"
 import type { WorkflowStepExecutor } from "../services/publish-workflow"
+import { notifyWorkflowError } from "./notify"
 
 const commentRefreshWorkflowParamsSchema = z
   .object({
@@ -129,18 +130,24 @@ export class CommentRefreshWorkflow extends WorkflowEntrypoint<
       throw new NonRetryableError("Workflow の入力が不正です")
     }
 
-    return runCommentRefreshWorkflow({
-      workflowId: event.instanceId,
-      params: parsed.data,
-      step: createStepExecutor(step),
-      dependencies: {
-        loadComment: async (commentPageId) => loadComment(commentPageId, this.env),
-        refreshComments: async (request) => refreshComments(request, this.env),
-        invalidateSite: async (summary) => invalidateSite(summary, this.env),
-        writeRefreshError: async (commentPageId, error) =>
-          writeRefreshError(commentPageId, error, this.env),
-        writeSlug: async (commentPageId, slug) => writeSlug(commentPageId, slug, this.env),
-      },
-    })
+    try {
+      return await runCommentRefreshWorkflow({
+        workflowId: event.instanceId,
+        params: parsed.data,
+        step: createStepExecutor(step),
+        dependencies: {
+          loadComment: async (commentPageId) => loadComment(commentPageId, this.env),
+          refreshComments: async (request) => refreshComments(request, this.env),
+          invalidateSite: async (summary) => invalidateSite(summary, this.env),
+          writeRefreshError: async (commentPageId, error) =>
+            writeRefreshError(commentPageId, error, this.env),
+          writeSlug: async (commentPageId, slug) => writeSlug(commentPageId, slug, this.env),
+        },
+      })
+    } catch (err) {
+      // 失敗は comment row の 公開エラー にも残るが、comments を開かないと気づけない
+      await notifyWorkflowError(step, this.env, "コメントの反映", event.instanceId, err)
+      throw err
+    }
   }
 }

@@ -29,11 +29,17 @@ import type {
 } from "../lib/publishing"
 import { isPageRevisionUnchanged, selectGenerateRevisions } from "../lib/publishing"
 import {
+  createPublishFailureMessage,
+  createSiteLabel,
+  publishModeLabel,
+} from "../services/notifications"
+import {
   type LoadedPublishRequest,
   type PublishedPageCheck,
   type PublishWorkflowStepExecutor,
   runPublishWorkflow,
 } from "../services/publish-workflow"
+import { notifySlack, notifyWorkflowError } from "./notify"
 
 const publishWorkflowParamsSchema = z
   .object({
@@ -327,8 +333,27 @@ export class PublishWorkflow extends WorkflowEntrypoint<CloudflareBindings, Publ
 
     const params = parsed.data
 
+    try {
+      return await this.#run(event.instanceId, params, step)
+    } catch (err) {
+      await notifyWorkflowError(
+        step,
+        this.env,
+        publishModeLabel(params.mode),
+        event.instanceId,
+        err,
+      )
+      throw err
+    }
+  }
+
+  async #run(
+    workflowId: string,
+    params: PublishWorkflowParams,
+    step: WorkflowStep,
+  ): Promise<PublishWorkflowResult> {
     return runPublishWorkflow({
-      workflowId: event.instanceId,
+      workflowId,
       params,
       step: createStepExecutor(step),
       dependencies: {
@@ -343,6 +368,11 @@ export class PublishWorkflow extends WorkflowEntrypoint<CloudflareBindings, Publ
         writeNotionResultsIfUnchanged: async (results, expectedRevisions, delayMs) =>
           writeNotionResultsIfUnchanged(results, expectedRevisions, this.env, delayMs),
         findPagesChangedAfterBuild: async (checks) => findPagesChangedAfterBuild(checks, this.env),
+        notifyFailures: async (notice) =>
+          notifySlack(
+            this.env,
+            createPublishFailureMessage(notice, createSiteLabel(this.env.APP_ENV)),
+          ),
       },
     })
   }

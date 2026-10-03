@@ -187,7 +187,10 @@ generate のあいだ、Container は「HTTP を開いたまま待っていな�
 - generate / bootstrap は、1 記事が失敗しても全体を止めない。1 記事のブログカードのために、コードの release や数時間かかる bootstrap をまるごとやり直すのは割に合わないため
 - そのかわり、失敗した記事はどの mode でも Notion の `公開エラー` に出す。以前は partial しか書いておらず、generate / bootstrap の失敗は Workflow の出力に `completed-with-errors` が残るだけだった。CI も Workflow の `complete` しか見ないので、誰も気づけなかった
     - 成功した記事に書かないのは、全件 writeback を避ける従来の方針のまま。例外は下の「generate が書いた 公開エラー を消す」だけ
-- CI を赤くするのは generate そのものが失敗したときだけにする。記事ごとの失敗で赤くすると、generate は最後まで終わっているのに CI だけ失敗に見えてわかりにくい、という圭くんの意見。気づくための手段は、CI ではなく Slack への通知にする（未実装）
+- CI を赤くするのは generate そのものが失敗したときだけにする。記事ごとの失敗で赤くすると、generate は最後まで終わっているのに CI だけ失敗に見えてわかりにくい、という圭くんの意見。気づくための手段は、CI ではなく Slack への通知にする（2026-10-03 に実装。`services/notifications.ts` が文面を組み立て、`services/slack.ts` が送る）
+    - 失敗した記事は Workflow の最後の `notify-failures` step でまとめて送る。Workflow が例外で止まったときは、入口（`workflows/workflow.ts`、`workflows/comment-refresh-workflow.ts`）で受けて `notify-error` step で送ってから投げ直す（`workflows/notify.ts`）
+    - 通知の失敗では公開の結果を失敗にしない。Slack の不調で、配信まで済んだ公開が Errored に見えるのを避けるため
+    - 止まった 🔵 / 🟠 の確認は、09:00 JST の Cron でコメントの digest と並べて流す（`scheduled.ts`）。片方が落ちてももう片方は流す
     - Slack は、WordPress 時代の 1 記事だけ generate する CI（`generate-only-specified-post.yaml`）で通知に使っていたもの。メール（コメントの digest と同じ SES）も候補だったが、圭くんが Slack を選んだ
 
 ### 公開エラー はどこで書いたかを文面に残す
@@ -261,7 +264,8 @@ generate のあいだ、Container は「HTTP を開いたまま待っていな�
     - 直されていたら、配信の状態（`internal-state = 公開中`、`last-deploy`、`公開日`）は書きつつ、公開エラー に「公開の途中で本文が直されたので、直す前の本文で公開しました。もう一度「公開」を押してください」と書いて 🔴 にする。公開ボタンの 公開エラー なので、generate は Notion の本文から作り直さない
     - 書き込みとは別の step にしてある。同じ step だと、書き込んだあとに step が retry されたとき、自分の書き込みを編集とみなして 🟢 を 🔴 で上書きしてしまう
     - 確かめ終わってから書き込むまでの、step のあいだの一瞬の窓は残る（許容）
-    - 2026-10-03 の UAT で、圭くんが公開ボタンを押した直後に直した `agentic-coding` は 🟢 になった。ほかの記事の公開が Container で走っていて、本文を取り始めたのが直しのあとだったため、直した内容ごと公開されたとみられる（dev サイトでの確認はまだ）
+    - 2026-10-03 の UAT で、圭くんが公開ボタンを押した直後に直した `agentic-coding` は 🟢 になり、直した内容（段落の追加）が dev サイトに出ていた。ほかの記事の公開が Container で走っていて、本文を取り始めたのが直しのあとだったため（正しい 🟢）
+    - 同じ日に、分の頭で押して 20〜30 秒後に同じ分のうちに直す手順を `my-home` で試したが、これも直した内容ごと公開されて 🟢 になった。Notion の Webhook が届いたのは、変更（`event.timestamp` 20:15:03 JST）の約 1 分後（Workflow の作成 20:16:06）で、本文を取ったのはそのあと。Webhook がこのくらい遅れるなら、「押した同じ分のうちに、本文を取ったあとで直す」はまず起きない。この 2 つの確認は、その万一のための保険で、🔴 になる経路はユニットテストで見ている
     - 1 記事なので取り直しは数秒。bootstrap は全記事の取り直しになるうえ、記事を触らない前提なので行わない
     - `sourceHash` ではなく別の hash にしたのは、`sourceHash` が 公開日 と 更新日 を含まないため。ボタンを押した直後に 公開日 を直した場合も止めたい
     - Notion ホストのファイル URL は取得のたびに署名が変わるので、比べるときは path だけを使う（`sourceHash` と同じ）

@@ -1,4 +1,4 @@
-import { createNotionClient } from "shared/notion"
+import { createNotionClient, fetchStuckPublishRevisions } from "shared/notion"
 import {
   createCommentNotifiedUpdate,
   createUnnotifiedPublicFormCommentsFilter,
@@ -8,10 +8,12 @@ import {
 
 import { startScheduledBackup } from "./services/backup"
 import { runCommentDigest } from "./services/comment-digest"
+import { createSiteLabel, runStuckPublishCheck } from "./services/notifications"
 import { createSesEmailSender } from "./services/ses"
+import { createSlackNotifier } from "./services/slack"
 
 // wrangler.jsonc の triggers.crons と対応させる（UTC で書く）
-// 09:00 JST。コメント digest
+// 09:00 JST。コメント digest と、止まった公開の確認
 export const COMMENT_DIGEST_CRON = "0 0 * * *"
 // 04:00 JST。Notion の定期バックアップ（頻度は仮決定）
 export const NOTION_BACKUP_CRON = "0 19 * * *"
@@ -58,10 +60,46 @@ export const runScheduledCommentDigest = async (env: CloudflareBindings): Promis
     {
       from: sender,
       to: recipient,
-      siteName: env.APP_ENV === "prd" ? "mirumi.me" : `mirumi.me (${env.APP_ENV ?? "dev"})`,
+      siteName: createSiteLabel(env.APP_ENV),
     },
   )
   console.info(JSON.stringify({ event: "comment_digest_finished", ...result }))
+}
+
+// 公開ボタンを押したのに 2 時間以上 公開待ち / 非公開待ち のままの記事を Slack に知らせる。
+// Webhook の取りこぼしや、Notion への書き戻しの失敗で止まると、ほかに気づく手段がない
+export const runScheduledStuckPublishCheck = async (env: CloudflareBindings): Promise<void> => {
+  const {
+    NOTION_TOKEN: notionToken,
+    NOTION_POSTS_DATA_SOURCE_ID: posts,
+    NOTION_PAGES_DATA_SOURCE_ID: pages,
+    SLACK_WEBHOOK_URL: webhookUrl,
+  } = env
+  if (!notionToken || !posts || !pages || !webhookUrl) {
+    console.error(JSON.stringify({ event: "stuck_publish_check_configuration_missing" }))
+
+    return
+  }
+  const notion = createNotionClient(notionToken)
+  const result = await runStuckPublishCheck(
+    {
+      loadStuckPages: async (before) => {
+        const revisions = await fetchStuckPublishRevisions(notion, { posts, pages }, before)
+
+        return revisions.map(({ pageId, title, slug, internalState, lastEditedTime }) => ({
+          pageId,
+          title,
+          slug,
+          internalState,
+          lastEditedTime,
+        }))
+      },
+      notify: createSlackNotifier(webhookUrl),
+      now: () => new Date(),
+    },
+    createSiteLabel(env.APP_ENV),
+  )
+  console.info(JSON.stringify({ event: "stuck_publish_check_finished", ...result }))
 }
 
 // scheduled handler は wall time 15 分が上限で全記事の取得が収まらないため、Workflow を起動するだけにする
@@ -84,7 +122,17 @@ export const handleScheduled = async (
   env: CloudflareBindings,
 ): Promise<void> => {
   if (event.cron === COMMENT_DIGEST_CRON) {
-    await runScheduledCommentDigest(env)
+    // どちらかが落ちても、もう片方は流す
+    const results = await Promise.allSettled([
+      runScheduledCommentDigest(env),
+      runScheduledStuckPublishCheck(env),
+    ])
+    const failed = results.flatMap((result) =>
+      result.status === "rejected" ? [result.reason] : [],
+    )
+    if (0 < failed.length) {
+      throw failed[0]
+    }
 
     return
   }

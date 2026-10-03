@@ -17,6 +17,7 @@ import {
   isGeneratePublishError,
   validatePageRevisionMetadata,
 } from "../lib/publishing"
+import type { PublishFailureNotice } from "./notifications"
 
 type WorkflowDurationUnit = "second" | "minute" | "hour" | "day" | "week" | "month" | "year"
 type WorkflowDuration = `${number} ${WorkflowDurationUnit}` | `${number} ${WorkflowDurationUnit}s`
@@ -71,6 +72,10 @@ export const PUBLISH_WORKFLOW_STEP_CONFIGS = {
   confirmPublishedPages: {
     retries: { limit: 5, delay: "10 seconds", backoff: "exponential" },
     timeout: "2 minutes",
+  },
+  notifyFailures: {
+    retries: { limit: 2, delay: "10 seconds", backoff: "exponential" },
+    timeout: "1 minute",
   },
   writeNotionResult: {
     retries: { limit: 5, delay: "10 seconds", backoff: "exponential" },
@@ -130,6 +135,8 @@ export interface PublishWorkflowDependencies {
   ): Promise<void>
   // 公開ボタンの build のあと（Container の最後の確認より後）で本文が直された page を返す
   findPagesChangedAfterBuild(checks: Array<PublishedPageCheck>): Promise<Array<string>>
+  // 失敗した記事を Slack に知らせる。Notion の 公開エラー は公開ボタンを押した人しか見ないので、気づけるようにする
+  notifyFailures(notice: PublishFailureNotice): Promise<void>
 }
 
 interface RunPublishWorkflowOptions {
@@ -296,6 +303,55 @@ const writeGenerateNotionResults = async (
           NOTION_WRITEBACK_DELAY_MS,
         )
       },
+    )
+  }
+}
+
+const notifyPublishFailures = async (
+  failures: Array<PublishFailure>,
+  revisions: Array<PageRevision>,
+  workflowId: string,
+  params: PublishWorkflowParams,
+  step: WorkflowStepExecutor,
+  dependencies: PublishWorkflowDependencies,
+) => {
+  if (failures.length === 0) {
+    return
+  }
+  const messagesByPage = new Map<string, Array<string>>()
+  for (const failure of failures) {
+    messagesByPage.set(failure.pageId, [
+      ...(messagesByPage.get(failure.pageId) ?? []),
+      failure.message,
+    ])
+  }
+  const revisionByPage = new Map(revisions.map((revision) => [revision.pageId, revision]))
+  const notice: PublishFailureNotice = {
+    workflowId,
+    mode: params.mode,
+    failures: [...messagesByPage].map(([pageId, messages]) => {
+      const revision = revisionByPage.get(pageId)
+
+      return {
+        pageId,
+        title: revision?.title ?? "",
+        slug: revision?.slug ?? "",
+        message: messages.join(" / "),
+      }
+    }),
+  }
+  try {
+    await step.do("notify-failures", PUBLISH_WORKFLOW_STEP_CONFIGS.notifyFailures, async () => {
+      await dependencies.notifyFailures(notice)
+    })
+  } catch (err) {
+    // 通知が届かないことを理由に、公開の結果まで失敗にしない
+    console.warn(
+      JSON.stringify({
+        event: "publish_failure_notification_failed",
+        workflowId,
+        error: err instanceof Error ? err.message : String(err),
+      }),
     )
   }
 }
@@ -528,6 +584,15 @@ export const runPublishWorkflow = async ({
       )
     }
 
+    await notifyPublishFailures(
+      preflightFailures,
+      loaded.revisions,
+      workflowId,
+      params,
+      step,
+      dependencies,
+    )
+
     return createResult(workflowId, null, preflightFailures, loaded)
   }
 
@@ -625,6 +690,14 @@ export const runPublishWorkflow = async ({
         ])
       },
     )
+    // 直す前の本文で公開した page も、押し直してもらうために知らせる
+    failures.push(
+      ...[...changedPageIds].map((pageId) => ({
+        pageId,
+        code: "publish-failed" as const,
+        message: "公開の途中で本文が直されたので、直す前の本文で公開しました",
+      })),
+    )
   } else if (params.mode === "bootstrap") {
     const deploymentPages = await loadFailureDeploymentPages(failures, step, dependencies)
     await writeBootstrapNotionResults(
@@ -643,6 +716,8 @@ export const runPublishWorkflow = async ({
       dependencies,
     )
   }
+
+  await notifyPublishFailures(failures, loaded.revisions, workflowId, params, step, dependencies)
 
   return createResult(workflowId, summary, failures, loaded)
 }

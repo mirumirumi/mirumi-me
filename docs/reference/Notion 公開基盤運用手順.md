@@ -26,6 +26,7 @@ production bootstrap だけでは移行完了ではない。コメント、検�
 
 - `公開待ち` → Webhook → 公開成功後に `公開中`
 - `非公開待ち` → Webhook → 非公開成功後に `非公開`
+- すでに `非公開` の記事でもう一度 `非公開` を押しても、失敗にせず `非公開` のままにする（2026-10-03 から）。一度も公開していない記事だけは「未公開の page は非公開にできません」になる
 - Webhook は同じ event ID の重複配送を正常系として扱う
 - build 中に page が再編集された場合は S3 更新前に中止する。`last_edited_time` は分単位で、ボタンを押した同じ分のうちの編集は
   見分けられないので、本文も取り直して比べる（変わっていたら「build 中に Notion page が変更されました」で 🔴。押し直せば通る）
@@ -339,7 +340,11 @@ generate / bootstrap では、Container のジョブの末尾と、Workflow の 
     - bootstrap で失敗した記事は、publish index に載らないので一覧、sitemap、feed から外れ、S3 には旧 WordPress 版の HTML が残る。`internal-state` を `下書き` に戻し、`公開エラー` に「bootstrap で失敗しました: 〜」と書く。直して `公開` を押せば、Notion の `公開日` のまま公開される
     - 公開ボタン（partial）で書いた `公開エラー` は、generate では消さない（下の「generate が作り直す記事」）
     - generate が Notion に書くのは、読み込んだときから誰も触っていない記事だけ。途中で編集された記事は、その編集を 🟢 / 🔴 で上書きしないよう書かずに飛ばす（Worker のログに `notion_result_skipped`）
-    - 🚧 失敗した記事があったら Slack に通知する。generate / bootstrap そのものが失敗したときも通知する
+    - 失敗した記事があったら、Workflow の最後に Slack（`SLACK_WEBHOOK_URL`）へ通知する（公開ボタン、generate、bootstrap のどれでも）。記事の題名、slug、理由、Notion の URL を並べる。公開ボタンで、書き戻しの直前に本文が直されていた記事も含む
+    - Workflow そのものが例外で止まったときも、`notify-error` の step で Slack に通知する（公開の Workflow と、コメント反映の Workflow）
+    - 通知が届かなくても、公開の結果は失敗にしない（Worker のログに `publish_failure_notification_failed` / `workflow_error_notification_failed`）
+    - `公開待ち` / `非公開待ち` のまま 2 時間以上たった記事を、毎朝（09:00 JST の Cron。コメントの digest と同じ）Slack に通知する。Webhook の取りこぼしや Notion の障害で止まった公開に気づくため。Notion のボタンを押し直しても値が変わらず Webhook が飛ばないので、`POST /admin/publish` で流し直す
+    - 🚧 記事を非公開にしたとき、その記事を指す内部ブログカードを持つ記事を Slack に知らせる。prd ではそれらの記事が次の generate で公開エラーになるため
 - Container の標準出力はどこからも読めない。Nuxt generate が落ちた原因は例外へ載せて
   Workflow まで持ち上げている
 - job が終わったのに Container instance が `running` のままなら、`sleepAfter` は SIGTERM を

@@ -9,6 +9,7 @@ import type {
   PublishWorkflowParams,
 } from "../lib/publishing"
 import { BOOTSTRAP_PUBLISH_ERROR_PREFIX, GENERATE_PUBLISH_ERROR_PREFIX } from "../lib/publishing"
+import type { PublishFailureNotice } from "./notifications"
 import {
   type LoadedPublishRequest,
   NOTION_WRITEBACK_CHUNK_SIZE,
@@ -102,6 +103,7 @@ describe("runPublishWorkflow", () => {
     const writeNotionResults = vi.fn(async () => undefined)
     const writeNotionResultsIfUnchanged = vi.fn(async () => undefined)
     const findPagesChangedAfterBuild = vi.fn(async () => [] as Array<string>)
+    const notifyFailures = vi.fn(async (_notice: PublishFailureNotice) => undefined)
 
     return {
       dependencies: {
@@ -114,6 +116,7 @@ describe("runPublishWorkflow", () => {
         writeNotionResults,
         writeNotionResultsIfUnchanged,
         findPagesChangedAfterBuild,
+        notifyFailures,
       } satisfies PublishWorkflowDependencies,
       loadRequest,
       publishSite,
@@ -124,6 +127,7 @@ describe("runPublishWorkflow", () => {
       writeNotionResults,
       writeNotionResultsIfUnchanged,
       findPagesChangedAfterBuild,
+      notifyFailures,
     }
   }
 
@@ -202,6 +206,12 @@ describe("runPublishWorkflow", () => {
     expect(findPagesChangedAfterBuild).toHaveBeenCalledWith([
       { pageId: revision.pageId, revision, fetchedHash: "fetched-hash" },
     ])
+    expect(dependencies.notifyFailures).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: "partial",
+        failures: [expect.objectContaining({ pageId: revision.pageId })],
+      }),
+    )
     // 配信はもう直す前の本文に切り替わっているので、配信の状態は書きつつ 🔴 にする
     expect(writeNotionResults).toHaveBeenCalledWith([
       {
@@ -812,7 +822,7 @@ describe("runPublishWorkflow", () => {
         revisions,
         350,
       )
-      expect(step.calls.at(-1)).toEqual({
+      expect(step.calls.find(({ name }) => name === "write-generate-notion-result-0")).toEqual({
         name: "write-generate-notion-result-0",
         config: PUBLISH_WORKFLOW_STEP_CONFIGS.writeGenerateNotionResult,
       })
@@ -855,6 +865,86 @@ describe("runPublishWorkflow", () => {
         revisions,
         350,
       )
+    })
+
+    test("失敗した記事があれば、題名と理由をそろえて通知する", async () => {
+      const step = new MemoryStep()
+      const { dependencies, readPublishSiteState, notifyFailures } = createDependencies({
+        revisions: [published()],
+        failed: [],
+        skippedPageIds: [],
+      })
+      readPublishSiteState.mockResolvedValue({
+        status: "done",
+        summary: makeSummary({
+          pages: [],
+          failed: [
+            {
+              pageId: "00000000-0000-0000-0000-000000000001",
+              code: "publish-failed",
+              message: "Request to Notion API has timed out",
+            },
+          ],
+        }),
+      })
+
+      await runPublishWorkflow({
+        workflowId: "workflow-id",
+        params: fullParams,
+        step,
+        dependencies,
+      })
+
+      expect(notifyFailures).toHaveBeenCalledWith({
+        workflowId: "workflow-id",
+        mode: "full",
+        failures: [
+          {
+            pageId: "00000000-0000-0000-0000-000000000001",
+            title: "記事タイトル",
+            slug: "article-slug",
+            message: "Request to Notion API has timed out",
+          },
+        ],
+      })
+      expect(step.calls.at(-1)?.name).toEqual("notify-failures")
+    })
+
+    test("失敗がなければ通知しない", async () => {
+      const step = new MemoryStep()
+      const { dependencies, notifyFailures } = createDependencies({
+        revisions: [published()],
+        failed: [],
+        skippedPageIds: [],
+      })
+
+      await runPublishWorkflow({
+        workflowId: "workflow-id",
+        params: fullParams,
+        step,
+        dependencies,
+      })
+
+      expect(notifyFailures).not.toHaveBeenCalled()
+    })
+
+    test("通知に失敗しても、公開の結果は失敗にしない", async () => {
+      const step = new MemoryStep()
+      const { dependencies, notifyFailures } = createDependencies({
+        revisions: [published({ title: "" })],
+        failed: [],
+        skippedPageIds: [],
+      })
+      notifyFailures.mockRejectedValue(Error("slack unavailable"))
+
+      expect(
+        await runPublishWorkflow({
+          workflowId: "workflow-id",
+          params: fullParams,
+          step,
+          dependencies,
+        }),
+      ).toEqual(expect.objectContaining({ status: "completed-with-errors" }))
     })
 
     test("Container に渡す前に落ちた記事にも 公開エラー を書く", async () => {

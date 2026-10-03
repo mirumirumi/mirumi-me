@@ -327,7 +327,7 @@ describe("publishing lifecycle", () => {
       expect(result.issues).toEqual([])
     })
 
-    test("別 revision ですでに非公開の page は再実行とみなさない", () => {
+    test("すでに非公開の page をもう一度非公開にしても、失敗にせず非公開のままにする", () => {
       const deployed = makeDeployedPage({ status: "unpublished" })
       const result = preparePageRevision(
         makeRevision({
@@ -339,7 +339,8 @@ describe("publishing lifecycle", () => {
         makeState([deployed]),
       )
 
-      expect(result.issues.map((issue) => issue.code)).toEqual(["not-published"])
+      expect(result.action).toEqual("unpublish")
+      expect(result.issues).toEqual([])
     })
   })
 

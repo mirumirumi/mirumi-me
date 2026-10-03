@@ -33,7 +33,7 @@ export const createNotionPageUrl = (pageId: string): string => {
   return `https://www.notion.so/${pageId.replaceAll("-", "")}`
 }
 
-const formatJst = (value: string): string => {
+export const formatJst = (value: string): string => {
   return new Intl.DateTimeFormat("ja-JP", {
     timeZone: "Asia/Tokyo",
     year: "numeric",
