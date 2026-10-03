@@ -161,6 +161,9 @@ export type PublishJobPageResult =
       contentHash: string
       // 内容が変わった再公開で決めた新しい 更新日。Notion へ書き戻すときだけ値が入る
       updatedAt: string | null
+      // build に使った本文の hash（createFetchedArticleHash）。公開ボタンでは、Notion へ書き戻す直前に
+      // 取り直した本文と比べる。rollout 中の古い Container は返さないので null がありうる
+      fetchedHash: string | null
     }
   | {
       pageId: string

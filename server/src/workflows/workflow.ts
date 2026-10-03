@@ -4,6 +4,7 @@ import { z } from "zod"
 
 import {
   createNotionClient,
+  fetchNotionArticle,
   fetchNotionPageRevision,
   fetchNotionPageRevisions,
   InvalidNotionPageRevisionError,
@@ -15,6 +16,7 @@ import {
 } from "shared/notion"
 import { isIgnoredFixedPageSlug } from "shared/site-routes"
 
+import { createFetchedArticleHash } from "../lib/article-hash"
 import type {
   DeploymentPageState,
   PageRevision,
@@ -28,6 +30,7 @@ import type {
 import { isPageRevisionUnchanged, selectGenerateRevisions } from "../lib/publishing"
 import {
   type LoadedPublishRequest,
+  type PublishedPageCheck,
   type PublishWorkflowStepExecutor,
   runPublishWorkflow,
 } from "../services/publish-workflow"
@@ -270,6 +273,41 @@ const writeNotionResultsIfUnchanged = async (
   }
 }
 
+const findPagesChangedAfterBuild = async (
+  checks: Array<PublishedPageCheck>,
+  env: CloudflareBindings,
+): Promise<Array<string>> => {
+  const { token, dataSources } = getNotionConfig(env)
+  const client = createNotionClient(token)
+  const changed: Array<string> = []
+  for (const check of checks) {
+    try {
+      const current = await fetchNotionPageRevision(client, check.pageId, dataSources)
+      if (!isPageRevisionUnchanged(check.revision, current)) {
+        changed.push(check.pageId)
+        continue
+      }
+      // 公開ボタンを押した同じ分のうちの編集は revision では見分けられないので、本文も取り直す
+      if (
+        check.fetchedHash !== null &&
+        createFetchedArticleHash(await fetchNotionArticle(client, check.pageId)) !==
+          check.fetchedHash
+      ) {
+        changed.push(check.pageId)
+      }
+    } catch (err) {
+      // 消えた page には書き戻せないので、ここで止めずに書き込みの側に任せる
+      if (isNotionObjectNotFound(err) || err instanceof InvalidNotionPageRevisionError) {
+        continue
+      }
+
+      throw err
+    }
+  }
+
+  return changed
+}
+
 const createStepExecutor = (step: WorkflowStep): PublishWorkflowStepExecutor => {
   return {
     do: (name, config, callback) => step.do(name, config, callback),
@@ -304,6 +342,7 @@ export class PublishWorkflow extends WorkflowEntrypoint<CloudflareBindings, Publ
           writeNotionResults(results, this.env, delayMs),
         writeNotionResultsIfUnchanged: async (results, expectedRevisions, delayMs) =>
           writeNotionResultsIfUnchanged(results, expectedRevisions, this.env, delayMs),
+        findPagesChangedAfterBuild: async (checks) => findPagesChangedAfterBuild(checks, this.env),
       },
     })
   }

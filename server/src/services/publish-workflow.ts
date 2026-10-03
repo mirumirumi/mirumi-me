@@ -68,6 +68,10 @@ export const PUBLISH_WORKFLOW_STEP_CONFIGS = {
     retries: { limit: 5, delay: "10 seconds", backoff: "exponential" },
     timeout: "2 minutes",
   },
+  confirmPublishedPages: {
+    retries: { limit: 5, delay: "10 seconds", backoff: "exponential" },
+    timeout: "2 minutes",
+  },
   writeNotionResult: {
     retries: { limit: 5, delay: "10 seconds", backoff: "exponential" },
     timeout: "2 minutes",
@@ -103,6 +107,12 @@ export interface LoadedPublishRequest {
   skippedPageIds: Array<string>
 }
 
+export interface PublishedPageCheck {
+  pageId: string
+  revision: PageRevision
+  fetchedHash: string | null
+}
+
 export interface PublishWorkflowDependencies {
   loadRequest(): Promise<LoadedPublishRequest>
   publishSite(request: PublishJobRequest): Promise<PublishJobSummary>
@@ -118,6 +128,8 @@ export interface PublishWorkflowDependencies {
     expectedRevisions: Array<PageRevision>,
     delayMs: number,
   ): Promise<void>
+  // 公開ボタンの build のあと（Container の最後の確認より後）で本文が直された page を返す
+  findPagesChangedAfterBuild(checks: Array<PublishedPageCheck>): Promise<Array<string>>
 }
 
 interface RunPublishWorkflowOptions {
@@ -352,6 +364,38 @@ const createResult = (
   }
 }
 
+// Container の最後の確認から Notion への書き戻しまでのあいだ（S3 への配置と CloudFront の更新）に本文が直されると、
+// 配信は直す前の本文なのに 🟢 になって直しが隠れる。書き戻す直前に確かめ、直されていたら 🔴 にして押し直してもらう
+const toChangedAfterBuildResult = (
+  result: Extract<NotionPublishResult, { status: "published" }>,
+  workflowId: string,
+): NotionPublishResult => {
+  return {
+    status: "failed",
+    pageId: result.pageId,
+    internalState: "公開中",
+    deployedAt: result.deployedAt,
+    publishedAt: result.publishedAt,
+    error: `公開の途中で本文が直されたので、直す前の本文で公開しました。もう一度「公開」を押してください（Workflow: ${workflowId}）`,
+  }
+}
+
+const createPublishedPageChecks = (
+  summary: PublishJobSummary,
+  revisions: Array<PageRevision>,
+): Array<PublishedPageCheck> => {
+  const revisionByPage = new Map(revisions.map((revision) => [revision.pageId, revision]))
+
+  return summary.pages.flatMap((page): Array<PublishedPageCheck> => {
+    const revision = revisionByPage.get(page.pageId)
+    if (page.action !== "publish" || !revision) {
+      return []
+    }
+
+    return [{ pageId: page.pageId, revision, fetchedHash: page.fetchedHash }]
+  })
+}
+
 const toSuccessfulNotionResults = (summary: PublishJobSummary): Array<NotionPublishResult> => {
   return summary.pages.map((page) => {
     if (page.action === "publish") {
@@ -553,8 +597,24 @@ export const runPublishWorkflow = async ({
     throw err
   }
   if (params.mode === "partial") {
-    const successResults = toSuccessfulNotionResults(summary)
     const deploymentPages = await loadFailureDeploymentPages(failures, step, dependencies)
+    const checks = createPublishedPageChecks(summary, loaded.revisions)
+    // 書き込みとは別の step にする。同じ step にすると、書き込んだあとの retry で自分の書き込みを編集とみなしてしまう
+    const changedPageIds =
+      0 < checks.length
+        ? new Set(
+            await step.do(
+              "confirm-published-pages",
+              PUBLISH_WORKFLOW_STEP_CONFIGS.confirmPublishedPages,
+              async () => dependencies.findPagesChangedAfterBuild(checks),
+            ),
+          )
+        : new Set<string>()
+    const successResults = toSuccessfulNotionResults(summary).map((result) => {
+      return result.status === "published" && changedPageIds.has(result.pageId)
+        ? toChangedAfterBuildResult(result, workflowId)
+        : result
+    })
     await step.do(
       "write-notion-result",
       PUBLISH_WORKFLOW_STEP_CONFIGS.writeNotionResult,

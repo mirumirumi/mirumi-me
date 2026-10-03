@@ -77,6 +77,7 @@ describe("runPublishWorkflow", () => {
           publishedAt: "2026-08-24T02:00:00.000Z",
           contentHash: "content-hash",
           updatedAt: null,
+          fetchedHash: "fetched-hash",
         },
       ],
       failed: [],
@@ -100,6 +101,7 @@ describe("runPublishWorkflow", () => {
     })
     const writeNotionResults = vi.fn(async () => undefined)
     const writeNotionResultsIfUnchanged = vi.fn(async () => undefined)
+    const findPagesChangedAfterBuild = vi.fn(async () => [] as Array<string>)
 
     return {
       dependencies: {
@@ -111,6 +113,7 @@ describe("runPublishWorkflow", () => {
         loadDeploymentPages,
         writeNotionResults,
         writeNotionResultsIfUnchanged,
+        findPagesChangedAfterBuild,
       } satisfies PublishWorkflowDependencies,
       loadRequest,
       publishSite,
@@ -120,6 +123,7 @@ describe("runPublishWorkflow", () => {
       loadDeploymentPages,
       writeNotionResults,
       writeNotionResultsIfUnchanged,
+      findPagesChangedAfterBuild,
     }
   }
 
@@ -155,6 +159,10 @@ describe("runPublishWorkflow", () => {
         name: "invalidate-cloudfront",
         config: PUBLISH_WORKFLOW_STEP_CONFIGS.invalidateCloudFront,
       },
+      {
+        name: "confirm-published-pages",
+        config: PUBLISH_WORKFLOW_STEP_CONFIGS.confirmPublishedPages,
+      },
       { name: "write-notion-result", config: PUBLISH_WORKFLOW_STEP_CONFIGS.writeNotionResult },
     ])
     expect(publishSite).toHaveBeenCalledWith({
@@ -175,6 +183,35 @@ describe("runPublishWorkflow", () => {
         deployedAt: "2026-08-24T02:05:00.000Z",
         publishedAt: "2026-08-24T02:00:00.000Z",
         updatedAt: null,
+      },
+    ])
+  })
+
+  test("build のあとで本文が直されていたら、🟢 にせず押し直してもらう", async () => {
+    const step = new MemoryStep()
+    const revision = makeRevision()
+    const { dependencies, findPagesChangedAfterBuild, writeNotionResults } = createDependencies({
+      revisions: [revision],
+      failed: [],
+      skippedPageIds: [],
+    })
+    findPagesChangedAfterBuild.mockResolvedValueOnce([revision.pageId])
+
+    await runPublishWorkflow({ workflowId: "workflow-id", params, step, dependencies })
+
+    expect(findPagesChangedAfterBuild).toHaveBeenCalledWith([
+      { pageId: revision.pageId, revision, fetchedHash: "fetched-hash" },
+    ])
+    // 配信はもう直す前の本文に切り替わっているので、配信の状態は書きつつ 🔴 にする
+    expect(writeNotionResults).toHaveBeenCalledWith([
+      {
+        status: "failed",
+        pageId: revision.pageId,
+        internalState: "公開中",
+        deployedAt: "2026-08-24T02:05:00.000Z",
+        publishedAt: "2026-08-24T02:00:00.000Z",
+        error:
+          "公開の途中で本文が直されたので、直す前の本文で公開しました。もう一度「公開」を押してください（Workflow: workflow-id）",
       },
     ])
   })
@@ -252,6 +289,7 @@ describe("runPublishWorkflow", () => {
           publishedAt: "2026-08-24T02:00:00.000Z",
           contentHash: "content-hash",
           updatedAt: null,
+          fetchedHash: "fetched-hash",
         })),
       }),
     })
@@ -800,6 +838,7 @@ describe("runPublishWorkflow", () => {
             publishedAt: "2026-08-20T00:00:00.000Z",
             contentHash: "content-hash",
             updatedAt: null,
+            fetchedHash: "fetched-hash",
           })),
         }),
       })

@@ -46,7 +46,10 @@ Notion → Workers → Workflows → Containers の公開基盤について、�
 ## Notion の status と公開結果の書き戻し
 
 - `last-notion-edit` は公開処理中の競合検出にだけ使い、`last-deploy` との大小比較には使わない
-- 公開開始時のページの `last_edited_time` を保持し、デプロイ成功後の最終書き込みの直前に取り直した値と違えば成功扱いにしない
+- 公開開始時のページの revision を保持し、build のあと 2 回確かめる。違えば成功扱いにしない（詳しくは下の「公開ボタンの同じ分のうちの編集」）
+    - Container の最後（S3 に置く前）：変わっていたら job ごと止めて 🔴
+    - Notion へ書き戻す直前（S3 に置いて CloudFront を更新したあと）：変わっていたら 🟢 にせず 🔴（配信は直す前の本文）
+    - 2026-10-03 までは、ここに「最終書き込みの直前に取り直す」と書いてあったが、コードは Container の 1 回しか確かめていなかった（圭くんと相談して、コードを記述に合わせた）
 - 成功時は `internal-state = 公開中`、`last-deploy` の更新、`公開エラー` のクリアを最後の 1 回の書き込みにまとめる。失敗時は短い理由と trace ID だけを残す
     - 失敗時は、`last-deploy` がなければ `internal-state = 下書き`、あれば `internal-state = 公開中` に戻す
 - 公開処理から記事に書き戻す経路は `workers-api` だけにする（取り直してから書き込むまでの短い競合の窓は許容する）
@@ -252,7 +255,13 @@ generate のあいだ、Container は「HTTP を開いたまま待っていな�
 
 - partial の `confirmFreshness` は、Container が本文を取ったあとに page を取り直し、`last_edited_time` と `internal-state` が読み込んだときと同じかを見ていた。`last_edited_time` は分単位なので、公開ボタンを押した同じ分のうちに本文を直すと、時刻も編集者（圭くん）も同じままになる
 - 本文を取ったあとの直しなら公開されず、書き戻しで 🟢 になって隠れていた。「公開を押してすぐ誤字に気づいて直す」で起きる
-- partial では、最後に本文も取り直し、取ったときと同じかを比べる（`containers/publish-job.ts` の `createFetchedArticleHash`）。変わっていたら今までどおり「build 中に Notion page が変更されました」で job を止め、🔴 になる。押し直せば通る
+- partial では、最後に本文も取り直し、取ったときと同じかを比べる（`lib/article-hash.ts` の `createFetchedArticleHash`）。変わっていたら今までどおり「build 中に Notion page が変更されました」で job を止め、🔴 になる。押し直せば通る
+- さらに、Notion へ 🟢 を書き戻す直前にも同じ比較をする（2026-10-03 に追加）。Container の確認のあと、S3 への配置と CloudFront の更新のあいだ（数秒〜十数秒）に直されると、配信は直す前の本文なのに 🟢 になって直しが隠れていたため
+    - Workflow の `confirm-published-pages` step で、revision と本文の hash（Container が結果の `fetchedHash` で返す）を取り直して比べる（`workflows/workflow.ts` の `findPagesChangedAfterBuild`）
+    - 直されていたら、配信の状態（`internal-state = 公開中`、`last-deploy`、`公開日`）は書きつつ、公開エラー に「公開の途中で本文が直されたので、直す前の本文で公開しました。もう一度「公開」を押してください」と書いて 🔴 にする。公開ボタンの 公開エラー なので、generate は Notion の本文から作り直さない
+    - 書き込みとは別の step にしてある。同じ step だと、書き込んだあとに step が retry されたとき、自分の書き込みを編集とみなして 🟢 を 🔴 で上書きしてしまう
+    - 確かめ終わってから書き込むまでの、step のあいだの一瞬の窓は残る（許容）
+    - 2026-10-03 の UAT で、圭くんが公開ボタンを押した直後に直した `agentic-coding` は 🟢 になった。ほかの記事の公開が Container で走っていて、本文を取り始めたのが直しのあとだったため、直した内容ごと公開されたとみられる（dev サイトでの確認はまだ）
     - 1 記事なので取り直しは数秒。bootstrap は全記事の取り直しになるうえ、記事を触らない前提なので行わない
     - `sourceHash` ではなく別の hash にしたのは、`sourceHash` が 公開日 と 更新日 を含まないため。ボタンを押した直後に 公開日 を直した場合も止めたい
     - Notion ホストのファイル URL は取得のたびに署名が変わるので、比べるときは path だけを使う（`sourceHash` と同じ）

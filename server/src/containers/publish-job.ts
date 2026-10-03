@@ -9,6 +9,7 @@ import { createNotionClient, fetchNotionArticle, fetchNotionPageRevision } from 
 import { renderArticleContent } from "shared/render"
 import { resolvePublicRoute } from "shared/site-routes"
 
+import { createArticleSourceHash, createFetchedArticleHash } from "../lib/article-hash"
 import type {
   DeployedPage,
   PreparedPageRevision,
@@ -44,12 +45,7 @@ import {
 import { MediaNormalizer } from "./images"
 import { JobProgressReporter } from "./job-progress"
 import type { SyncedArticleMedia } from "./media-sync"
-import {
-  createThumbnailGenerator,
-  downloadImage,
-  isNotionHostedImage,
-  syncArticleMedia,
-} from "./media-sync"
+import { createThumbnailGenerator, downloadImage, syncArticleMedia } from "./media-sync"
 import { createBuildPageContentHash, PublishedPageSnapshotStore } from "./published-pages"
 import {
   createSiteBuildPlan,
@@ -58,55 +54,6 @@ import {
 } from "./site-build"
 
 const RETIRED_CONTENT_ROUTES = ["/what-is-this-blog/"]
-
-// Notion ホストのファイル URL は取得のたびに署名が変わるため、比較には path だけを使う。
-// 外部 URL のクエリ（YouTube の v= など）は内容そのものなので残す
-const stableNotionFileUrl = (value: string): string => {
-  if (!isNotionHostedImage(value)) {
-    return value
-  }
-  const url = new URL(value)
-  url.search = ""
-
-  return url.href
-}
-
-const stableBlockUrls = (blocks: Array<ContentBlock>): Array<ContentBlock> => {
-  return blocks.map((block) => {
-    const children = stableBlockUrls(block.children)
-    if ("url" in block) {
-      return { ...block, url: stableNotionFileUrl(block.url), children }
-    }
-
-    return { ...block, children }
-  })
-}
-
-// 「著者が内容を変えたか」だけを見たいので、公開日・更新日は含めない。
-// レンダリング結果（BuildPage）を使うとコードの変更でも一致しなくなる
-export const createArticleSourceHash = (article: ArticleContent): string => {
-  const source = {
-    ...article,
-    publishedAt: null,
-    updatedAt: null,
-    blocks: stableBlockUrls(article.blocks),
-  }
-
-  return createHash("sha256").update(JSON.stringify(source)).digest("hex")
-}
-
-// 公開ボタンの build 中に本文が直されていないかを、取り直した本文と比べて確かめるための hash。
-// last_edited_time は分単位で、ボタンを押した同じ分のうちの編集を見分けられないため。
-// sourceHash と違い、公開日や更新日の property を直しても変わる
-export const createFetchedArticleHash = (article: ArticleContent): string => {
-  const source = {
-    ...article,
-    thumbnailUrl: article.thumbnailUrl && stableNotionFileUrl(article.thumbnailUrl),
-    blocks: stableBlockUrls(article.blocks),
-  }
-
-  return createHash("sha256").update(JSON.stringify(source)).digest("hex")
-}
 
 // 前回の配信から内容が変わった再公開でだけ 更新日 を requestedAt にする。
 // full は Notion へ書き戻さないため、ここで決めると HTML と index だけが動いて Notion と食い違う。
@@ -576,6 +523,7 @@ export const runContainerPublishJob = async (
           publishedAt: page.effectivePublishedAt!,
           contentHash: hash,
           updatedAt: source.updatedAt,
+          fetchedHash: source.fetchedHash,
         })
       } else {
         const deployed = deploymentState.pages[page.revision.pageId]
