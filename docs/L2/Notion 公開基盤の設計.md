@@ -158,6 +158,10 @@ generate のあいだ、Container は「HTTP を開いたまま待っていな�
     - TypeScript を 7（Go 製）に上げると、`typescript` パッケージの JS API が使えなくなるかもしれない。そのときは `plan` job が import の時点で落ちるので、静かに間違えることはない
     - `git diff` は `-z` で読む。付けないと日本語のパスが引用符付きでエスケープされ、`docs/` などの前方一致に掛からない
 - CI は generate の完了まで待つ。generate は Notion に何も書き戻さないので、待たないと失敗に誰も気づけない。repo が public なので Actions の時間は課金されない。待っているあいだの push は、失敗せずに順番待ちになる
+    - 待つときは instance の詳細の API（`GET …/workflows/<name>/instances/<id>`）を 1 分ごとに読む。2026-10-03 に、完了した generate の instance でこの API だけが失敗し続け、CI が 5 回続けて状態を取れずに赤くなった（Workflow 自体は ✅ Completed）。そこで、詳細の API が失敗したときは一覧の API を `status`（complete / errored / terminated）で絞って探し、見つかればその状態で判断する（`scripts/cloudflare-api.ts` の `findTerminalStatus`）
+    - 詳細の API の失敗のしかた：HTTP は 200 で、本文は `success: false`、`errors` が `workflows.api.error.internal_server`（10001）。`result` には `status: complete` と Workflow の出力がそろっているが、`steps` は 63 個中、最初の `load-request` の 1 個しかなかった。その出力は Cloudflare 側で切り詰められていて、ほかの instance では 1,024 文字ちょうどで切られて `[truncated output]` が付くのに、これだけは 924 文字で、印なしに revision の `publishError` の日本語の途中で終わっていた
+    - 推測：Cloudflare が step の出力を切り詰める処理が、切る位置と日本語（マルチバイトの文字）の並びによっては失敗し、steps の組み立てごと止まる。revision に `publishError` を足したことで、切る位置が日本語の上に移った。走っているあいだの読み取りが通っていた理由は説明できていない。Cloudflare 側の不具合と見ており、cf-ray は `a449ce26eaced429-KIX`
+    - 同じことは、記事の題名などの日本語でも、切る位置しだいでいつでも起こりうる。一覧での確認はそのための保険
 - generate しない run でも rollout の収束は待つ。CI が緑になった時点で公開を試せるようにするため
 - 作業ブランチへの push では動かさない。圭くんは作業ブランチを不完全な状態で push するため。dev に出すのは `dev` への push と `workflow_dispatch` だけ
 - 手元から流す generate と bootstrap は SHA を持たないので基準点にならない。また prd の Workflow は 2026-09-10 以降に作るため、完了した instance の記録は既定で 7 日しか残らない（それより前に作った Workflow は 30 日）。どちらも generate が余分に走るだけで、安全側

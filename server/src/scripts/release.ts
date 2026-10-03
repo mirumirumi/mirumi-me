@@ -185,12 +185,19 @@ const generate = async (env: Env) => {
     try {
       state = await api.readInstance(workflow, instanceId)
     } catch (err) {
-      failures++
-      console.log(`${minute} 分経過: 状態を取れませんでした（${failures} 回目）: ${err}`)
-      if (GENERATE_POLL_MAX_FAILURES <= failures) {
-        throw err
+      // 詳細の API だけが失敗し続けることがある（2026-10-03 に、完了した instance で internal_server が続いた）。
+      // 一覧で終わっていると確かめられれば、それを状態として扱う
+      const listed = await api.findTerminalStatus(workflow, instanceId).catch(() => null)
+      if (!listed) {
+        failures++
+        console.log(`${minute} 分経過: 状態を取れませんでした（${failures} 回目）: ${err}`)
+        if (GENERATE_POLL_MAX_FAILURES <= failures) {
+          throw err
+        }
+        continue
       }
-      continue
+      console.log(`${minute} 分経過: 詳細を取れないため一覧で確かめました: ${err}`)
+      state = { status: listed, error: "詳細の API が失敗したため、理由は一覧から取れません" }
     }
     failures = 0
     console.log(`${minute} 分経過: ${state.status}`)

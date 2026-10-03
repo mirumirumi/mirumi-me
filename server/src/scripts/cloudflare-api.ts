@@ -11,7 +11,8 @@ const instancesPageSchema = z.object({
   success: z.boolean(),
   errors: errorsSchema,
   result: z.array(z.object({ id: z.string(), created_on: z.string() })).nullable(),
-  result_info: z.object({ cursor: z.string().optional() }).nullish(),
+  // 最後のページでは cursor が null で返ることがある
+  result_info: z.object({ cursor: z.string().nullish() }).nullish(),
 })
 const instanceSchema = z.object({
   success: z.boolean(),
@@ -28,6 +29,9 @@ export interface InstanceState {
   status: string
   error: string | null
 }
+
+const TERMINAL_STATUSES = ["complete", "errored", "terminated"] as const
+export type TerminalStatus = (typeof TERMINAL_STATUSES)[number]
 
 // wrangler の instance 一覧と詳細は表形式でしか出せないため、CI では API を直接読む
 export class CloudflareWorkflowsApi {
@@ -59,11 +63,11 @@ export class CloudflareWorkflowsApi {
     return response.json()
   }
 
-  async listCompletedInstances(workflow: string): Promise<Array<CompletedInstance>> {
+  async #listInstances(workflow: string, status: string): Promise<Array<CompletedInstance>> {
     const instances: Array<CompletedInstance> = []
-    let cursor: string | undefined
+    let cursor: string | null | undefined
     for (let page = 0; page < MAX_LIST_PAGES; page++) {
-      const params = new URLSearchParams({ status: "complete" })
+      const params = new URLSearchParams({ status })
       if (cursor) {
         params.set("cursor", cursor)
       }
@@ -78,6 +82,23 @@ export class CloudflareWorkflowsApi {
       }
     }
     throw Error(`instance の一覧が ${MAX_LIST_PAGES} ページを超えました`)
+  }
+
+  async listCompletedInstances(workflow: string): Promise<Array<CompletedInstance>> {
+    return this.#listInstances(workflow, "complete")
+  }
+
+  // 2026-10-03 に、完了した generate の instance の詳細だけが internal_server を返し続けた（一覧では complete）。
+  // 詳細を取れないときに、終わっているかどうかだけを一覧から確かめる
+  async findTerminalStatus(workflow: string, instanceId: string): Promise<TerminalStatus | null> {
+    for (const status of TERMINAL_STATUSES) {
+      const instances = await this.#listInstances(workflow, status)
+      if (instances.some(({ id }) => id === instanceId)) {
+        return status
+      }
+    }
+
+    return null
   }
 
   async readInstance(workflow: string, instanceId: string): Promise<InstanceState> {
