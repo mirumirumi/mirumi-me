@@ -366,6 +366,38 @@ describe("publishing lifecycle", () => {
       expect(result.action).toEqual("noop")
       expect(result.issues).toEqual([])
     })
+
+    test("generate と bootstrap は、テンプレートを通らずにできて internal-state が空の page を下書きと同じに扱う", () => {
+      const revision = makeRevision({ internalState: null, title: "", slug: "", category: null })
+
+      for (const mode of ["full", "bootstrap"] as const) {
+        const result = validatePageRevisionMetadata(revision, mode, "2026-08-24T02:00:00.000Z")
+
+        expect(result.action).toEqual("noop")
+        expect(result.issues).toEqual([])
+      }
+    })
+
+    test("公開したことのある page で internal-state が空なら、壊れているので generate でも失敗にする", () => {
+      const result = validatePageRevisionMetadata(
+        makeRevision({
+          internalState: null,
+          lastDeploy: "2026-08-20T00:00:00.000Z",
+          publishedAt: "2026-08-20T00:00:00.000Z",
+        }),
+        "full",
+        "2026-08-24T02:00:00.000Z",
+      )
+
+      expect(result.action).toEqual("noop")
+      expect(result.issues).toEqual([
+        {
+          pageId: "00000000-0000-0000-0000-000000000001",
+          code: "invalid-state",
+          message: "internal-state が空です",
+        },
+      ])
+    })
   })
 
   describe("overlayDeploymentState", () => {

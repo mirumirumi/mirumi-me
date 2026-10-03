@@ -24,6 +24,9 @@ production bootstrap だけでは移行完了ではない。コメント、検�
 
 通常操作は Notion のボタンから行う。
 
+- 新しい記事や固定ページは、posts / pages の `新規` から作る。既定のテンプレート `template` が使われ、`internal-state` が `下書き` になる（テンプレートの一覧から `template` を選んでも同じ）
+    - 貼り付けなどでテンプレートを通らずにできた row は、`internal-state` が空になる。generate / bootstrap は `下書き` と同じく何もしない（2026-10-03 から。それまでは 🔴 と Slack 通知になっていた）
+    - 公開したことのある記事（`last-deploy` がある）で `internal-state` が空なのは壊れているので、generate / bootstrap でも「internal-state が空です」で失敗にする
 - `公開待ち` → Webhook → 公開成功後に `公開中`
 - `非公開待ち` → Webhook → 非公開成功後に `非公開`
 - すでに `非公開` の記事でもう一度 `非公開` を押しても、失敗にせず `非公開` のままにする（2026-10-03 から）。一度も公開していない記事だけは「未公開の page は非公開にできません」になる
@@ -35,7 +38,7 @@ production bootstrap だけでは移行完了ではない。コメント、検�
 - 一度公開した slug は publish index が所有し続ける。slug 変更や別 page での再利用は自動では行わない
 - `公開日` は初回公開で 1 回だけ Worker が決める。`更新日` は再公開で本文・title・画像などの内容が
   前回の配信から変わったときだけ Worker が決める（判定は publish index の `sourceHash`）。
-  誤字修正でも動く。generate は Notion へ書き戻さないので `更新日` も動かない
+  誤字修正でも動く。generate が Notion に書くのは `公開エラー` だけなので、`更新日` は動かない
 - production の render warning は 1 件でも公開を止める
 
 手動の部分公開は Access 配下の `POST /admin/publish`、状態確認は `GET /admin/workflows/:instanceId` を使う。action は request ではなく Notion の最新 state から決まる。

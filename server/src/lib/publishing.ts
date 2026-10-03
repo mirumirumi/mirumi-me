@@ -319,8 +319,14 @@ export const validatePageRevisionMetadata = (
   const action = resolvePublishAction(revision.internalState, mode)
   const route = resolvePublicRoute(revision.kind, revision.slug)
 
-  if (!revision.internalState || (mode === "partial" && action === "noop")) {
+  if (mode === "partial" && action === "noop") {
     issues.push(issue(revision, "invalid-state", "internal-state が公開待ち状態ではありません"))
+  }
+  // generate / bootstrap で internal-state が空なのは、貼り付けなどでテンプレートを通らずにできた row で、
+  // 下書きと同じく何もしない。公開したことのある page で空なのは壊れているので失敗にする。
+  // ここは Worker の preflight でも通り publish index を持たないので、公開したかは Notion の last-deploy で見る
+  if (mode !== "partial" && !revision.internalState && revision.lastDeploy) {
+    issues.push(issue(revision, "invalid-state", "internal-state が空です"))
   }
   if (mode !== "partial" && action === "noop") {
     return { revision, action, route, effectivePublishedAt: revision.publishedAt, issues }

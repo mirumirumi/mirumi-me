@@ -208,6 +208,16 @@ generate のあいだ、Container は「HTTP を開いたまま待っていな�
 - そこで、書く直前に page を取り直し、Workflow が読み込んだときの revision と比べて変わっていない page にだけ書く（`workflows/workflow.ts` の `writeNotionResultsIfUnchanged`）。取り直してから書くまでの短い競合の窓は、partial の書き戻しと同じく許容する
 - 比べるのは `last_edited_time`、`last_edited_by`、`internal-state`、`公開エラー`（`lib/publishing.ts` の `isPageRevisionUnchanged`）。`last_edited_time` は分単位なので、同じ分のうちの人の編集は `last_edited_by` で、同じ分のうちの integration の書き込み（409 の失敗の書き戻し）は `公開エラー` で見分ける
 
+### internal-state が空の row は generate / bootstrap で失敗にしない
+
+2026-10-03 に圭くんと決めた（`lib/publishing.ts` の `validatePageRevisionMetadata`）。
+
+- 経緯：圭くんが dev の posts に文字列を貼り付けて、中身が空の row ができた。posts / pages の既定のテンプレート `template` は `internal-state = 下書き` を入れるが、貼り付けでできた row はテンプレートを通らないので `internal-state` が空になる。これを generate が「internal-state が公開待ち状態ではありません」で失敗にして、🔴 と Slack 通知になった
+- 以前は、partial 以外でも `internal-state` が空なら失敗にしていた。`下書き` なら何もしないのに、空だと失敗になるのは釣り合わない。文面も generate の場面では意味が通らなかった
+- いまは、generate / bootstrap では空の row を `下書き` と同じく何もしない。ただし `last-deploy` がある（公開したことがある）のに空なのは壊れているので、「internal-state が空です」で失敗にする。partial は今までどおり、待ち状態以外はすべて「公開待ち状態ではありません」
+- 公開したかを publish index でなく `last-deploy` で見るのは、この検証が Worker の preflight でも通り、そこには publish index がないため。preflight で noop になった page は Container へ渡らないので、Container 側の `preparePageRevision` で拾うこともできない
+- 悪くなるのは、publish index に載っているのに `internal-state` と `last-deploy` の両方が手で消された page だけ。黙って noop になるが、generate は snapshot から作り直すので配信は崩れない
+
 ## generate で 🟡 の記事を Notion から作り直さない
 
 2026-10-01 に見つけて、圭くんと L1 どおりに直すと決め、2026-10-02 に実装した。同じ日のうちに、飛ばすのではなく最後に公開した版から作り直す形（下の「最後に公開した版から作り直す」）に変え、L1 も直した。
