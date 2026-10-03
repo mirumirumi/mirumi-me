@@ -385,11 +385,37 @@ bun run dev
 Codex App から起動して Windows 側の一時ディレクトリが継承される場合だけ、
 Nuxt の Unix socket 用に `TMPDIR=/tmp bun run dev` とする。
 
-- 一覧 metadata は Notion から 5 分ごと、本文は表示した記事だけ 30 分ごとに取得する
-- cache は `app/.cache/notion-dev` に保存し、Notion や外部 API の一時障害時は古い値を使う
+### 表示される内容
+
+- `app/.env` が指す dev の posts / pages data source を、Nuxt の server route（`/api/_build/*`）が Notion API で直接読む。prd の Notion、WordPress、build manifest は読まない
+- 出るのは `internal-state` が `公開中` で、タイトルと公開日があるページだけ
+    - 🟡 未公開差分ありの記事は Notion の最新の本文がそのまま出る。generate は最後に公開したときの snapshot から作り直すので、ここだけ見え方が違う
+- dev data source の中身は WordPress へ追従させていない（`docs/L2/dev Notion データソースの方針.md`）。cache をいくら新しくしても、dev data source より新しくはならない
 - 内部 Bookmark は Notion metadata、外部 Bookmark はローカル取得、X post は Access 配下の dev Worker と KV / ローカル cache で解決する
 - 本文と thumbnail の Notion 一時 URL はそのまま使うため、画像同期、変換、タイトルカード生成は行わない
+    - `thumbnail` が空の記事は、トップページのカード画像が `no-image.jpg` になる（generate では自動生成 OGP の 412 variant が入るところ）
 - Amazon は静的 fallback card を出したあと、dev Worker の Creators API endpoint で hydration する。失敗時は fallback を維持する
+- コメントは常に 0 件
+
+### cache の鮮度
+
+cache は `app/.cache/notion-dev` に 1 件 1 ファイルで保存する。
+期限切れはリクエストのたびに判定し、裏で定期的に取り直すことはしない。期限が切れたあとの最初のリクエストで取り直す。
+
+| 対象 | 取り直す条件 | 取得に失敗したとき |
+| --- | --- | --- |
+| 一覧 metadata（タイトル、slug、カテゴリ、日付、thumbnail、`internal-state`、`last_edited_time`） | 前回の取得から 5 分経ったとき。posts / pages を毎回全件 query する | 古い cache を期限なしで使う |
+| 本文 | 表示した記事だけ。一覧の `last_edited_time` が cache と変わったとき、または前回の取得から 30 分経ったとき | 古い cache を期限なしで使う |
+| 外部 Bookmark | 前回の取得から 30 日経ったとき | 古い cache を使う。cache もなければ hostname だけの card を出し、失敗は cache しない |
+| X post | 一度 cache したら取り直さない | 本文に「X ポストを解決できませんでした」の枠を出す |
+
+- 本文は `last_edited_time` を見ているので、Notion での編集は実質 5 分（一覧の周期）以内に反映される
+    - ただし `last_edited_time` は分単位なので、本文を取得したのと同じ分のうちに編集すると、30 分の期限まで反映されないことがある
+- 外部 Bookmark と X post の解決に失敗した状態の本文も、そのまま本文の cache に入る。直るのは本文を取り直したとき
+- cache の形式（version）が変わると、古い cache は読まずに取り直す
+- 全部取り直したいときは `app/.cache/notion-dev` を消せばよい
+
+### build manifest を読む
 
 Container の最終成果物を確認したい場合だけ、従来どおり build manifest を優先して読む。
 
@@ -414,7 +440,7 @@ MIRUMI_BUILD_MANIFEST_DIR=/tmp/mirumi-build/JOB/manifest bun run dev
 - 本文静止画: 800 / 1200 / 1600 px、拡大なし、WebP quality 80
 - thumbnail: 412x216 / 600x315 / 1200x630、cover、WebP quality 80
 - 記事ヘッダー: mobile 600、desktop 1200
-- トップと内部ブログカード: 412。トップと一覧のカードは thumbnail がない記事でも自動生成 OGP の 412 variant を使う（記事ヘッダーと内部ブログカードには出さない）
+- トップと内部ブログカード: 412。トップのカードは thumbnail がない記事でも自動生成 OGP の 412 variant を使う（記事ヘッダーと内部ブログカードには出さない）
 - key: 本文は `{assetHash}-{cleanStem}-{setWidth}x{setHeight}-{actualWidth}w.webp`、thumbnail は `{assetHash}-{cleanStem}-{width}x{height}.webp`
 - `{setWidth}x{setHeight}` は本文画像セットの最大 variant の実寸。フロントエンドはこれを `<img>` の `width` / `height` に出す（Notion の image block に寸法がないため URL で運ぶ）
 - 画像変換契約は `v2`（2026-09-25 に本文 key へ寸法を追加して `v1` から上げた。`v1` の本文 object は S3 に 1 つも作られていない）
