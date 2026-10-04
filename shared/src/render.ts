@@ -603,7 +603,7 @@ const renderApp = (attributes: Record<string, string>, context: RenderContext): 
     price ? `<span class="appreach__price">${escapeHtml(price)}</span>` : "",
   ].join("")
 
-  return `<div class="appreach"><img class="appreach__icon" src="${escapeHtml(icon)}" alt="${escapeHtml(name)}" loading="lazy"><div class="appreach__detail"><p class="appreach__name">${escapeHtml(name)}</p><p class="appreach__info">${detail}</p></div><div class="appreach__links">${storeLink(attributes.ios, "appreach__aslink", "as_ja.svg", "App Store")}${storeLink(attributes.android, "appreach__gplink", "gplay_ja.png", "Google Play")}</div></div>`
+  return `<div class="appreach"><img class="appreach__icon" src="${escapeHtml(icon)}" alt="${escapeHtml(name)}" loading="lazy"><div class="appreach__detail"><p class="appreach__name">${escapeHtml(name)}</p><p class="appreach__info">${detail}</p></div><div class="appreach__links">${storeLink(attributes.ios, "appreach__aslink", "itune_ja.svg", "App Store")}${storeLink(attributes.android, "appreach__gplink", "gplay_ja.png", "Google Play")}</div></div>`
 }
 
 const renderQuoteImage = (attributes: Record<string, string>, context: RenderContext): string => {

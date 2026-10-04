@@ -1101,6 +1101,8 @@ describe("アプリ紹介カード", () => {
     expect(rendered.warnings).toEqual([])
     expect(rendered.html).toContain('src="https://mirumi.media/app.webp" alt="移行したアプリ"')
     expect(rendered.html).toContain('<span class="appreach__price">120 円</span>')
+    // WordPress 時代と同じバッジ。as_ja.svg は配布元から消えている（404）
+    expect(rendered.html).toContain('src="https://nabettu.github.io/appreach/img/itune_ja.svg"')
   })
 
   test("ios だけのカードは、App Store から引いた値で埋め、書いた属性はそちらを優先する", () => {
