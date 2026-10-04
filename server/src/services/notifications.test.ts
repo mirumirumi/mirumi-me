@@ -6,6 +6,7 @@ import {
   createStuckPublishMessage,
   createUnpublishedReferenceMessage,
   createWorkflowErrorMessage,
+  runStuckPublishAlert,
   runStuckPublishCheck,
   type StuckPublishPage,
 } from "./notifications"
@@ -142,7 +143,7 @@ describe("notifications", () => {
   })
 
   describe("createStuckPublishMessage", () => {
-    test("止まっている記事と、押し直しでは動かないことを伝える", () => {
+    test("止まっている記事と、動かし直す手順を伝える", () => {
       const message = createStuckPublishMessage(
         [
           {
@@ -154,12 +155,14 @@ describe("notifications", () => {
           },
         ],
         "mirumi.me",
+        "30 分",
       )
 
       expect(message).toContain(
-        "[mirumi.me] 公開待ち / 非公開待ち のまま 2 時間以上止まっている記事が 1 件あります",
+        "[mirumi.me] 公開待ち / 非公開待ち のまま 30 分以上止まっている記事が 1 件あります",
       )
       expect(message).toContain("・記事タイトル（article）: 公開待ち（2026/10/03 18:14 から）")
+      expect(message).toContain("2 分ほどあけてから")
       expect(message).toContain("POST /admin/publish")
     })
   })
@@ -173,7 +176,7 @@ describe("notifications", () => {
       lastEditedTime: "2026-10-03T06:00:00.000Z",
     }
 
-    test("2 時間より前から止まっている記事だけを探して通知する", async () => {
+    test("2 時間より前から止まっている記事をすべて探して通知する", async () => {
       const loadStuckPages = vi.fn(async () => [stuck])
       const notify = vi.fn(async () => undefined)
 
@@ -183,8 +186,11 @@ describe("notifications", () => {
           "mirumi.me",
         ),
       ).toEqual({ count: 1, notified: true })
-      expect(loadStuckPages).toHaveBeenCalledWith("2026-10-03T07:00:00.000Z")
-      expect(notify).toHaveBeenCalledTimes(1)
+      expect(loadStuckPages).toHaveBeenCalledWith({
+        before: "2026-10-03T07:00:00.000Z",
+        onOrAfter: null,
+      })
+      expect(notify).toHaveBeenCalledWith(expect.stringContaining("2 時間以上止まっている"))
     })
 
     test("止まっている記事がなければ通知しない", async () => {
@@ -201,6 +207,34 @@ describe("notifications", () => {
         ),
       ).toEqual({ count: 0, notified: false })
       expect(notify).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("runStuckPublishAlert", () => {
+    test("30 分ごとに、止まってから 30 分たった記事だけを 1 回だけ通知する", async () => {
+      const loadStuckPages = vi.fn(async () => [
+        {
+          pageId,
+          title: "記事タイトル",
+          slug: "article",
+          internalState: "公開待ち" as const,
+          lastEditedTime: "2026-10-03T08:10:00.000Z",
+        },
+      ])
+      const notify = vi.fn(async () => undefined)
+
+      expect(
+        await runStuckPublishAlert(
+          { loadStuckPages, notify, now: () => new Date("2026-10-03T09:00:00.000Z") },
+          "mirumi.me",
+        ),
+      ).toEqual({ count: 1, notified: true })
+      // 前回（08:30）と次回（09:30）の確認と重ならない
+      expect(loadStuckPages).toHaveBeenCalledWith({
+        before: "2026-10-03T08:30:00.000Z",
+        onOrAfter: "2026-10-03T08:00:00.000Z",
+      })
+      expect(notify).toHaveBeenCalledWith(expect.stringContaining("30 分以上止まっている"))
     })
   })
 })

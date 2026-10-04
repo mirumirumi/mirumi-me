@@ -336,7 +336,7 @@ describe("fetchStuckPublishRevisions", () => {
       await fetchStuckPublishRevisions(
         client,
         { posts: "posts-source", pages: "pages-source" },
-        "2026-10-03T07:00:00.000Z",
+        { before: "2026-10-03T07:00:00.000Z", onOrAfter: null },
       ),
     ).toEqual([
       expect.objectContaining({
@@ -360,6 +360,45 @@ describe("fetchStuckPublishRevisions", () => {
             {
               timestamp: "last_edited_time",
               last_edited_time: { before: "2026-10-03T07:00:00.000Z" },
+            },
+          ],
+        },
+      }),
+    )
+  })
+
+  test("始まりの時刻も渡すと、そのあいだに止まった page だけを探す", async () => {
+    const query = vi.fn(async () => ({
+      object: "list",
+      results: [],
+      next_cursor: null,
+      has_more: false,
+    }))
+    const client = { dataSources: { query } } as unknown as Client
+
+    await fetchStuckPublishRevisions(
+      client,
+      { posts: "posts-source", pages: "pages-source" },
+      { before: "2026-10-03T07:00:00.000Z", onOrAfter: "2026-10-03T06:30:00.000Z" },
+    )
+
+    expect(query).toHaveBeenCalledWith(
+      expect.objectContaining({
+        filter: {
+          and: [
+            {
+              or: [
+                { property: "internal-state", select: { equals: "公開待ち" } },
+                { property: "internal-state", select: { equals: "非公開待ち" } },
+              ],
+            },
+            {
+              timestamp: "last_edited_time",
+              last_edited_time: { before: "2026-10-03T07:00:00.000Z" },
+            },
+            {
+              timestamp: "last_edited_time",
+              last_edited_time: { on_or_after: "2026-10-03T06:30:00.000Z" },
             },
           ],
         },

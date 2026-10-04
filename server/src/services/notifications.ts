@@ -1,3 +1,5 @@
+import type { StuckPublishWindow } from "shared/notion"
+
 import type { InternalState, PublishMode, UnpublishedPageReferrer } from "../lib/publishing"
 import { createNotionPageUrl, formatJst } from "./comment-digest"
 
@@ -5,7 +7,11 @@ import { createNotionPageUrl, formatJst } from "./comment-digest"
 
 const MAX_LISTED_PAGES = 20
 const MAX_MESSAGE_CHARS = 300
+// 毎朝の確認：2 時間以上止まっている記事をすべて出す（直していなければ翌朝も出る）
 export const STUCK_PUBLISH_THRESHOLD_MS = 2 * 60 * 60 * 1_000
+// 30 分ごとの確認：止まってから 30 分たった記事を 1 回だけ出す。間隔は wrangler.jsonc の Cron と同じにする
+export const STUCK_PUBLISH_ALERT_THRESHOLD_MS = 30 * 60 * 1_000
+export const STUCK_PUBLISH_ALERT_INTERVAL_MS = 30 * 60 * 1_000
 
 export interface PublishFailureNoticeItem {
   pageId: string
@@ -133,33 +139,62 @@ export const createUnpublishedReferenceMessage = (
 export const createStuckPublishMessage = (
   pages: Array<StuckPublishPage>,
   siteLabel: string,
+  durationLabel: string,
 ): string => {
   return [
-    `[${siteLabel}] 公開待ち / 非公開待ち のまま 2 時間以上止まっている記事が ${pages.length} 件あります`,
+    `[${siteLabel}] 公開待ち / 非公開待ち のまま ${durationLabel}以上止まっている記事が ${pages.length} 件あります`,
     ...listPages(pages, (page) => [
       `・${pageLine(page)}: ${page.internalState ?? "状態なし"}（${formatJst(page.lastEditedTime)} から）`,
       `  ${createNotionPageUrl(page.pageId)}`,
     ]),
-    "Webhook の取りこぼしなどで処理が始まっていません。Notion のボタンを押し直しても値が変わらず動かないので、POST /admin/publish に pageId を渡して流し直してください",
+    "Webhook の取りこぼしなどで処理が始まっていません。ボタンを押し直しても値が変わらないので動きません。internal-state を押す前の値（下書き / 公開中 / 非公開）に戻し、2 分ほどあけてからもう一度ボタンを押してください（すぐ押すと、戻した変更とまとめて届いて、また始まらないことがあります）。POST /admin/publish に pageId を渡して流し直すこともできます",
   ].join("\n")
 }
 
 export interface StuckPublishCheckDependencies {
-  loadStuckPages(before: string): Promise<Array<StuckPublishPage>>
+  loadStuckPages(window: StuckPublishWindow): Promise<Array<StuckPublishPage>>
   notify(text: string): Promise<void>
   now(): Date
+}
+
+const notifyStuckPages = async (
+  dependencies: StuckPublishCheckDependencies,
+  window: StuckPublishWindow,
+  siteLabel: string,
+  durationLabel: string,
+): Promise<{ count: number; notified: boolean }> => {
+  const pages = await dependencies.loadStuckPages(window)
+  if (pages.length === 0) {
+    return { count: 0, notified: false }
+  }
+  await dependencies.notify(createStuckPublishMessage(pages, siteLabel, durationLabel))
+
+  return { count: pages.length, notified: true }
+}
+
+const minutesAgo = (now: Date, ms: number): string => {
+  return new Date(now.getTime() - ms).toISOString()
 }
 
 export const runStuckPublishCheck = async (
   dependencies: StuckPublishCheckDependencies,
   siteLabel: string,
 ): Promise<{ count: number; notified: boolean }> => {
-  const before = new Date(dependencies.now().getTime() - STUCK_PUBLISH_THRESHOLD_MS).toISOString()
-  const pages = await dependencies.loadStuckPages(before)
-  if (pages.length === 0) {
-    return { count: 0, notified: false }
-  }
-  await dependencies.notify(createStuckPublishMessage(pages, siteLabel))
+  const before = minutesAgo(dependencies.now(), STUCK_PUBLISH_THRESHOLD_MS)
 
-  return { count: pages.length, notified: true }
+  return notifyStuckPages(dependencies, { before, onOrAfter: null }, siteLabel, "2 時間")
+}
+
+// 確認のたびに「止まってから 30〜60 分の記事」だけを見る。前後の確認と範囲が重ならないので、同じ記事は 1 回だけ出る
+export const runStuckPublishAlert = async (
+  dependencies: StuckPublishCheckDependencies,
+  siteLabel: string,
+): Promise<{ count: number; notified: boolean }> => {
+  const now = dependencies.now()
+  const window = {
+    before: minutesAgo(now, STUCK_PUBLISH_ALERT_THRESHOLD_MS),
+    onOrAfter: minutesAgo(now, STUCK_PUBLISH_ALERT_THRESHOLD_MS + STUCK_PUBLISH_ALERT_INTERVAL_MS),
+  }
+
+  return notifyStuckPages(dependencies, window, siteLabel, "30 分")
 }

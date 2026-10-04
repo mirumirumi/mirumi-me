@@ -627,10 +627,16 @@ export const fetchNotionPageRevisions = async (
 }
 
 // 公開ボタンを押したのに処理が始まらず（Webhook の取りこぼしなど）、公開待ち / 非公開待ち のまま止まっている page
+// last_edited_time が onOrAfter（null なら下限なし）から before までのあいだで止まっている page
+export interface StuckPublishWindow {
+  before: string
+  onOrAfter: string | null
+}
+
 export const fetchStuckPublishRevisions = async (
   client: Client,
   dataSources: NotionDataSourceIds,
-  before: string,
+  window: StuckPublishWindow,
 ): Promise<Array<PageRevision>> => {
   const revisions: Array<PageRevision> = []
   for (const [kind, dataSourceId] of [
@@ -649,7 +655,15 @@ export const fetchStuckPublishRevisions = async (
               { property: "internal-state", select: { equals: "非公開待ち" } },
             ],
           },
-          { timestamp: "last_edited_time", last_edited_time: { before } },
+          { timestamp: "last_edited_time", last_edited_time: { before: window.before } },
+          ...(window.onOrAfter === null
+            ? []
+            : [
+                {
+                  timestamp: "last_edited_time" as const,
+                  last_edited_time: { on_or_after: window.onOrAfter },
+                },
+              ]),
         ],
       },
     })

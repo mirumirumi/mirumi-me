@@ -8,7 +8,12 @@ import {
 
 import { startScheduledBackup } from "./services/backup"
 import { runCommentDigest } from "./services/comment-digest"
-import { createSiteLabel, runStuckPublishCheck } from "./services/notifications"
+import {
+  createSiteLabel,
+  runStuckPublishAlert,
+  runStuckPublishCheck,
+  type StuckPublishCheckDependencies,
+} from "./services/notifications"
 import { createSesEmailSender } from "./services/ses"
 import { createSlackNotifier } from "./services/slack"
 
@@ -17,6 +22,8 @@ import { createSlackNotifier } from "./services/slack"
 export const COMMENT_DIGEST_CRON = "0 0 * * *"
 // 04:00 JST。Notion の定期バックアップ（頻度は仮決定）
 export const NOTION_BACKUP_CRON = "0 19 * * *"
+// 30 分ごと。止まってから 30 分たった公開を知らせる（services/notifications.ts の STUCK_PUBLISH_ALERT_* と同じ間隔）
+export const STUCK_PUBLISH_ALERT_CRON = "*/30 * * * *"
 
 export const runScheduledCommentDigest = async (env: CloudflareBindings): Promise<void> => {
   const {
@@ -66,9 +73,10 @@ export const runScheduledCommentDigest = async (env: CloudflareBindings): Promis
   console.info(JSON.stringify({ event: "comment_digest_finished", ...result }))
 }
 
-// 公開ボタンを押したのに 2 時間以上 公開待ち / 非公開待ち のままの記事を Slack に知らせる。
-// Webhook の取りこぼしや、Notion への書き戻しの失敗で止まると、ほかに気づく手段がない
-export const runScheduledStuckPublishCheck = async (env: CloudflareBindings): Promise<void> => {
+const createStuckPublishDependencies = (
+  env: CloudflareBindings,
+  now: Date,
+): StuckPublishCheckDependencies | null => {
   const {
     NOTION_TOKEN: notionToken,
     NOTION_POSTS_DATA_SOURCE_ID: posts,
@@ -78,28 +86,50 @@ export const runScheduledStuckPublishCheck = async (env: CloudflareBindings): Pr
   if (!notionToken || !posts || !pages || !webhookUrl) {
     console.error(JSON.stringify({ event: "stuck_publish_check_configuration_missing" }))
 
-    return
+    return null
   }
   const notion = createNotionClient(notionToken)
-  const result = await runStuckPublishCheck(
-    {
-      loadStuckPages: async (before) => {
-        const revisions = await fetchStuckPublishRevisions(notion, { posts, pages }, before)
 
-        return revisions.map(({ pageId, title, slug, internalState, lastEditedTime }) => ({
-          pageId,
-          title,
-          slug,
-          internalState,
-          lastEditedTime,
-        }))
-      },
-      notify: createSlackNotifier(webhookUrl),
-      now: () => new Date(),
+  return {
+    loadStuckPages: async (window) => {
+      const revisions = await fetchStuckPublishRevisions(notion, { posts, pages }, window)
+
+      return revisions.map(({ pageId, title, slug, internalState, lastEditedTime }) => ({
+        pageId,
+        title,
+        slug,
+        internalState,
+        lastEditedTime,
+      }))
     },
-    createSiteLabel(env.APP_ENV),
-  )
+    notify: createSlackNotifier(webhookUrl),
+    now: () => now,
+  }
+}
+
+// 公開ボタンを押したのに 2 時間以上 公開待ち / 非公開待ち のままの記事を、毎朝まとめて Slack に知らせる。
+// Webhook の取りこぼしや、Notion への書き戻しの失敗で止まると、ほかに気づく手段がない
+export const runScheduledStuckPublishCheck = async (env: CloudflareBindings): Promise<void> => {
+  const dependencies = createStuckPublishDependencies(env, new Date())
+  if (!dependencies) {
+    return
+  }
+  const result = await runStuckPublishCheck(dependencies, createSiteLabel(env.APP_ENV))
   console.info(JSON.stringify({ event: "stuck_publish_check_finished", ...result }))
+}
+
+// 止まってから 30 分たった公開を、その場で 1 回だけ知らせる。範囲は Cron の予定時刻から決めるので、
+// 起動が少し遅れても前後の確認と重ならない
+export const runScheduledStuckPublishAlert = async (
+  event: ScheduledController,
+  env: CloudflareBindings,
+): Promise<void> => {
+  const dependencies = createStuckPublishDependencies(env, new Date(event.scheduledTime))
+  if (!dependencies) {
+    return
+  }
+  const result = await runStuckPublishAlert(dependencies, createSiteLabel(env.APP_ENV))
+  console.info(JSON.stringify({ event: "stuck_publish_alert_finished", ...result }))
 }
 
 // scheduled handler は wall time 15 分が上限で全記事の取得が収まらないため、Workflow を起動するだけにする
@@ -138,6 +168,11 @@ export const handleScheduled = async (
   }
   if (event.cron === NOTION_BACKUP_CRON) {
     await runScheduledNotionBackup(event, env)
+
+    return
+  }
+  if (event.cron === STUCK_PUBLISH_ALERT_CRON) {
+    await runScheduledStuckPublishAlert(event, env)
 
     return
   }

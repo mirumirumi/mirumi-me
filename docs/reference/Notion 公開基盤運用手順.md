@@ -347,7 +347,11 @@ generate / bootstrap では、Container のジョブの末尾と、Workflow の 
     - 失敗した記事があったら、Workflow の最後に Slack（`SLACK_WEBHOOK_URL`）へ通知する（公開ボタン、generate、bootstrap のどれでも）。記事の題名、slug、理由、Notion の URL を並べる。公開ボタンで、書き戻しの直前に本文が直されていた記事も含む
     - Workflow そのものが例外で止まったときも、`notify-error` の step で Slack に通知する（公開の Workflow と、コメント反映の Workflow）
     - 通知が届かなくても、公開の結果は失敗にしない（Worker のログに `publish_failure_notification_failed` / `workflow_error_notification_failed`）
-    - `公開待ち` / `非公開待ち` のまま 2 時間以上たった記事を、毎朝（09:00 JST の Cron。コメントの digest と同じ）Slack に通知する。Webhook の取りこぼしや Notion の障害で止まった公開に気づくため。Notion のボタンを押し直しても値が変わらず Webhook が飛ばないので、`POST /admin/publish` で流し直す
+    - `公開待ち` / `非公開待ち` のまま止まった記事を Slack に通知する。Webhook の取りこぼしや Notion の障害で止まった公開に気づくため
+        - 30 分ごとの Cron：止まってから 30 分たった記事を 1 回だけ知らせる（止まってから 30〜60 分のあいだに知らせが来る）。毎回「30〜60 分前に止まったもの」だけを見るので、同じ記事は何度も来ない
+        - 毎朝 09:00 JST の Cron（コメントの digest と同じ）：2 時間以上止まっている記事をすべて知らせる。直していなければ翌朝も来る
+        - ボタンを押し直しても値が変わらず Webhook が飛ばないので、`internal-state` を押す前の値（`下書き` / `公開中` / `非公開`）に戻し、2 分ほどあけてから押し直す。すぐ押すと、戻した変更と押した変更が 1 つの Webhook にまとめられて、また始まらないことがある。`POST /admin/publish` に pageId を渡して流し直すこともできる
+    - 公開が失敗した直後（1 分くらいのうち）に `公開` / `非公開` を押し直すと、止まることがある。Notion は短い時間の項目の変更を 1 つの Webhook にまとめて送り、bot の書き戻し（`公開待ち` → `公開中`）と押し直し（`公開中` → `公開待ち`）で行って戻った `internal-state` は、変わった項目に入らない。少し待ってから押し直すか、止まったら上の手順で動かし直す
     - 記事を `非公開` にしたとき、その記事を内部ブログカードで指している公開中の記事を Slack に知らせる（公開ボタンの Workflow の `notify-unpublished-references` step）。それらは、次に `公開` を押したときや generate で Notion の本文から作り直すときにカードを解決できず、prd では公開エラーになるため
         - 調べるのは公開中の記事の snapshot（`_internal/published-pages-v1`）の HTML。普通のリンクは対象外
         - snapshot を読めなかった記事は飛ばす（Container のログにだけ `unpublished_reference_check_skipped` が残る）
