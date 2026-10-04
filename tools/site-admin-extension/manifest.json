@@ -8,15 +8,20 @@
         "48": "icons/icon_48.png",
         "128": "icons/icon_128.png"
     },
+    "background": {
+        "service_worker": "src/background.ts",
+        "type": "module"
+    },
+    "host_permissions": [
+        "https://api.cloudflare.com/*",
+        "https://api.notion.com/*"
+    ],
     "content_scripts": [
         {
             "matches": [
                 "https://mirumi.me/*",
-                "https://d3unw9ju8hrt73.cloudfront.net/*"
-            ],
-            "exclude_matches": [
-                "https://mirumi.me/wp-admin/*",
-                "https://mirumi.in/wp-admin/*"
+                "https://d3unw9ju8hrt73.cloudfront.net/*",
+                "https://d3694gpnjd4x49.cloudfront.net/*"
             ],
             "js": [
                 "src/content-script.ts"

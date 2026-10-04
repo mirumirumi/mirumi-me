@@ -1,5 +1,5 @@
-const API_DOMAIN = "mirumi.in"
-const BASE_URL = `https://${API_DOMAIN}/wp-json/mirumi`
+import type { PageAdminData, PageAdminDataRequest, PageAdminDataResponse } from "./admin-data"
+import { toPageViewPath } from "./admin-data"
 
 main(null)
 
@@ -26,15 +26,11 @@ window.addEventListener("click", async (event) => {
 })
 
 async function main(to: string | null): Promise<void> {
-  let slug = to ? to.slice(1) : window.location.pathname.slice(1)
-  slug = slug.replace(/(.*?)\/$/gim, "$1")
+  const target = new URL(to ?? window.location.href, window.location.href)
+  // 外へのリンクと、PV を数えないページ（2 階層以上など）では何も出さない
+  if (target.origin !== window.location.origin || !toPageViewPath(target.pathname)) return
 
-  let res = null
-  if (!/.*?\/.*?/gim.test(slug) && !new URL(window.location.href).searchParams.get("p")) {
-    // In case of NOT the top page and NOT the preview for newly page
-
-    res = await fetchData(slug)
-  }
+  const res = await fetchData(target.pathname)
   if (!res) return
   const { pv, editUrl } = res
 
@@ -45,7 +41,7 @@ async function main(to: string | null): Promise<void> {
 
   box.id = "site-admin-extension"
   counter.textContent = `PV: ${pv.toString()}`
-  a.href = `${editUrl}`
+  a.href = editUrl ?? ""
   a.textContent = "編集"
   a.style.cssText = `
     color: #fff;
@@ -74,37 +70,26 @@ async function main(to: string | null): Promise<void> {
   editLink.style.cssText = innerStyle
 
   box.appendChild(counter)
-  box.appendChild(editLink)
+  // トップと記事一覧は Notion のページがないので、編集リンクを出さない
+  if (editUrl) {
+    box.appendChild(editLink)
+  }
   document.body.appendChild(box)
 }
 
-// 🔴ここは明確に Notion 用に修正必要
-async function fetchData(slug: string): Promise<{ pv: string; editUrl: string }> {
-  let postId: number | string = "0"
-
-  if (slug.length === 0) {
-    // In case of the top page
-
-    postId = "12717"
-  } else {
-    postId = await fetchJson<number | string>(`/post_id_with_post_slug/${slug}`)
-  }
-
-  const editUrl = `https://${API_DOMAIN}/wp-admin/post.php?post=${postId}&action=edit`
-
-  const pageViews = await fetchJson<number | string | null>(`/page_admin_data/${postId}`)
-  const pv = pageViews ? pageViews.toString() : "0"
-
-  return { pv, editUrl }
-}
-
-async function fetchJson<T>(path: string): Promise<T> {
-  const response = await fetch(`${BASE_URL}${path}`)
+// PV は Analytics Engine、編集リンクは Notion から、background の service worker が読む
+async function fetchData(path: string): Promise<PageAdminData | null> {
+  const response = await chrome.runtime.sendMessage<PageAdminDataRequest, PageAdminDataResponse>({
+    type: "page-admin-data",
+    host: window.location.host,
+    path,
+  })
   if (!response.ok) {
-    throw Error(`Request failed: ${response.status} ${response.statusText}`)
+    console.warn(`site-admin-extension: ${response.error}`)
+    return null
   }
 
-  return response.json() as Promise<T>
+  return response.data
 }
 
 function cleanup(): void {

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --port 8080",
     "tsc": "tsc --noEmit",
+    "test": "vitest run --config ../../vitest.config.ts --configLoader runner tools/site-admin-extension",
     "build": "tsc --noEmit && vite build"
   },
   "devDependencies": {
