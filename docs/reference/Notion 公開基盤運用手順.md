@@ -566,7 +566,8 @@ dev で見えない理由と、本番まで持ち越した経緯は `docs/L2/Not
 ```
 
 - 公開のときに、iTunes Search API の lookup で名前（trackName）、開発元（artistName）、価格（formattedPrice）、アイコン（artworkUrl512）を引く
-    - Container が Worker の橋渡し（`bindings.internal/app-store`）で引き、Worker が `CONTENT_CACHE` に cache する（key は `app-store:v1:<国>:<ID>`）。7 日は引き直さず、1 年残す。引けないときは古い値を使う
+    - Container が iTunes を直接引く（Worker から引くと Apple がほとんど 403 で断るため）。cache は Worker の `CONTENT_CACHE` に置き、Container からは橋渡し（`bindings.internal/app-store-cache`）で読み書きする（key は `app-store:v1:<国>:<ID>`）。7 日は引き直さず、1 年残す。引けないときは古い値を使う
+    - 引けなかった理由は Container のログにしか残らない（読めない）。公開エラーや 🚨 の箱には URL だけが出る
     - 国は URL の `/jp/` などから決める。無ければ jp
     - アイコンは取ってきて、本文画像と同じく mirumi.media に置き直す（`app-icon-<ID>`）。CDN 直リンクは将来切れるため
 - 書いた属性（`name`、`icon`、`developer`、`price`）は引いた値より優先する。`android="…"` もそのまま書ける

@@ -1,7 +1,6 @@
 import { Container } from "@cloudflare/containers"
 import { z } from "zod"
 
-import { resolveAppStoreApp } from "shared/app-store"
 import { resolveExternalBookmark } from "shared/bookmark"
 import { resolveXPost } from "shared/x-post"
 
@@ -14,6 +13,7 @@ import type {
 } from "../lib/publishing"
 import { PUBLISH_FAILURE_CODES } from "../lib/publishing"
 import { createXaiPostFetcher, createXPostLinkCardResolver } from "../services/x-post"
+import { APP_STORE_CACHE_BRIDGE_URL, handleAppStoreCacheBridge } from "./app-store-cache-bridge"
 import {
   BACKGROUND_JOB_START_TIMEOUT_MS,
   CONTROL_REQUEST_TIMEOUT_MS,
@@ -438,15 +438,19 @@ export class BuildContainer extends Container<CloudflareBindings> {
 
 BuildContainer.outboundByHost = {
   "bindings.internal": async (request, env) => {
-    if (request.method !== "GET") {
-      return new Response("Method Not Allowed", { status: 405 })
-    }
     if (!env.CONTENT_CACHE) {
       console.error(JSON.stringify({ event: "content_cache_binding_missing" }))
 
       return new Response("Internal Server Error", { status: 500 })
     }
     const url = new URL(request.url)
+    // App Store の cache の書き込みだけは PUT を受ける
+    if (url.pathname === new URL(APP_STORE_CACHE_BRIDGE_URL).pathname) {
+      return handleAppStoreCacheBridge(request, env.CONTENT_CACHE)
+    }
+    if (request.method !== "GET") {
+      return new Response("Method Not Allowed", { status: 405 })
+    }
     if (url.pathname === "/bookmark") {
       const target = url.searchParams.get("url")
       if (!target) {
@@ -454,26 +458,6 @@ BuildContainer.outboundByHost = {
       }
 
       return Response.json(await resolveExternalBookmark(target, env.CONTENT_CACHE))
-    }
-    if (url.pathname === "/app-store") {
-      const target = url.searchParams.get("url")
-      if (!target) {
-        return Response.json({ error: "Invalid App Store URL" }, { status: 400 })
-      }
-      try {
-        return Response.json(await resolveAppStoreApp(target, env.CONTENT_CACHE))
-      } catch (err) {
-        // Container 側は失敗を warning にして公開を止めるので、理由はここで残す
-        console.warn(
-          JSON.stringify({
-            event: "app_store_lookup_failed",
-            url: target,
-            error: err instanceof Error ? err.message : String(err),
-          }),
-        )
-
-        return Response.json({ error: "App Store lookup failed" }, { status: 502 })
-      }
     }
     const postId = url.pathname.match(/^\/x-post\/(\d+)$/)?.[1]
     if (postId) {

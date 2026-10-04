@@ -1,4 +1,6 @@
-import { parseAppStoreApp } from "shared/app-store"
+import { z } from "zod"
+
+import { type AppStoreCache, createAppStoreLookup, resolveAppStoreApp } from "shared/app-store"
 import type { BookmarkCardData } from "shared/bookmark"
 import { parseBookmarkCardData } from "shared/bookmark"
 import type { ArticleContent } from "shared/content"
@@ -11,6 +13,7 @@ import {
 import { parseStaticXPostData } from "shared/x-post"
 
 import type { Fetcher } from "../lib/types"
+import { APP_STORE_CACHE_BRIDGE_URL } from "./app-store-cache-bridge"
 
 export { createInternalBookmarkLookup, type InternalBookmarkSource }
 
@@ -26,6 +29,32 @@ const fetchJson = async (url: URL, fetcher: Fetcher): Promise<unknown> => {
   }
 
   return response.json()
+}
+
+const appStoreCacheValueSchema = z.strictObject({ value: z.string().nullable() })
+
+// App Store の cache は Worker の KV に置き、Container からは橋渡しで読み書きだけを頼む
+const createAppStoreCacheBridge = (fetcher: Fetcher): AppStoreCache => {
+  return {
+    get: async (key) => {
+      const url = new URL(APP_STORE_CACHE_BRIDGE_URL)
+      url.searchParams.set("key", key)
+
+      return appStoreCacheValueSchema.parse(await fetchJson(url, fetcher)).value
+    },
+    put: async (key, value, options) => {
+      const response = await fetcher(new URL(APP_STORE_CACHE_BRIDGE_URL), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key, value, expirationTtl: options?.expirationTtl }),
+        signal: AbortSignal.timeout(BRIDGE_TIMEOUT_MS),
+      })
+      await response.body?.cancel()
+      if (!response.ok) {
+        throw Error(`App Store の cache を書けませんでした: ${response.status}`)
+      }
+    },
+  }
 }
 
 export const resolveArticleEnrichment = async (
@@ -45,11 +74,11 @@ export const resolveArticleEnrichment = async (
         await fetchJson(new URL(`/x-post/${postId}`, "http://bindings.internal"), fetcher),
       )
     },
+    // iTunes は Container から引く。Worker から引くと Apple がほとんど 403 で断る
     appStore: async (url) => {
-      const bridge = new URL("http://bindings.internal/app-store")
-      bridge.searchParams.set("url", url)
-
-      return parseAppStoreApp(await fetchJson(bridge, fetcher))
+      return resolveAppStoreApp(url, createAppStoreCacheBridge(fetcher), {
+        lookup: createAppStoreLookup((input, init) => fetcher(input, init)),
+      })
     },
   })
 }

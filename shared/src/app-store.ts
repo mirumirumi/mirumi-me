@@ -2,7 +2,9 @@ import { z } from "zod"
 
 // アプリ紹介カードの `[app ios="…"]` を、App Store の URL だけから組み立てるための値。
 // iTunes Search API の lookup（認証不要・無料）で引き、KV に cache する。
-// 移行した 103 件は name / icon などを焼き込んであるので引かない
+// 移行した 103 件は name / icon などを焼き込んであるので引かない。
+// 公開のときは Container から引く。Worker から引くと Apple がほとんど 403 で断るため
+// （L2 `コンテンツブロックタイプ変換の設計.md` の「アプリ紹介カードを App Store の URL から組み立てる」）
 
 // 価格が変わりうるので、ブログカード（30 日）より短く取り直す
 const FRESH_CACHE_MS = 7 * 24 * 60 * 60 * 1_000
@@ -24,6 +26,8 @@ export interface AppStoreCache {
 }
 
 export type LookupAppStoreApp = (id: string, country: string) => Promise<AppStoreApp>
+
+export type AppStoreFetcher = (input: URL, init?: RequestInit) => Promise<Response>
 
 const appStoreAppSchema: z.ZodType<AppStoreApp> = z.strictObject({
   id: z.string().regex(/^\d+$/),
@@ -53,11 +57,6 @@ const lookupSchema = z.object({
   ),
 })
 
-// Container と Worker の橋渡しで受け取った値を確かめる
-export const parseAppStoreApp = (value: unknown): AppStoreApp => {
-  return appStoreAppSchema.parse(value)
-}
-
 // https://apps.apple.com/jp/app/<名前>/id<数字> の形（古い itunes.apple.com も）。国がなければ jp
 export const parseAppStoreUrl = (value: string): { id: string; country: string } | null => {
   let url: URL
@@ -77,29 +76,35 @@ export const parseAppStoreUrl = (value: string): { id: string; country: string }
   return { id: match[2], country: match[1] ?? DEFAULT_COUNTRY }
 }
 
-export const fetchAppStoreApp: LookupAppStoreApp = async (id, country) => {
-  const url = new URL("https://itunes.apple.com/lookup")
-  url.searchParams.set("id", id)
-  url.searchParams.set("country", country)
-  const response = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) })
-  if (!response.ok) {
-    await response.body?.cancel()
-    throw Error(`iTunes の lookup に失敗しました: ${response.status}`)
-  }
-  const result = lookupSchema.parse(await response.json()).results[0]
-  const artworkUrl = result?.artworkUrl512 ?? result?.artworkUrl100
-  if (!result || !artworkUrl) {
-    throw Error(`App Store にアプリが見つかりません: ${id}`)
-  }
+export const createAppStoreLookup = (fetcher: AppStoreFetcher): LookupAppStoreApp => {
+  return async (id, country) => {
+    const url = new URL("https://itunes.apple.com/lookup")
+    url.searchParams.set("id", id)
+    url.searchParams.set("country", country)
+    const response = await fetcher(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) })
+    if (!response.ok) {
+      await response.body?.cancel()
+      throw Error(`iTunes の lookup に失敗しました: ${response.status}`)
+    }
+    const result = lookupSchema.parse(await response.json()).results[0]
+    const artworkUrl = result?.artworkUrl512 ?? result?.artworkUrl100
+    if (!result || !artworkUrl) {
+      throw Error(`App Store にアプリが見つかりません: ${id}`)
+    }
 
-  return {
-    id,
-    name: result.trackName,
-    developer: result.artistName,
-    price: result.formattedPrice ?? "",
-    artworkUrl,
+    return {
+      id,
+      name: result.trackName,
+      developer: result.artistName,
+      price: result.formattedPrice ?? "",
+      artworkUrl,
+    }
   }
 }
+
+export const fetchAppStoreApp: LookupAppStoreApp = createAppStoreLookup((input, init) =>
+  fetch(input, init),
+)
 
 const parseCached = (value: string | null) => {
   if (!value) {

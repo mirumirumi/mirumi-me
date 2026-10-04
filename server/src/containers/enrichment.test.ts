@@ -125,7 +125,7 @@ describe("article enrichment", () => {
     }
   })
 
-  test("属性の足りない [app ios] だけを bridge で App Store から引き、ios の値ごとに対応づける", async () => {
+  test("属性の足りない [app ios] だけを Container から App Store で引き、cache は橋渡しで Worker の KV に読み書きする", async () => {
     const ios = "https://apps.apple.com/jp/app/some-app/id42"
     const paragraph = (id: string, content: string): ArticleContent["blocks"][number] => ({
       id,
@@ -154,9 +154,27 @@ describe("article enrichment", () => {
       price: "無料",
       artworkUrl: "https://is1-ssl.mzstatic.com/image/thumb/icon/512x512bb.jpg",
     }
-    const fetcher = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) =>
-      Response.json(app),
-    )
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.startsWith("https://itunes.apple.com/lookup")) {
+        return Response.json({
+          resultCount: 1,
+          results: [
+            {
+              trackId: 42,
+              trackName: app.name,
+              artistName: app.developer,
+              formattedPrice: app.price,
+              artworkUrl512: app.artworkUrl,
+            },
+          ],
+        })
+      }
+
+      return init?.method === "PUT"
+        ? new Response(null, { status: 204 })
+        : Response.json({ value: null })
+    })
     const appArticle: ArticleContent = {
       ...article,
       blocks: [
@@ -172,10 +190,18 @@ describe("article enrichment", () => {
     expect((await resolveArticleEnrichment(appArticle, new Map(), fetcher)).apps).toEqual({
       [ios]: app,
     })
-    expect(fetcher).toHaveBeenCalledOnce()
-    expect(String(fetcher.mock.calls[0]?.[0])).toEqual(
-      `http://bindings.internal/app-store?url=${encodeURIComponent(ios)}`,
-    )
+    expect(
+      fetcher.mock.calls.map(([input, init]) => [String(input), init?.method ?? "GET"]),
+    ).toEqual([
+      ["http://bindings.internal/app-store-cache?key=app-store%3Av1%3Ajp%3A42", "GET"],
+      ["https://itunes.apple.com/lookup?id=42&country=jp", "GET"],
+      ["http://bindings.internal/app-store-cache", "PUT"],
+    ])
+    expect(JSON.parse(String(fetcher.mock.calls[2]?.[1]?.body))).toEqual({
+      key: "app-store:v1:jp:42",
+      value: expect.stringContaining('"name":"アプリ"'),
+      expirationTtl: 365 * 24 * 60 * 60,
+    })
   })
 
   test("xAI failure は未解決のまま renderer へ渡す", async () => {
