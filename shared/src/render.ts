@@ -1,4 +1,5 @@
 import { createAmazonFallbackLinks, parseAmazonShortcode } from "./amazon"
+import type { AppStoreApp } from "./app-store"
 import type { BookmarkCardData } from "./bookmark"
 import type {
   ArticleContent,
@@ -11,6 +12,8 @@ import type {
 } from "./content"
 import { WAKU_CALLOUT_ICON } from "./content"
 import { isNotionHostedFile, resolveMediaDimensions, resolveResponsiveBodyImage } from "./media"
+import { normalizeSearchText } from "./search"
+import { parseShortcodeAttributes } from "./shortcode"
 import type { StaticXPostData } from "./x-post"
 import { findXPostLinkMatch } from "./x-post"
 
@@ -19,6 +22,8 @@ export interface RenderOptions {
   allowUnsignedAmazonCards?: boolean
   bookmarks?: Readonly<Record<string, BookmarkCardData>>
   xPosts?: Readonly<Record<string, StaticXPostData>>
+  // アプリ紹介カードの `ios` の値（書いたまま）ごとの App Store の値
+  apps?: Readonly<Record<string, AppStoreApp>>
 }
 
 interface RenderContext {
@@ -465,6 +470,49 @@ const renderMedia = (
   return `<a class="blogcard${external ? " external" : ""}" href="${escapeHtml(bookmark.url)}"${external ? ' target="_blank" rel="noopener"' : ""}><div class="${cardClass}">${image}<div class="content"><div class="title">${escapeHtml(bookmark.title)}</div>${snippet}${footer}</div></div></a>`
 }
 
+// 上のカードの形に合わせて、描いた本文から内部ブログカードの行き先（route）を拾う。公開済みの snapshot は
+// 描いたあとの HTML しか持たないので、非公開にした記事を指している記事はここから探す
+const INTERNAL_BLOGCARD_PATTERN = /<a class="blogcard" href="https:\/\/mirumi\.me(\/[^"]*)"/g
+
+export const findInternalBlogcardRoutes = (html: string): Array<string> => {
+  return [...new Set([...html.matchAll(INTERNAL_BLOGCARD_PATTERN)].map((match) => match[1]!))]
+}
+
+// もくじは見出しの重複、内部ブログカードはほかの記事の題名なので、検索の索引には入れない。
+// もくじの中身は ul / li / a だけなので、最初の `</div></div>` で閉じる
+const TOC_PATTERN = /<div class="toc">[\s\S]*?<\/div><\/div>/g
+const INTERNAL_BLOGCARD_BLOCK_PATTERN = /<a class="blogcard"[\s\S]*?<\/a>/g
+const HTML_ENTITIES: Readonly<Record<string, string>> = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+}
+
+const decodeHtmlEntities = (value: string): string => {
+  return value.replaceAll(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (entity, name: string) => {
+    if (name.startsWith("#x") || name.startsWith("#X")) {
+      return String.fromCodePoint(Number.parseInt(name.slice(2), 16))
+    }
+    if (name.startsWith("#")) {
+      return String.fromCodePoint(Number.parseInt(name.slice(1), 10))
+    }
+
+    return HTML_ENTITIES[name.toLowerCase()] ?? entity
+  })
+}
+
+// 描いた本文から検索の索引に入れる平文を作る。snapshot から作り直す記事は HTML しか持たないので、
+// どの記事もここを通してそろえる
+export const createSearchText = (html: string): string => {
+  const text = html
+    .replaceAll(TOC_PATTERN, " ")
+    .replaceAll(INTERNAL_BLOGCARD_BLOCK_PATTERN, " ")
+    .replaceAll(/<[^>]*>/g, " ")
+
+  return normalizeSearchText(decodeHtmlEntities(text))
+}
+
 // image ブロックのキャプションは、先頭に `[image …]` のオプショントークンを置ける。
 // トークンより後ろが実際のキャプションで、区切りの半角スペース 1 個は取り除く
 const splitImageCaption = (
@@ -528,12 +576,22 @@ const renderDelayedVideo = (attributes: Record<string, string>, context: RenderC
 }
 
 // 漫画の引用表現。もとの WordPress でも blockquote.img + wp-caption の組み合わせだった
-// アプリ紹介カード。属性はすべて移行時に焼き込まれているので外部への問い合わせは不要
+// アプリ紹介カード。移行した 103 件は属性をすべて焼き込んである。新しく書く記事は `ios` だけを書き、
+// 足りない値は公開のときに App Store から引いたもの（options.apps）で埋める。書いた属性はそちらを優先する
 const renderApp = (attributes: Record<string, string>, context: RenderContext): string => {
-  const icon = attributes.icon ? mediaUrl(attributes.icon) : null
-  if (!attributes.name || !icon) {
-    return addWarning(context, "アプリカードの name か icon がありません")
+  const app = attributes.ios ? context.options.apps?.[attributes.ios] : undefined
+  const name = attributes.name || app?.name
+  const icon = attributes.icon ? mediaUrl(attributes.icon) : app ? safeUrl(app.artworkUrl) : null
+  if (!name || !icon) {
+    return addWarning(
+      context,
+      attributes.ios && (!attributes.name || !attributes.icon)
+        ? `アプリカードの情報を App Store から引けませんでした（${attributes.ios}）`
+        : "アプリカードの name か icon がありません",
+    )
   }
+  const developer = attributes.developer || app?.developer
+  const price = attributes.price || app?.price
   const storeLink = (url: string | undefined, className: string, image: string, label: string) => {
     const safe = url ? safeUrl(url) : null
     return safe
@@ -541,13 +599,11 @@ const renderApp = (attributes: Record<string, string>, context: RenderContext): 
       : ""
   }
   const detail = [
-    attributes.developer
-      ? `<span class="appreach__developper">${escapeHtml(attributes.developer)}</span>`
-      : "",
-    attributes.price ? `<span class="appreach__price">${escapeHtml(attributes.price)}</span>` : "",
+    developer ? `<span class="appreach__developper">${escapeHtml(developer)}</span>` : "",
+    price ? `<span class="appreach__price">${escapeHtml(price)}</span>` : "",
   ].join("")
 
-  return `<div class="appreach"><img class="appreach__icon" src="${escapeHtml(icon)}" alt="${escapeHtml(attributes.name)}" loading="lazy"><div class="appreach__detail"><p class="appreach__name">${escapeHtml(attributes.name)}</p><p class="appreach__info">${detail}</p></div><div class="appreach__links">${storeLink(attributes.ios, "appreach__aslink", "as_ja.svg", "App Store")}${storeLink(attributes.android, "appreach__gplink", "gplay_ja.png", "Google Play")}</div></div>`
+  return `<div class="appreach"><img class="appreach__icon" src="${escapeHtml(icon)}" alt="${escapeHtml(name)}" loading="lazy"><div class="appreach__detail"><p class="appreach__name">${escapeHtml(name)}</p><p class="appreach__info">${detail}</p></div><div class="appreach__links">${storeLink(attributes.ios, "appreach__aslink", "as_ja.svg", "App Store")}${storeLink(attributes.android, "appreach__gplink", "gplay_ja.png", "Google Play")}</div></div>`
 }
 
 const renderQuoteImage = (attributes: Record<string, string>, context: RenderContext): string => {
@@ -614,17 +670,6 @@ const renderAmazon = (value: string, context: RenderContext): string => {
   return `<div class="amazon-item-box product-item-box no-icon no-after cf"${hydrationAttributes}><div class="amazon-item-content product-item-content amazon-card-content-fallback cf"><div class="amazon-item-title product-item-title"><a class="amazon-item-title-link product-item-title-link" data-amazon-title href="${escapeHtml(links.amazon)}" target="_blank" rel="nofollow noopener">${escapeHtml(title)}</a></div><div class="amazon-item-snippet product-item-snippet"><span class="amazon-item-maker product-item-maker" data-amazon-byline></span></div><div class="amazon-item-buttons product-item-buttons"><div class="shoplinkamazon"><a data-amazon-link href="${escapeHtml(links.amazon)}" target="_blank" rel="nofollow noopener">Amazon で見る</a></div><div class="shoplinkrakuten"><a href="${escapeHtml(links.rakuten)}" target="_blank" rel="nofollow noopener">楽天市場で探す</a></div><div class="shoplinkyahoo"><a href="${escapeHtml(links.yahoo)}" target="_blank" rel="nofollow noopener">Yahoo!ショッピングで探す</a></div></div></div></div>`
 }
 
-const shortcodeAttributes = (value: string): Record<string, string> => {
-  const attributes: Record<string, string> = {}
-  for (const match of value.matchAll(/([a-zA-Z][\w-]*)\s*=\s*"((?:[^"\\]|\\.)*)"/g)) {
-    if (match[1] && match[2] !== undefined) {
-      attributes[match[1]] = match[2].replaceAll('\\"', '"')
-    }
-  }
-
-  return attributes
-}
-
 const renderBlock = (block: ContentBlock, context: RenderContext): string => {
   switch (block.type) {
     case "paragraph": {
@@ -641,7 +686,7 @@ const renderBlock = (block: ContentBlock, context: RenderContext): string => {
         if (shortcode[1] === "amazon") {
           return renderAmazon(plainText.trim(), context)
         }
-        const attributes = shortcodeAttributes(plainText.trim())
+        const attributes = parseShortcodeAttributes(plainText.trim())
         if (shortcode[1] === "button") {
           return renderButton(attributes, context)
         }

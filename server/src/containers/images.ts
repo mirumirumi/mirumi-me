@@ -15,7 +15,25 @@ const THUMBNAIL_SIZES = [
   { width: 1_200, height: 630, name: "article" },
 ] as const
 
-type MediaUsage = "body" | "thumbnail"
+// audio / video は Notion にアップロードしたものを変換せずに置く（寸法は持たない）
+export type MediaUsage = "body" | "thumbnail" | "audio" | "video"
+
+// 本文の audio / video の上限。メモリに読んでから置くので、Container（standard-3）のメモリに余裕を残す
+export const MAX_BODY_FILE_BYTES = 500 * 1_024 * 1_024
+
+// Notion が octet-stream で返したときと、拡張子のない URL のときに使う。同じ Content-Type は先のものを拡張子にする
+const BODY_FILE_TYPES: Array<{ extension: string; contentType: string }> = [
+  { extension: "mp4", contentType: "video/mp4" },
+  { extension: "m4v", contentType: "video/mp4" },
+  { extension: "mov", contentType: "video/quicktime" },
+  { extension: "webm", contentType: "video/webm" },
+  { extension: "mp3", contentType: "audio/mpeg" },
+  { extension: "m4a", contentType: "audio/mp4" },
+  { extension: "wav", contentType: "audio/wav" },
+  { extension: "ogg", contentType: "audio/ogg" },
+  { extension: "aac", contentType: "audio/aac" },
+  { extension: "flac", contentType: "audio/flac" },
+]
 
 export interface MediaObjectMetadata {
   transformVersion: string
@@ -34,6 +52,11 @@ export interface MediaObject {
 export interface MediaObjectStore {
   head(key: string): Promise<MediaObjectMetadata | null>
   put(key: string, object: MediaObject): Promise<void>
+}
+
+export interface DownloadedMediaFile {
+  bytes: Uint8Array
+  contentType: string
 }
 
 export interface NormalizedBodyImage {
@@ -79,6 +102,10 @@ export const cleanMediaStem = (source: string, fallback: string): string => {
     .slice(0, 80)
 
   return stem || fallback
+}
+
+const isOctetStream = (contentType: string): boolean => {
+  return contentType === "application/octet-stream" || contentType === "binary/octet-stream"
 }
 
 const publicMediaUrl = (key: string): string => {
@@ -247,6 +274,34 @@ export class MediaNormalizer {
     }
 
     return urls as ThumbnailUrls
+  }
+
+  // Notion にアップロードした audio / video は、画像の animation と同じく変換せず元 bytes のまま置く
+  async copyBodyFile(
+    file: DownloadedMediaFile,
+    kind: "audio" | "video",
+    sourceUrl: string,
+    fallbackStem: string,
+  ): Promise<string> {
+    if (MAX_BODY_FILE_BYTES < file.bytes.byteLength) {
+      throw Error(`${kind} が 500 MiB の上限を超えています`)
+    }
+    const sourceExtension =
+      filenameFromSource(sourceUrl)
+        .match(/\.([a-z0-9]{1,8})$/i)?.[1]
+        ?.toLowerCase() ?? null
+    const contentType = isOctetStream(file.contentType)
+      ? (BODY_FILE_TYPES.find((type) => type.extension === sourceExtension)?.contentType ??
+        file.contentType)
+      : file.contentType
+    const extension =
+      sourceExtension ??
+      BODY_FILE_TYPES.find((type) => type.contentType === contentType)?.extension ??
+      "bin"
+    const key = `${assetHash(file.bytes, kind)}-${cleanMediaStem(sourceUrl, fallbackStem)}.${extension}`
+    await this.#saveVariant(key, file.bytes, contentType, kind, { width: 0, height: 0 })
+
+    return publicMediaUrl(key)
   }
 
   async #saveVariant(

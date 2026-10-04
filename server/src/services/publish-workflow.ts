@@ -17,7 +17,7 @@ import {
   isGeneratePublishError,
   validatePageRevisionMetadata,
 } from "../lib/publishing"
-import type { PublishFailureNotice } from "./notifications"
+import type { PublishFailureNotice, UnpublishedReferenceNotice } from "./notifications"
 
 type WorkflowDurationUnit = "second" | "minute" | "hour" | "day" | "week" | "month" | "year"
 type WorkflowDuration = `${number} ${WorkflowDurationUnit}` | `${number} ${WorkflowDurationUnit}s`
@@ -74,6 +74,10 @@ export const PUBLISH_WORKFLOW_STEP_CONFIGS = {
     timeout: "2 minutes",
   },
   notifyFailures: {
+    retries: { limit: 2, delay: "10 seconds", backoff: "exponential" },
+    timeout: "1 minute",
+  },
+  notifyUnpublishedReferences: {
     retries: { limit: 2, delay: "10 seconds", backoff: "exponential" },
     timeout: "1 minute",
   },
@@ -137,6 +141,9 @@ export interface PublishWorkflowDependencies {
   findPagesChangedAfterBuild(checks: Array<PublishedPageCheck>): Promise<Array<string>>
   // 失敗した記事を Slack に知らせる。Notion の 公開エラー は公開ボタンを押した人しか見ないので、気づけるようにする
   notifyFailures(notice: PublishFailureNotice): Promise<void>
+  // 非公開にした記事を内部ブログカードで指している記事を Slack に知らせる。それらは次に作り直すとき prd で失敗になるので、
+  // 非公開にした時点で気づけるようにする
+  notifyUnpublishedReferences(notice: UnpublishedReferenceNotice): Promise<void>
 }
 
 interface RunPublishWorkflowOptions {
@@ -349,6 +356,50 @@ const notifyPublishFailures = async (
     console.warn(
       JSON.stringify({
         event: "publish_failure_notification_failed",
+        workflowId,
+        error: err instanceof Error ? err.message : String(err),
+      }),
+    )
+  }
+}
+
+const notifyUnpublishedReferences = async (
+  summary: PublishJobSummary,
+  revisions: Array<PageRevision>,
+  workflowId: string,
+  step: WorkflowStepExecutor,
+  dependencies: PublishWorkflowDependencies,
+) => {
+  if (summary.unpublishedReferences.length === 0) {
+    return
+  }
+  const revisionByPage = new Map(revisions.map((revision) => [revision.pageId, revision]))
+  const notice: UnpublishedReferenceNotice = {
+    workflowId,
+    pages: summary.unpublishedReferences.map((references) => {
+      const revision = revisionByPage.get(references.pageId)
+
+      return {
+        pageId: references.pageId,
+        title: revision?.title ?? "",
+        slug: revision?.slug ?? "",
+        referrers: references.referrers,
+      }
+    }),
+  }
+  try {
+    await step.do(
+      "notify-unpublished-references",
+      PUBLISH_WORKFLOW_STEP_CONFIGS.notifyUnpublishedReferences,
+      async () => {
+        await dependencies.notifyUnpublishedReferences(notice)
+      },
+    )
+  } catch (err) {
+    // 非公開はもう済んでいるので、知らせられないことを理由に失敗にしない
+    console.warn(
+      JSON.stringify({
+        event: "unpublished_reference_notification_failed",
         workflowId,
         error: err instanceof Error ? err.message : String(err),
       }),
@@ -698,6 +749,7 @@ export const runPublishWorkflow = async ({
         message: "公開の途中で本文が直されたので、直す前の本文で公開しました",
       })),
     )
+    await notifyUnpublishedReferences(summary, loaded.revisions, workflowId, step, dependencies)
   } else if (params.mode === "bootstrap") {
     const deploymentPages = await loadFailureDeploymentPages(failures, step, dependencies)
     await writeBootstrapNotionResults(

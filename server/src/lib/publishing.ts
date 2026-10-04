@@ -183,6 +183,21 @@ export interface PublishJobSummary {
   // generate で、最後に公開した版からも作り直せず、前のアプリの HTML のまま残した page
   stale: Array<string>
   updatedPaths: Array<string>
+  // 公開ボタンで非公開にした page を、内部ブログカードで指している公開中の page。
+  // それらは次に Notion の本文から作り直すとき、カードを解決できずに prd では失敗になる
+  unpublishedReferences: Array<UnpublishedPageReferences>
+}
+
+export interface UnpublishedPageReferrer {
+  pageId: string
+  title: string
+  slug: string
+}
+
+export interface UnpublishedPageReferences {
+  pageId: string
+  route: string
+  referrers: Array<UnpublishedPageReferrer>
 }
 
 // full / bootstrap は結果を待たずに受け付けるため、状態を polling で取りに行く。

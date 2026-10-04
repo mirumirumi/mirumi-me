@@ -12,7 +12,7 @@ import type {
   DeploymentIndexStoredObject,
   DeploymentIndexWriteCondition,
 } from "../repositories/deployment-index"
-import type { MediaObject, MediaObjectMetadata, MediaObjectStore } from "./images"
+import type { MediaObject, MediaObjectMetadata, MediaObjectStore, MediaUsage } from "./images"
 
 interface AwsClientConfig {
   region: string
@@ -148,13 +148,24 @@ export class S3SiteObjectStore implements SiteObjectStore {
   }
 }
 
+const MEDIA_USAGES: ReadonlyArray<string> = [
+  "body",
+  "thumbnail",
+  "audio",
+  "video",
+] satisfies Array<MediaUsage>
+
+const isMediaUsage = (value: string | undefined): value is MediaUsage => {
+  return value !== undefined && MEDIA_USAGES.includes(value)
+}
+
 const toMediaMetadata = (
   metadata: Record<string, string> | undefined,
 ): MediaObjectMetadata | null => {
   if (
     !metadata?.["transform-version"] ||
     !metadata["variant-hash"] ||
-    (metadata.usage !== "body" && metadata.usage !== "thumbnail") ||
+    !isMediaUsage(metadata.usage) ||
     !metadata.width ||
     !metadata.height
   ) {

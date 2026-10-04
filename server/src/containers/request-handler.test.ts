@@ -47,6 +47,7 @@ describe("createRequestHandler", () => {
       skipped: [],
       stale: [],
       updatedPaths: ["/*"],
+      unpublishedReferences: [],
     }
   }
 

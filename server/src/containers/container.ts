@@ -1,6 +1,7 @@
 import { Container } from "@cloudflare/containers"
 import { z } from "zod"
 
+import { resolveAppStoreApp } from "shared/app-store"
 import { resolveExternalBookmark } from "shared/bookmark"
 import { resolveXPost } from "shared/x-post"
 
@@ -69,6 +70,26 @@ const publishJobSummarySchema = z
     skipped: z.array(z.guid()).default([]),
     stale: z.array(z.guid()).default([]),
     updatedPaths: z.array(z.string().startsWith("/").max(1_000)),
+    // rollout 中の古い Container image は返さない
+    unpublishedReferences: z
+      .array(
+        z
+          .object({
+            pageId: z.guid(),
+            route: z.string().startsWith("/").max(1_000),
+            referrers: z.array(
+              z
+                .object({
+                  pageId: z.guid(),
+                  title: z.string().max(1_000),
+                  slug: z.string().max(1_000),
+                })
+                .strict(),
+            ),
+          })
+          .strict(),
+      )
+      .default([]),
   })
   .strict()
 
@@ -433,6 +454,26 @@ BuildContainer.outboundByHost = {
       }
 
       return Response.json(await resolveExternalBookmark(target, env.CONTENT_CACHE))
+    }
+    if (url.pathname === "/app-store") {
+      const target = url.searchParams.get("url")
+      if (!target) {
+        return Response.json({ error: "Invalid App Store URL" }, { status: 400 })
+      }
+      try {
+        return Response.json(await resolveAppStoreApp(target, env.CONTENT_CACHE))
+      } catch (err) {
+        // Container 側は失敗を warning にして公開を止めるので、理由はここで残す
+        console.warn(
+          JSON.stringify({
+            event: "app_store_lookup_failed",
+            url: target,
+            error: err instanceof Error ? err.message : String(err),
+          }),
+        )
+
+        return Response.json({ error: "App Store lookup failed" }, { status: 502 })
+      }
     }
     const postId = url.pathname.match(/^\/x-post\/(\d+)$/)?.[1]
     if (postId) {

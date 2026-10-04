@@ -4,6 +4,7 @@ import {
   createPublishFailureMessage,
   createSiteLabel,
   createStuckPublishMessage,
+  createUnpublishedReferenceMessage,
   createWorkflowErrorMessage,
   runStuckPublishCheck,
   type StuckPublishPage,
@@ -83,6 +84,60 @@ describe("notifications", () => {
           "Workflow: release-abc",
         ].join("\n"),
       )
+    })
+  })
+
+  describe("createUnpublishedReferenceMessage", () => {
+    test("非公開にした記事ごとに、内部ブログカードで指している記事と Notion の URL を並べる", () => {
+      expect(
+        createUnpublishedReferenceMessage(
+          {
+            workflowId: "partial-id",
+            pages: [
+              {
+                pageId,
+                title: "非公開にした記事",
+                slug: "gone",
+                referrers: [
+                  {
+                    pageId: "3c065425-ad40-81c3-8029-ce4715996234",
+                    title: "指している記事",
+                    slug: "referrer",
+                  },
+                ],
+              },
+            ],
+          },
+          "mirumi.me (dev)",
+        ),
+      ).toEqual(
+        [
+          "[mirumi.me (dev)] 非公開にした記事を、1 件の記事が内部ブログカードで指しています",
+          "・非公開にした記事（gone）を指している記事",
+          "  ・指している記事（referrer）",
+          "    https://www.notion.so/3c065425ad4081c38029ce4715996234",
+          "これらの記事は、次に「公開」を押したときや generate で作り直すときにカードを解決できず、prd では 公開エラー になります。カードを消すか普通のリンクにしてから「公開」を押してください",
+          "Workflow: partial-id",
+        ].join("\n"),
+      )
+    })
+
+    test("同じ記事が複数の非公開にした記事を指していても、件数は 1 件と数える", () => {
+      const referrer = { pageId, title: "指している記事", slug: "referrer" }
+      const message = createUnpublishedReferenceMessage(
+        {
+          workflowId: "partial-id",
+          pages: [
+            { pageId, title: "A", slug: "a", referrers: [referrer] },
+            { pageId, title: "B", slug: "b", referrers: [referrer] },
+          ],
+        },
+        "mirumi.me",
+      )
+
+      expect(message).toContain("非公開にした記事を、1 件の記事が内部ブログカードで指しています")
+      expect(message).toContain("・A（a）を指している記事")
+      expect(message).toContain("・B（b）を指している記事")
     })
   })
 

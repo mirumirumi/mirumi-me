@@ -31,6 +31,7 @@ import { isPageRevisionUnchanged, selectGenerateRevisions } from "../lib/publish
 import {
   createPublishFailureMessage,
   createSiteLabel,
+  createUnpublishedReferenceMessage,
   publishModeLabel,
 } from "../services/notifications"
 import {
@@ -372,6 +373,11 @@ export class PublishWorkflow extends WorkflowEntrypoint<CloudflareBindings, Publ
           notifySlack(
             this.env,
             createPublishFailureMessage(notice, createSiteLabel(this.env.APP_ENV)),
+          ),
+        notifyUnpublishedReferences: async (notice) =>
+          notifySlack(
+            this.env,
+            createUnpublishedReferenceMessage(notice, createSiteLabel(this.env.APP_ENV)),
           ),
       },
     })

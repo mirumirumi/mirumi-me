@@ -136,6 +136,62 @@ describe("MediaNormalizer", () => {
       expect.objectContaining({ width: "1200", height: "630", usage: "thumbnail" }),
     ])
   })
+
+  test("Notion にアップロードした音声・動画は、元 bytes のまま拡張子と Content-Type を保って置く", async () => {
+    const store = new MemoryMediaStore()
+    const bytes = new Uint8Array([1, 2, 3])
+    const url = await new MediaNormalizer(store).copyBodyFile(
+      { bytes, contentType: "video/mp4" },
+      "video",
+      "https://prod-files-secure.s3.us-west-2.amazonaws.com/space/file/My%20Movie.MP4?X-Amz-Signature=x",
+      "video-block",
+    )
+
+    expect(url).toMatch(/^https:\/\/mirumi\.media\/[a-f0-9]{16}-my-movie\.mp4$/)
+    expect([...store.objects.values()]).toEqual([
+      {
+        body: bytes,
+        contentType: "video/mp4",
+        metadata: expect.objectContaining({ usage: "video", width: "0", height: "0" }),
+      },
+    ])
+  })
+
+  test("octet-stream で返った音声・動画は、拡張子から Content-Type を決める", async () => {
+    const store = new MemoryMediaStore()
+    const url = await new MediaNormalizer(store).copyBodyFile(
+      { bytes: new Uint8Array([1, 2, 3]), contentType: "application/octet-stream" },
+      "audio",
+      "https://file.notion.so/voice.m4a",
+      "audio-block",
+    )
+
+    expect(url).toMatch(/-voice\.m4a$/)
+    expect([...store.objects.values()].map((object) => object.contentType)).toEqual(["audio/mp4"])
+  })
+
+  test("拡張子のない音声・動画は、Content-Type から拡張子を決める", async () => {
+    const store = new MemoryMediaStore()
+    const url = await new MediaNormalizer(store).copyBodyFile(
+      { bytes: new Uint8Array([1, 2, 3]), contentType: "audio/mpeg" },
+      "audio",
+      "https://file.notion.so/download",
+      "audio-block",
+    )
+
+    expect(url).toMatch(/^https:\/\/mirumi\.media\/[a-f0-9]{16}-download\.mp3$/)
+  })
+
+  test("同じ音声・動画がすでにあれば PUT を省略する", async () => {
+    const store = new MemoryMediaStore()
+    const normalizer = new MediaNormalizer(store)
+    const file = { bytes: new Uint8Array([1, 2, 3]), contentType: "video/webm" }
+
+    await normalizer.copyBodyFile(file, "video", "https://file.notion.so/clip.webm", "block")
+    await normalizer.copyBodyFile(file, "video", "https://file.notion.so/clip.webm", "block")
+
+    expect(store.puts).toHaveLength(1)
+  })
 })
 
 describe("cleanMediaStem", () => {

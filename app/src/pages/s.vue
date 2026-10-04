@@ -33,21 +33,13 @@
 </template>
 
 <script setup lang="ts">
+import type { SearchResponse } from "shared/search"
+
 import type { PostIndexSummary } from "@/utils/defines"
-
-interface PostId {
-  id: number
-}
-
-interface LegacyPageSummary {
-  slug: string
-  title: string
-  createdAt: string
-  updatedAt: string | null
-}
 
 const router = useRouter()
 const appConfig = useAppConfig()
+const runtimeConfig = useRuntimeConfig()
 
 const keyword = ref(router.currentRoute.value.query.q)
 const page = ref(Number(router.currentRoute.value.query.p ?? 1))
@@ -86,47 +78,15 @@ async function search() {
 
   isLoading.value = true
 
-  const res = await $fetch.raw(`/wp/v2/search`, {
-    baseURL: appConfig.baseURL,
-    params: {
-      page: page.value,
-      per_page: appConfig.perPage,
-      search: keyword.value,
-      type: "post",
-      subtype: "post",
-      _fields: "id",
-    },
-    parseResponse: JSON.parse,
+  // Workers の検索 API が 13 件ずつ返す（shared/search の SEARCH_PER_PAGE）
+  const res = await $fetch<SearchResponse>("/api/search", {
+    baseURL: runtimeConfig.public.workersApiOrigin,
+    params: { q: keyword.value, page: page.value },
   })
 
-  pageCount.value = Number(res.headers.get("x-wp-totalpages"))
-  itemCount.value = Number(res.headers.get("x-wp-total"))
-
-  const postIdObjs = res._data as Array<PostId>
-  if (postIdObjs.length === 0) {
-    posts.value = []
-    isLoading.value = false
-    return
-  }
-
-  const postIds: Array<number> = []
-  for (const p of postIdObjs) {
-    postIds.push(p.id)
-  }
-
-  const summaries = await $fetch<Array<LegacyPageSummary>>(
-    `/mirumi/post_summaries_with_post_ids/${postIds.join(",")}`,
-    {
-      baseURL: appConfig.baseURL,
-      parseResponse: JSON.parse,
-    },
-  )
-  posts.value = summaries.map((summary) => ({
-    slug: summary.slug,
-    title: summary.title,
-    publishedAt: summary.createdAt,
-    updatedAt: summary.updatedAt,
-  }))
+  pageCount.value = res.pages
+  itemCount.value = res.total
+  posts.value = res.posts
 
   isLoading.value = false
 }

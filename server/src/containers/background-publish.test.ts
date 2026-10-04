@@ -29,6 +29,7 @@ describe("BackgroundPublishJobs", () => {
       skipped: [],
       stale: [],
       updatedPaths: [],
+      unpublishedReferences: [],
     }
   }
 

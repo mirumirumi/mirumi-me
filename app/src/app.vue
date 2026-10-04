@@ -13,8 +13,10 @@
 </template>
 
 <script setup lang="ts">
+import { normalizePageViewPath } from "shared/page-views"
+
 const router = useRouter()
-const appConfig = useAppConfig()
+const runtimeConfig = useRuntimeConfig()
 
 const app = ref()
 
@@ -46,48 +48,27 @@ MMMMMMMMMMWKkoc;,'''''',;cokKNMMMMMMMMMM
 © みるめも
 `)
 
-  const slug = shapeSlug(router.currentRoute.value.path)
-  await incrementAccessCounter(slug)
+  sendPageView(router.currentRoute.value.path)
 })
 
 watch(
   () => router.currentRoute.value,
-  async (newValue) => {
-    const slug = shapeSlug(newValue.path)
-    await incrementAccessCounter(slug)
+  (newValue) => {
+    sendPageView(newValue.path)
   },
 )
 
-async function incrementAccessCounter(slug: string): Promise<void> {
-  if (/.*?\/.*?/gim.test(slug)) return
-  if (slug === "entries") return
-  if (slug === "s") return
+// 1 PV ずつ Workers に送り、Analytics Engine に書いてもらう。応答は待たない。
+// 一覧（/entries/）と検索（/s/）は WordPress 時代から数えていない。ローカルの nuxt dev では送らない
+function sendPageView(path: string): void {
+  if (import.meta.dev) return
+  const normalized = normalizePageViewPath(path)
+  if (!normalized || normalized === "/entries/" || normalized === "/s/") return
 
-  let postId = "0"
-
-  if (slug.length === 0) {
-    // In case of the top page
-
-    postId = "12717"
-  } else if (slug === "entry-list") {
-    // In case of the entry list page
-
-    postId = "17582"
-  } else {
-    postId = await $fetch(`/mirumi/post_id_with_post_slug/${slug}`, {
-      baseURL: appConfig.baseURL,
-      parseResponse: JSON.parse,
-    })
+  const url = `${runtimeConfig.public.workersApiOrigin}/api/pv`
+  if (!navigator.sendBeacon?.(url, normalized)) {
+    void fetch(url, { method: "POST", body: normalized, keepalive: true }).catch(() => undefined)
   }
-  if (!postId) return
-
-  await $fetch(`/mirumi/increment_access_counter/${postId}`, {
-    baseURL: appConfig.baseURL,
-  })
-}
-
-function shapeSlug(path: string): string {
-  return path.slice(1).replace(/(.*?)\/$/gim, "$1")
 }
 </script>
 

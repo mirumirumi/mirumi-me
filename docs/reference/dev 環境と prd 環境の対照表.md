@@ -17,7 +17,7 @@ dev / prd のリソースと、共通にしているものの理由をまとめ�
 | Container | `mirumi-me-build-prd` | `mirumi-me-build-dev` | 分離 | 同じ Dockerfile |
 | KV `CONTENT_CACHE` | 🚧 未作成 | `ab630ddb…` | 分離 | prd の namespace ID 未設定のままだと deploy が通らない |
 | R2 `BACKUP` | `mirumi-me-backup-prd` | `mirumi-me-backup-dev` | 分離 | 定期バックアップの staging 兼 1 つ目の保管先 |
-| Analytics Engine | `mirumi_me_pv_prd` | `mirumi_me_pv_dev` | 分離 | 🚧 write / read の実装はこれから |
+| Analytics Engine | `mirumi_me_pv_prd` | `mirumi_me_pv_dev` | 分離 | フロントが送った PV を Workers の `POST /api/pv` が書き、site-admin-extension が SQL API で読む（2026-10-04 に実装）。dataset は最初の書き込みでできる |
 | Rate limit namespace | `913240002`（API 全般）/ `913240004`（コメント投稿） | `913240001` / `913240003` | 分離 | |
 | Access `mirumi-me-preview` | 共通 AUD | 共通 AUD | 共通 | 同一人物・同一ポリシーのため 1 アプリで dev / prd 両方の `/preview` を保護 |
 | Access `mirumi-me-admin` | 共通 AUD | 共通 AUD | 共通 | 同上 |
@@ -77,4 +77,4 @@ dev / prd のリソースと、共通にしているものの理由をまとめ�
 | GitHub Actions deploy | `main` push | `dev` push | 分離 | `ENV_NAME` が ref 名から切り替わる。`workflow_dispatch` は ref が `main` なら prd、それ以外は dev |
 | `CLOUDFLARE_API_TOKEN` | 共通 | 共通 | 共通 | deploy 権限のみのトークン 1 本 |
 | ローカル `app/.env` | 使わない | dev を参照 | dev のみ | Notion token と Access service token |
-| site-admin-extension の `.env.local` | 🚧 prd の posts / pages を読む | dev の posts / pages を読む | 分離 | Cloudflare の API token（ユーザートークン、Account Analytics: Read）と、読み取りだけの Notion integration の token。integration は 2026-10-02 時点で dev にだけ接続 |
+| site-admin-extension の `.env.local` | 🚧 prd の posts / pages を読む | dev の posts / pages を読む | 分離 | Cloudflare の API token（ユーザートークン、Account Analytics: Read）と、読み取りだけの Notion integration の token。integration は 2026-10-02 時点で dev にだけ接続。拡張は開いているページのホストで dev / prd の読み先を分ける（`src/admin-data.ts`） |

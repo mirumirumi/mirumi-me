@@ -9,7 +9,7 @@ import type {
   PublishWorkflowParams,
 } from "../lib/publishing"
 import { BOOTSTRAP_PUBLISH_ERROR_PREFIX, GENERATE_PUBLISH_ERROR_PREFIX } from "../lib/publishing"
-import type { PublishFailureNotice } from "./notifications"
+import type { PublishFailureNotice, UnpublishedReferenceNotice } from "./notifications"
 import {
   type LoadedPublishRequest,
   NOTION_WRITEBACK_CHUNK_SIZE,
@@ -85,6 +85,7 @@ describe("runPublishWorkflow", () => {
       skipped: [],
       stale: [],
       updatedPaths: ["/article-slug/", "/article-slug/index.html"],
+      unpublishedReferences: [],
       ...overrides,
     }
   }
@@ -104,6 +105,9 @@ describe("runPublishWorkflow", () => {
     const writeNotionResultsIfUnchanged = vi.fn(async () => undefined)
     const findPagesChangedAfterBuild = vi.fn(async () => [] as Array<string>)
     const notifyFailures = vi.fn(async (_notice: PublishFailureNotice) => undefined)
+    const notifyUnpublishedReferences = vi.fn(
+      async (_notice: UnpublishedReferenceNotice) => undefined,
+    )
 
     return {
       dependencies: {
@@ -117,6 +121,7 @@ describe("runPublishWorkflow", () => {
         writeNotionResultsIfUnchanged,
         findPagesChangedAfterBuild,
         notifyFailures,
+        notifyUnpublishedReferences,
       } satisfies PublishWorkflowDependencies,
       loadRequest,
       publishSite,
@@ -128,6 +133,7 @@ describe("runPublishWorkflow", () => {
       writeNotionResultsIfUnchanged,
       findPagesChangedAfterBuild,
       notifyFailures,
+      notifyUnpublishedReferences,
     }
   }
 
@@ -582,6 +588,102 @@ describe("runPublishWorkflow", () => {
         error: "公開処理に失敗しました: container unavailable（Workflow: workflow-id）",
       },
     ])
+  })
+
+  describe("非公開にした記事を指す記事の通知", () => {
+    const unpublishing = makeRevision({
+      internalState: "非公開待ち",
+      title: "非公開にする記事",
+      slug: "gone",
+      publishedAt: "2026-08-20T00:00:00.000Z",
+    })
+    const referrer = {
+      pageId: "00000000-0000-0000-0000-000000000002",
+      title: "指している記事",
+      slug: "referrer",
+    }
+    const unpublishedSummary = (
+      unpublishedReferences: PublishJobSummary["unpublishedReferences"],
+    ): PublishJobSummary => {
+      return makeSummary({
+        pages: [
+          {
+            pageId: unpublishing.pageId,
+            action: "unpublish",
+            deployedAt: "2026-08-24T02:05:00.000Z",
+            contentHash: null,
+          },
+        ],
+        unpublishedReferences,
+      })
+    }
+
+    test("非公開にした記事を内部ブログカードで指している記事を、題名をそろえて Slack に知らせる", async () => {
+      const step = new MemoryStep()
+      const { dependencies, publishSite, notifyUnpublishedReferences } = createDependencies({
+        revisions: [unpublishing],
+        failed: [],
+        skippedPageIds: [],
+      })
+      publishSite.mockResolvedValue(
+        unpublishedSummary([
+          { pageId: unpublishing.pageId, route: "/gone/", referrers: [referrer] },
+        ]),
+      )
+
+      await runPublishWorkflow({ workflowId: "workflow-id", params, step, dependencies })
+
+      expect(notifyUnpublishedReferences).toHaveBeenCalledWith({
+        workflowId: "workflow-id",
+        pages: [
+          {
+            pageId: unpublishing.pageId,
+            title: "非公開にする記事",
+            slug: "gone",
+            referrers: [referrer],
+          },
+        ],
+      })
+      expect(step.calls.map((call) => call.name)).toContain("notify-unpublished-references")
+    })
+
+    test("指している記事がなければ知らせない", async () => {
+      const step = new MemoryStep()
+      const { dependencies, publishSite, notifyUnpublishedReferences } = createDependencies({
+        revisions: [unpublishing],
+        failed: [],
+        skippedPageIds: [],
+      })
+      publishSite.mockResolvedValue(unpublishedSummary([]))
+
+      await runPublishWorkflow({ workflowId: "workflow-id", params, step, dependencies })
+
+      expect(notifyUnpublishedReferences).not.toHaveBeenCalled()
+    })
+
+    test("知らせられなくても、非公開の結果は失敗にしない", async () => {
+      const step = new MemoryStep()
+      const { dependencies, publishSite, notifyUnpublishedReferences } = createDependencies({
+        revisions: [unpublishing],
+        failed: [],
+        skippedPageIds: [],
+      })
+      publishSite.mockResolvedValue(
+        unpublishedSummary([
+          { pageId: unpublishing.pageId, route: "/gone/", referrers: [referrer] },
+        ]),
+      )
+      notifyUnpublishedReferences.mockRejectedValue(Error("slack unavailable"))
+
+      expect(
+        await runPublishWorkflow({ workflowId: "workflow-id", params, step, dependencies }),
+      ).toEqual(
+        expect.objectContaining({
+          status: "completed",
+          unpublishedPageIds: [unpublishing.pageId],
+        }),
+      )
+    })
   })
 
   describe("generate の完了待ち", () => {

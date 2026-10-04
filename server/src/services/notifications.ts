@@ -1,4 +1,4 @@
-import type { InternalState, PublishMode } from "../lib/publishing"
+import type { InternalState, PublishMode, UnpublishedPageReferrer } from "../lib/publishing"
 import { createNotionPageUrl, formatJst } from "./comment-digest"
 
 // Slack に送る文面。送るのは呼び出し側（createSlackNotifier）で、ここは組み立てだけ
@@ -18,6 +18,16 @@ export interface PublishFailureNotice {
   workflowId: string
   mode: PublishMode
   failures: Array<PublishFailureNoticeItem>
+}
+
+export interface UnpublishedReferenceNotice {
+  workflowId: string
+  pages: Array<{
+    pageId: string
+    title: string
+    slug: string
+    referrers: Array<UnpublishedPageReferrer>
+  }>
 }
 
 export interface StuckPublishPage {
@@ -95,6 +105,28 @@ export const createWorkflowErrorMessage = (input: {
     `[${input.siteLabel}] ${withParticle(input.label, "が")}途中で止まりました`,
     `理由: ${truncate(input.message)}`,
     `Workflow: ${input.workflowId}`,
+  ].join("\n")
+}
+
+export const createUnpublishedReferenceMessage = (
+  notice: UnpublishedReferenceNotice,
+  siteLabel: string,
+): string => {
+  const referrerCount = new Set(
+    notice.pages.flatMap((page) => page.referrers.map((referrer) => referrer.pageId)),
+  ).size
+
+  return [
+    `[${siteLabel}] 非公開にした記事を、${referrerCount} 件の記事が内部ブログカードで指しています`,
+    ...notice.pages.flatMap((page) => [
+      `・${pageLine(page)}を指している記事`,
+      ...listPages(page.referrers, (referrer) => [
+        `  ・${pageLine(referrer)}`,
+        `    ${createNotionPageUrl(referrer.pageId)}`,
+      ]),
+    ]),
+    "これらの記事は、次に「公開」を押したときや generate で作り直すときにカードを解決できず、prd では 公開エラー になります。カードを消すか普通のリンクにしてから「公開」を押してください",
+    `Workflow: ${notice.workflowId}`,
   ].join("\n")
 }
 

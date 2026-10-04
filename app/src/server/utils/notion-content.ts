@@ -1,3 +1,4 @@
+import { resolveAppStoreApp } from "shared/app-store"
 import { resolveExternalBookmark } from "shared/bookmark"
 import type {
   BuildPage,
@@ -341,6 +342,9 @@ export class NotionDevelopmentContentReader {
           xPost: async (postId) => {
             return resolveXPost(postId, this.#cache, (id) => this.#fetchXPost(id))
           },
+          appStore: async (url) => {
+            return resolveAppStoreApp(url, this.#cache)
+          },
         },
       )
       const thumbnailUrls = resolveDevelopmentThumbnailUrls(source.thumbnailUrl)
@@ -352,6 +356,7 @@ export class NotionDevelopmentContentReader {
           allowUnsignedAmazonCards: true,
           bookmarks: enrichment.bookmarks,
           xPosts: enrichment.xPosts,
+          apps: enrichment.apps,
         }),
         thumbnailUrls,
         ogImageUrl: thumbnailUrls?.article ?? DEFAULT_OG_IMAGE_URL,

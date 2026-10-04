@@ -5,8 +5,10 @@ import { handleCommentsOptions, postComment } from "./handlers/comments"
 import { postDevXPost } from "./handlers/dev-x-post"
 import { postNotionWebhook } from "./handlers/notion-webhook"
 import { getNotionWebhookVerification } from "./handlers/notion-webhook-verification"
+import { postPageView } from "./handlers/page-views"
 import { getPreview } from "./handlers/preview"
 import { postAdminPublish } from "./handlers/publish"
+import { getSearch, handleSearchOptions } from "./handlers/search"
 import { getWorkflowStatus } from "./handlers/workflow-status"
 import type { HonoEnv } from "./lib/types"
 import { createAccessMiddleware } from "./middleware/access"
@@ -27,6 +29,9 @@ export const app = new Hono<HonoEnv>()
   .get("/api/amazon/items", (c) => getAmazonItems(c))
   .options("/api/comments", (c) => handleCommentsOptions(c))
   .post("/api/comments", (c) => postComment(c))
+  .post("/api/pv", (c) => postPageView(c))
+  .options("/api/search", (c) => handleSearchOptions(c))
+  .get("/api/search", (c) => getSearch(c))
   .post("/_dev/x-post", (c) => postDevXPost(c))
   .post("/webhooks/notion", (c) => postNotionWebhook(c))
   .post("/admin/publish", (c) => postAdminPublish(c))

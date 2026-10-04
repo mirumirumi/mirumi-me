@@ -110,6 +110,7 @@ describe("article enrichment", () => {
     expect(await resolveArticleEnrichment(bookmarkOnlyArticle, new Map(), fetcher)).toEqual({
       bookmarks: {},
       xPosts: {},
+      apps: {},
     })
   })
 
@@ -124,6 +125,59 @@ describe("article enrichment", () => {
     }
   })
 
+  test("属性の足りない [app ios] だけを bridge で App Store から引き、ios の値ごとに対応づける", async () => {
+    const ios = "https://apps.apple.com/jp/app/some-app/id42"
+    const paragraph = (id: string, content: string): ArticleContent["blocks"][number] => ({
+      id,
+      type: "paragraph",
+      richText: [
+        {
+          type: "text",
+          content,
+          href: null,
+          annotations: {
+            bold: false,
+            italic: false,
+            strikethrough: false,
+            underline: false,
+            code: false,
+            color: "default",
+          },
+        },
+      ],
+      children: [],
+    })
+    const app = {
+      id: "42",
+      name: "アプリ",
+      developer: "開発元",
+      price: "無料",
+      artworkUrl: "https://is1-ssl.mzstatic.com/image/thumb/icon/512x512bb.jpg",
+    }
+    const fetcher = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) =>
+      Response.json(app),
+    )
+    const appArticle: ArticleContent = {
+      ...article,
+      blocks: [
+        paragraph("new", `[app ios="${ios}"]`),
+        paragraph("same", `[app ios="${ios}" price="120 円"]`),
+        paragraph(
+          "migrated",
+          '[app name="移行したアプリ" icon="app.webp" ios="https://apps.apple.com/jp/app/old/id1"]',
+        ),
+      ],
+    }
+
+    expect((await resolveArticleEnrichment(appArticle, new Map(), fetcher)).apps).toEqual({
+      [ios]: app,
+    })
+    expect(fetcher).toHaveBeenCalledOnce()
+    expect(String(fetcher.mock.calls[0]?.[0])).toEqual(
+      `http://bindings.internal/app-store?url=${encodeURIComponent(ios)}`,
+    )
+  })
+
   test("xAI failure は未解決のまま renderer へ渡す", async () => {
     const xOnlyArticle: ArticleContent = {
       ...article,
@@ -136,6 +190,7 @@ describe("article enrichment", () => {
     expect(await resolveArticleEnrichment(xOnlyArticle, new Map(), fetcher)).toEqual({
       bookmarks: {},
       xPosts: {},
+      apps: {},
     })
   })
 })

@@ -208,6 +208,22 @@ generate のあいだ、Container は「HTTP を開いたまま待っていな�
 - そこで、書く直前に page を取り直し、Workflow が読み込んだときの revision と比べて変わっていない page にだけ書く（`workflows/workflow.ts` の `writeNotionResultsIfUnchanged`）。取り直してから書くまでの短い競合の窓は、partial の書き戻しと同じく許容する
 - 比べるのは `last_edited_time`、`last_edited_by`、`internal-state`、`公開エラー`（`lib/publishing.ts` の `isPageRevisionUnchanged`）。`last_edited_time` は分単位なので、同じ分のうちの人の編集は `last_edited_by` で、同じ分のうちの integration の書き込み（409 の失敗の書き戻し）は `公開エラー` で見分ける
 
+### 非公開にした記事を指す記事の通知
+
+2026-10-02 に圭くんが案 C を選び、2026-10-04 に実装した（`containers/unpublished-references.ts`）。
+
+- 背景：prd では、解決できない内部ブログカードは render warning で、その記事の失敗になる。非公開にした記事を指すカードを持つ記事は、次に Notion の本文から作り直すとき（`公開` や generate）に 🔴 になる。WordPress は何も出さないだけだった。案 A（そのまま）、B（消えた記事を指すカードは warning にしない）、C（A のまま、非公開にした時点で Slack に知らせる）から C
+- 公開ボタンの job で非公開にした page があれば、Container が index を保存したあとに、公開中の全記事の snapshot の `contentHtml` から内部ブログカード（`shared/src/render.ts` の `findInternalBlogcardRoutes`）を拾って、非公開にした route を指す記事を集める。同じ job で作った page はメモリの BuildPage を使う。結果は `PublishJobSummary.unpublishedReferences` で Worker に返し、Worker が Slack に送る
+    - generate / bootstrap は非公開をしないので調べない
+    - 公開中の記事が数百あるので、snapshot は 16 本ずつ並べて読む。非公開は頻度が低いので、そのたびに読む費用は気にしない
+- publish index の各 page に「指している route」を持たせる案は採らなかった
+    - index の schema は `strictObject` なので、新しい項目を足すと、deploy の rollout 中に古い Worker / Container が新しい index を読めなくなる。足すなら「読む側を先に緩める → 書く」の 2 回の release が要る
+    - index の上限は 800 KB で、2026-10-03 の dev はすでに 632 KB ある
+    - 足す前に公開した記事の分は、作り直すまで空のままになる
+- カードの見つけ方は描いたあとの HTML の形（`<a class="blogcard" href="https://mirumi.me/...">`）に依存する。形を決める `renderBookmark` のすぐ下に置き、render.test.ts で「描いたカードを拾える」ことを確かめているので、片方だけ変えるとテストが落ちる
+- snapshot を読めなかった記事は飛ばし、Container の `console.warn` にだけ残す。Container の標準出力は読めないので、実際には気づけない。prd では bootstrap で全記事の snapshot ができ、comment-refresh も同じ snapshot に頼っているので、欠けていれば別の形で表に出る。ここで件数を Slack に出すのは見送った（`PublishJobSummary` の項目がもう 1 つ増えるわりに得が小さい）
+- 知らせられなくても、非公開の結果は失敗にしない（失敗の通知と同じ）
+
 ### internal-state が空の row は generate / bootstrap で失敗にしない
 
 2026-10-03 に圭くんと決めた（`lib/publishing.ts` の `validatePageRevisionMetadata`）。
@@ -288,3 +304,36 @@ generate のあいだ、Container は「HTTP を開いたまま待っていな�
 - Notion にファイルを直接上げた audio / video ブロックは、Notion がホストするファイルになり、API からは 1 時間ほどで切れる署名付き URL しか取れない。今の同期（`containers/media-sync.ts`）は image しか見ていないので、その URL が HTML に焼き込まれる
 - 公開のときに、新しい本文 animation と同じく変換せずに S3 へコピーすることにした
 - 採らなかった案は「Notion ホストの audio / video を validation error にして、mirumi.media に手で上げて external で貼る」。Notion のタブ 1 枚で書けるようにするという、移行の主目的に反するため
+- 2026-10-04 に実装した（`containers/media-sync.ts` の `syncBlocks`、`containers/images.ts` の `copyBodyFile`）。夜のあいだの作業で決めたこと（軽い仮決め。変えるのは定数だけで安い）
+    - 1 ファイル 500 MiB まで。メモリに読んでから S3 に置くので上限が要る。Container は standard-3（メモリ 8 GiB 程度）で、Nuxt generate の分を残しても余裕がある大きさにした。Notion の有料プランは 1 ファイル 5 GB まで上げられるが、ブログの動画でそこまでは想定しない。超えたらその記事の失敗として 公開エラー に出るので、黙って壊れることはない
+    - 取りに行くタイムアウトは 5 分（画像は 15 秒）
+    - Content-Type は Notion の応答のものを使い、octet-stream のときだけ拡張子から決める。`<video>` / `<audio>` はブラウザによって Content-Type を見て再生するかを決めるため
+    - S3 の metadata の usage は `audio` / `video` にした。画像の `body` と分けたのは、寸法を `0` にしている理由が metadata から読めるようにするため
+    - stream のまま S3 へ流す（multipart upload）作りにはしなかった。key に bytes の hash を入れる content-addressed の決まりと両立させるには、一度別の key に置いてから copy する手間が要るため。上限を大きく上げたくなったら考える
+
+## 検索
+
+2026-10-01 に圭くんと計画を決め（並びは b、索引はオンメモリで間隔つきの確認）、2026-10-04 に実装した。動きは運用手順の「検索」。
+
+- 索引は Container が書き、Worker が読む。公開 JSON をブラウザに配る案（本文込みで MB 単位をスマホで落とす）、D1 の FTS5（同期の仕組みが 1 つ増えるわりに 470 記事では得が小さい）、Worker が snapshot を毎回集める案（S3 の GET が 470 回）は採らなかった
+- 本文は描いたあとの HTML から作る。generate で snapshot から作り直す記事は HTML しか持たないので、全記事を同じ作り方にそろえた。もくじ（見出しの重複）と内部ブログカード（ほかの記事の題名）は除く。X ポストやコードは残す（WordPress の検索も本文の文字列をそのまま見ていた）。除き方は描いた HTML の形に依存するので、`shared/src/render.ts` の描画のすぐ下に置き、テストで描いた本文から作って確かめている
+- 公開ボタンでは、索引がなければ作らない。作ると、その job の記事だけの索引になり、generate までのあいだ検索がほぼ空になる。新しいコードの deploy では CI の generate が走るので、そこで全記事の索引ができる
+- 並びの b は「語の出現回数の多い順、同じなら新しい順」。タイトルの重みは 3 にした（2026-10-04 の仮決め）。圭くんは「WordPress はタイトルばっかり優先しすぎ」と感じていたので、本文で詳しく書いた記事が上に来るようにしつつ、タイトルに含む記事を少しだけ持ち上げる。重みは `shared/src/search.ts` の `TITLE_WEIGHT` だけで変えられ、索引の作り直しは要らない
+- Worker の確認の間隔は 60 秒のまま（圭くんの依頼で実装のときに精査した）
+    - isolate がどれだけ生き残るかは決まっておらず、アクセスが続けば長く残る。間隔は「公開のあと古い結果を返しうる時間」の上限で、短いほど古さは減る
+    - 確かめるのは ETag つきの条件つき GET で、変わっていなければ 304 の小さい応答 1 回。S3 の GET の費用は 1,000 回で 0.0004 ドル程度で、毎分 1 回でも月 4 万回強
+    - それでも 60 秒より短くしないのは、公開した直後にすぐ検索することがまれで得るものが少ないため。長くしないのは、長生きした isolate で古い結果が長引くため
+- rate limit の key は送信元の IP ごと（2026-10-04 の仮決め）。計画では「既存の `RATE_LIMITER_60_PER_MINUTE`」とだけ決めていた。Amazon の商品情報 API は全体で 1 つの key だが、検索を全体で 1 つにすると bot 1 つで全員が検索できなくなる
+- 索引を書けなくても公開は失敗にしない。配信はもう済んでいて、失敗にすると公開ボタンの押し直しを求めることになるため。Container のログは読めないので、気づくのは検索の結果が古いことからになる
+
+## PV と site-admin-extension
+
+2026-10-01 に圭くんと計画を決め（L1 のアクセスカウンターの節どおり、拡張の編集リンクは読み取り専用の Notion integration で引く案 A）、2026-10-04 に実装した。動きは運用手順の「PV と site-admin-extension」。
+
+- 公開中の route かどうかは、コメントの受付で記事の slug を確かめるのと同じ仕組み（publish index → KV に 5 分 cache、知らない値は 1 分に 1 回だけ読み直し）で確かめる。`services/published-slugs.ts` を、集める値（記事の slug か、公開中の route か）と KV の key だけを差し替えられる形に広げた。そのとき KV の中身の項目名を `values` にそろえ、記事の slug の key を `published-post-slugs:v2` に上げた（古い v1 は 5 分で消える）
+- PV の rate limit は送信元の IP ごと（検索と同じ理由。2026-10-04 の仮決め）
+- 公開中でないパスや数えないパスでも、書かずに 204 を返す。sendBeacon は応答を読まないので、断っても伝わる先がない。形の崩れたパスだけ 400 にした（自前のフロント以外が送ってきたものの見分けに使える）
+- 拡張は開いているページのホストで dev / prd を分ける（2026-10-04 の仮決め）。dev の CloudFront で新しい版を試せるようにするため。prd の data source ID は、本番リリースの準備で複製して作り直すときに `src/admin-data.ts` を直す（本番リリース手順の 6）
+- 拡張は shared に依存していない（依存を足すと lockfile も変わる）ので、パスのそろえ方（`shared/src/page-views.ts`）と Notion の API version は写している。どちらもコメントで元を書いた
+- 拡張にテストを足し（`src/admin-data.test.ts`）、root の `bun run test` からも流れるようにした
+- トップと `/entry-list/` には編集リンクを出さない。WordPress 版はトップに固定ページの編集リンクを出していたが、Notion にはトップに当たるページがない

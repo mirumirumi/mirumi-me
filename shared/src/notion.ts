@@ -431,7 +431,8 @@ export const fetchNotionBlockTree = async (
   return nodes
 }
 
-const normalizeBlockTree = (nodes: Array<NotionBlockNode>): Array<ContentBlock> => {
+// 移行ツールの dry-run も、変換したリクエストを Notion が返す形にそろえてここへ通す
+export const normalizeNotionBlockTree = (nodes: Array<NotionBlockNode>): Array<ContentBlock> => {
   return nodes.map(({ block, children }) => {
     if (!isFullBlock(block)) {
       return {
@@ -443,7 +444,7 @@ const normalizeBlockTree = (nodes: Array<NotionBlockNode>): Array<ContentBlock> 
       }
     }
 
-    return normalizeBlock(block, normalizeBlockTree(children))
+    return normalizeBlock(block, normalizeNotionBlockTree(children))
   })
 }
 
@@ -451,7 +452,7 @@ const fetchBlockChildren = async (
   client: Client,
   blockId: string,
 ): Promise<Array<ContentBlock>> => {
-  return normalizeBlockTree(await fetchNotionBlockTree(client, blockId))
+  return normalizeNotionBlockTree(await fetchNotionBlockTree(client, blockId))
 }
 
 const fetchCategory = async (

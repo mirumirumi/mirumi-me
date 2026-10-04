@@ -16,7 +16,7 @@
 production bootstrap だけでは移行完了ではない。コメント、検索、PV、管理拡張、バックアップなど
 `docs/L1/Notion 移行 やること.md` の必須項目を完了し、runtime の WordPress 依存をすべて撤去したあとに WordPress を完全廃止する。
 
-移行期間中は検索と PV が WordPress に依存する（いいねは廃止して UI も削除済み）。
+検索と PV は 2026-10-04 に Workers の API へ移した（いいねは廃止して UI も削除済み）。切り替えまでは、本番の mirumi.me は WordPress 版のフロントのまま。
 コメントは dev では新基盤で動いていて、prd の comments の用意と既存コメントの import が残る（`本番リリース手順.md` の 2 と 3）。
 コメント feed は移行せず廃止する。
 
@@ -348,7 +348,9 @@ generate / bootstrap では、Container のジョブの末尾と、Workflow の 
     - Workflow そのものが例外で止まったときも、`notify-error` の step で Slack に通知する（公開の Workflow と、コメント反映の Workflow）
     - 通知が届かなくても、公開の結果は失敗にしない（Worker のログに `publish_failure_notification_failed` / `workflow_error_notification_failed`）
     - `公開待ち` / `非公開待ち` のまま 2 時間以上たった記事を、毎朝（09:00 JST の Cron。コメントの digest と同じ）Slack に通知する。Webhook の取りこぼしや Notion の障害で止まった公開に気づくため。Notion のボタンを押し直しても値が変わらず Webhook が飛ばないので、`POST /admin/publish` で流し直す
-    - 🚧 記事を非公開にしたとき、その記事を指す内部ブログカードを持つ記事を Slack に知らせる。prd ではそれらの記事が次の generate で公開エラーになるため
+    - 記事を `非公開` にしたとき、その記事を内部ブログカードで指している公開中の記事を Slack に知らせる（公開ボタンの Workflow の `notify-unpublished-references` step）。それらは、次に `公開` を押したときや generate で Notion の本文から作り直すときにカードを解決できず、prd では公開エラーになるため
+        - 調べるのは公開中の記事の snapshot（`_internal/published-pages-v1`）の HTML。普通のリンクは対象外
+        - snapshot を読めなかった記事は飛ばす（Container のログにだけ `unpublished_reference_check_skipped` が残る）
 - Container の標準出力はどこからも読めない。Nuxt generate が落ちた原因は例外へ載せて
   Workflow まで持ち上げている
 - job が終わったのに Container instance が `running` のままなら、`sleepAfter` は SIGTERM を
@@ -444,6 +446,40 @@ MIRUMI_BUILD_MANIFEST_DIR=/tmp/mirumi-build/JOB/manifest bun run dev
 - secret を rotate するときは旧 secret の猶予時間を設定し、新 secret を `app/.env` へ入れて疎通確認後に旧 secret を失効する
 - refresh / rotate に必要な Cloudflare API token は `app/.env` へ置かず、Zero Trust UI または Cloudflare MCP から操作する
 
+## 検索
+
+検索画面（`app/src/pages/s.vue`）は Workers の `GET /api/search?q=<語>&page=<ページ>` を 1 回呼ぶ。13 件ずつ、`{ total, pages, posts }` を返す。
+
+- 索引は Container が公開のたびに site bucket の `_internal/search-index-v1.json` に書く（`server/src/containers/search-index.ts`）。載るのは公開中の記事だけで、固定ページとコメントは載らない
+    - generate / bootstrap：作り直した記事で丸ごと作る。作り直せなかった記事（失敗、snapshot が無いなど）は前の索引の値を引き継ぐ
+    - 公開ボタン：今ある索引の、その記事だけを差し替える（非公開にした記事は消える）。索引がまだないか壊れているときは作らない（その記事だけの索引になるため）。generate を流せばできる
+    - コメントの反映では触らない
+    - 本文は描いたあとの HTML から作る。もくじと内部ブログカードは除き、NFKC と小文字にそろえる
+    - 索引を書けなくても公開は失敗にしない（Container のログにだけ `search_index_refresh_failed` が残る）。次の公開か generate で追いつく
+- Worker は索引を isolate のメモリに持つ。60 秒ごとに ETag つきの条件つき GET で確かめ、変わっていたら読み直す。公開のあと最大 60 秒ほど古い結果を返しうる
+    - S3 を読めないときは、持っている索引で答え続ける。持っていなければ 503
+    - 索引がまだない（新しいコードで最初の generate の前）ときは 0 件を返す（Worker のログに `search_index_missing`）
+- 照合：空白（全角も）で語に分け、NFKC と小文字にそろえて部分一致。すべての語を含む記事だけを返す
+- 並び：語の出現回数の多い順（本文 1 回 = 1 点、タイトル 1 回 = 3 点）、同じなら公開日の新しい順
+- CORS は公開 API と同じ（`FRONTEND_ORIGIN`、`WORKERS_API_ORIGIN`、dev では loopback）。rate limit は `RATE_LIMITER_60_PER_MINUTE` で、送信元の IP ごとに 60 回 / 分
+- Worker の AWS のキーで `_internal/search-index-v1.json` を読む。publish index（`_internal/publish-index-v1.json`）を読むのと同じ権限
+
+## PV と site-admin-extension
+
+- フロント（`app/src/app.vue`）は、初めの表示とルートが変わるたびに、そのページのパスを Workers の `POST /api/pv` へ `navigator.sendBeacon` で送る（使えなければ `fetch` の keepalive）。応答は待たない
+    - パスは末尾スラッシュをそろえる（`shared/src/page-views.ts`）。数えるのはトップと 1 階層のページで、2 階層以上、`/entries/`、`/s/` は送らない（WordPress 時代と同じ）
+    - ローカルの nuxt dev では送らない
+- Worker は、トップ、`/entry-list/`、publish index で公開中の route（記事と固定ページ）だけを Analytics Engine（`MIRUMI_ME_PV`）に `indexes: [パス]`、`doubles: [1]` で書き、204 を返す。公開中でないパスは書かずに 204
+    - 公開中の route は publish index から集め、`CONTENT_CACHE` に 5 分 cache する（key は `published-routes:v1`）。cache にないパスは 1 分に 1 回だけ index を読み直す
+    - rate limit は `RATE_LIMITER_60_PER_MINUTE` で、送信元の IP ごとに 60 回 / 分
+- site-admin-extension は、開いているページの PV（直近 31 日の合計）と、Notion のページを開く「編集」リンクを左下に出す
+    - background の service worker が読む。PV は Analytics Engine の SQL API（`SUM(_sample_interval)`）、編集リンクは Notion の posts / pages を slug で引く
+    - 読み先は開いているページのホストで分ける。`mirumi.me` と prd の CloudFront は prd（`mirumi_me_pv_prd`、prd の posts / pages）、dev の CloudFront は dev
+    - トップと `/entry-list/` は Notion のページがないので、PV だけを出す
+    - token は `.env.local`（`VITE_CLOUDFLARE_ACCOUNT_ID`、`VITE_CLOUDFLARE_API_TOKEN`、`VITE_NOTION_TOKEN`）。build すると `dist/` の JS に埋め込まれる
+    - `bun run --cwd tools/site-admin-extension build` で `dist/` を作り、Chrome で読み込み直す
+- Analytics Engine は書き込んだ時刻しか持てないので、WordPress の過去の PV は移せない。切り替えから 31 日間は「直近 31 日」が少なめに出る
+
 ## 画像
 
 ### 新規 Notion upload
@@ -462,7 +498,11 @@ MIRUMI_BUILD_MANIFEST_DIR=/tmp/mirumi-build/JOB/manifest bun run dev
 - S3 の object は immutable として扱う。publish のたびに記事内の画像を走査し、同じ key がすでにあれば PUT を省略する。既存 object の metadata（変換契約、用途、寸法、bytes の hash）が食い違えば失敗させる
 - 本文 animation は変換せず byte-for-byte で S3 へコピーし、`srcset` を付けない。key は `{assetHash}-{cleanStem}-{width}x{height}.{元の拡張子}` で、`width` / `height` だけ出す
 - animated thumbnail は現在 validation error
-- 🚧 Notion にアップロードした本文の audio / video も、変換せず byte-for-byte で S3 へコピーする。今は image しか同期しておらず、1 時間ほどで切れる署名付き URL のまま HTML に入る（WordPress から移した audio / video は `mirumi.media` の external URL なので影響しない）
+- Notion にアップロードした本文の audio / video も、変換せず byte-for-byte で S3 へコピーし、本文の URL を `mirumi.media` に差し替える（Notion の署名付き URL は 1 時間ほどで切れるため）。WordPress から移した audio / video と YouTube などの external URL は触らない
+    - key は `{assetHash}-{cleanStem}.{拡張子}`。`assetHash` の用途は `audio` / `video`。S3 の metadata の寸法は持たないので `0`
+    - 拡張子は元のファイル名から取る。ファイル名に拡張子がなければ Content-Type から決める
+    - Content-Type は取ってきたときの応答のものを使う。`application/octet-stream` で返ったときは拡張子から決める（mp4 / m4v / mov / webm / mp3 / m4a / wav / ogg / aac / flac）
+    - 1 ファイル 500 MiB まで。超えるとその記事の公開が失敗する（公開エラー に「500 MiB の上限を超えています」）
 - thumbnail が canonical でなければ publish 時にホストを問わず取り込んで正規化する。Notion upload も WordPress 時代の `mirumi.media` 直下の画像も同じ経路を通る
 
 ### 既存 WordPress 画像の最終移行
@@ -482,6 +522,7 @@ bun run dry-run
 bun run upload
 ```
 
+- `dry-run` は変換したあと公開と同じ render まで通し、prd で公開を止める render warning を `dry-run-report.json` の `renderWarningRecords` に出す。内部ブログカードは投入する記事と固定ページの route で照合し、外部のブログカードと X ポストは解決できたものとして扱う（外部を見ないため）
 - `--apply` だけが media S3 へ書く
 - `upload` だけが Notion へ書く
 - static image の mapping 欠落は import error
@@ -514,6 +555,22 @@ dev で見えない理由と、本番まで持ち越した経緯は `docs/L2/Not
 - endpoint は Cloudflare location ごとに 60 request / 分へ制限し、超過時は静的 fallback card を維持する
 - API failure や JavaScript 無効時も fallback card を維持する
 - 商品が返らない場合は画像を追加せず、`title` を表示名にした静的 card を維持する
+
+## アプリ紹介カード
+
+今後の新規記事は、App Store の URL だけを書く（2026-10-04 から）。
+
+```text
+[app ios="https://apps.apple.com/jp/app/<名前>/id<数字>"]
+```
+
+- 公開のときに、iTunes Search API の lookup で名前（trackName）、開発元（artistName）、価格（formattedPrice）、アイコン（artworkUrl512）を引く
+    - Container が Worker の橋渡し（`bindings.internal/app-store`）で引き、Worker が `CONTENT_CACHE` に cache する（key は `app-store:v1:<国>:<ID>`）。7 日は引き直さず、1 年残す。引けないときは古い値を使う
+    - 国は URL の `/jp/` などから決める。無ければ jp
+    - アイコンは取ってきて、本文画像と同じく mirumi.media に置き直す（`app-icon-<ID>`）。CDN 直リンクは将来切れるため
+- 書いた属性（`name`、`icon`、`developer`、`price`）は引いた値より優先する。`android="…"` もそのまま書ける
+- 引けず、古い値も無いときは render warning（prd では公開が止まる）。プレビューは引かないので、`ios` だけのカードは 🚨 の箱になる
+- 移行した 103 件は `[app name="…" icon="…" developer="…" price="…" ios="…" android="…"]` のように焼き込んであるので引かない（`icon` は mirumi.media のファイル名）
 
 ## コールアウト（ボックス）
 

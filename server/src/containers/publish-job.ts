@@ -18,6 +18,7 @@ import type {
   PublishJobRequest,
   PublishJobSummary,
   SiteDeploymentState,
+  UnpublishedPageReferences,
 } from "../lib/publishing"
 import {
   createPageSummariesManifestFromDeployment,
@@ -45,13 +46,21 @@ import {
 import { MediaNormalizer } from "./images"
 import { JobProgressReporter } from "./job-progress"
 import type { SyncedArticleMedia } from "./media-sync"
-import { createThumbnailGenerator, downloadImage, syncArticleMedia } from "./media-sync"
+import {
+  createThumbnailGenerator,
+  downloadImage,
+  downloadMediaFile,
+  syncAppStoreIcons,
+  syncArticleMedia,
+} from "./media-sync"
 import { createBuildPageContentHash, PublishedPageSnapshotStore } from "./published-pages"
+import { refreshSearchIndex } from "./search-index"
 import {
   createSiteBuildPlan,
   findRemovedAggregateRoutes,
   findUnpublishedContentRoutes,
 } from "./site-build"
+import { findUnpublishedReferences } from "./unpublished-references"
 
 const RETIRED_CONTENT_ROUTES = ["/what-is-this-blog/"]
 
@@ -279,7 +288,7 @@ const loadPublishArticle = async (
   const media = await syncArticleMedia(
     article,
     mediaNormalizer,
-    downloadImage,
+    { image: downloadImage, file: downloadMediaFile },
     createThumbnailGenerator(config.thumbnailFunctionUrl),
     reusableOgImage,
   )
@@ -309,6 +318,7 @@ const loadPublishArticle = async (
 const createBuildPageForPublish = async (
   source: PreparedPublishArticle,
   internalBookmarks: ReturnType<typeof createInternalBookmarkLookup>,
+  mediaNormalizer: MediaNormalizer,
   config: ContainerConfig,
 ): Promise<BuildPage> => {
   const { prepared, media } = source
@@ -326,6 +336,7 @@ const createBuildPageForPublish = async (
     amazonCardSignatures,
     bookmarks: enrichment.bookmarks,
     xPosts: enrichment.xPosts,
+    apps: await syncAppStoreIcons(enrichment.apps, mediaNormalizer, downloadImage),
   })
   if (config.appEnv === "prd" && 0 < rendered.warnings.length) {
     throw Error(`production render warning: ${rendered.warnings.join(" / ")}`)
@@ -339,6 +350,42 @@ const createBuildPageForPublish = async (
     ogImageUrl: media.ogImageUrl,
     comments: source.comments,
   })
+}
+
+// 非公開にした記事を指す内部ブログカードは、指している記事を次に Notion の本文から作り直すまで残る。
+// 非公開にした時点で気づけるよう、Slack で知らせる材料を返す。非公開そのものはもう済んでいるので、ここでは失敗させない
+const findReferencesToUnpublished = async (
+  builtPages: Array<PreparedPageRevision>,
+  previousState: SiteDeploymentState,
+  nextState: SiteDeploymentState,
+  buildPages: Array<BuildPage>,
+  snapshotStore: PublishedPageSnapshotStore,
+): Promise<Array<UnpublishedPageReferences>> => {
+  const unpublished = builtPages.flatMap((page): Array<DeployedPage> => {
+    const deployed = previousState.pages[page.revision.pageId]
+
+    return page.action === "unpublish" && deployed ? [deployed] : []
+  })
+  if (unpublished.length === 0) {
+    return []
+  }
+  try {
+    return await findUnpublishedReferences({
+      unpublished,
+      state: nextState,
+      builtPages: new Map(buildPages.map((page) => [page.pageId, page])),
+      loadSnapshot: (pageId, contentHash) => snapshotStore.load(pageId, contentHash),
+    })
+  } catch (err) {
+    console.warn(
+      JSON.stringify({
+        event: "unpublished_reference_search_failed",
+        error: err instanceof Error ? err.message : String(err),
+      }),
+    )
+
+    return []
+  }
 }
 
 const createInternalBookmarkSources = (
@@ -439,6 +486,7 @@ export const runContainerPublishJob = async (
       skipped: [],
       stale: [],
       updatedPaths: [],
+      unpublishedReferences: [],
     }
   }
 
@@ -503,7 +551,12 @@ export const runContainerPublishJob = async (
         if (!source) {
           throw Error(`build 対象の記事本文がありません: ${page.revision.pageId}`)
         }
-        const buildPage = await createBuildPageForPublish(source, internalBookmarks, config)
+        const buildPage = await createBuildPageForPublish(
+          source,
+          internalBookmarks,
+          mediaNormalizer,
+          config,
+        )
         const hash = createBuildPageContentHash(buildPage)
         buildPages.push(buildPage)
         publishedSnapshots.push({ page: buildPage, contentHash: hash })
@@ -599,6 +652,7 @@ export const runContainerPublishJob = async (
       skipped,
       stale,
       updatedPaths: [],
+      unpublishedReferences: [],
     }
   }
 
@@ -660,6 +714,30 @@ export const runContainerPublishJob = async (
     deletedRoutes,
   )
   await repository.save(nextState, loaded.etag)
+  // 検索の索引を更新できなくても、配信はもう済んでいるので公開は失敗にしない。次の公開か generate で追いつく
+  try {
+    await refreshSearchIndex({
+      mode: request.params.mode,
+      store: siteStore,
+      builtPages: [...buildPages, ...snapshotPages],
+      state: nextState,
+      updatedAt: request.params.requestedAt,
+    })
+  } catch (err) {
+    console.warn(
+      JSON.stringify({
+        event: "search_index_refresh_failed",
+        error: err instanceof Error ? err.message : String(err),
+      }),
+    )
+  }
+  const unpublishedReferences = await findReferencesToUnpublished(
+    builtPages,
+    deploymentState,
+    nextState,
+    buildPages,
+    snapshotStore,
+  )
   await progress.report("done", results.length, prepared.pages.length)
 
   return {
@@ -670,5 +748,6 @@ export const runContainerPublishJob = async (
     skipped,
     stale,
     updatedPaths,
+    unpublishedReferences,
   }
 }

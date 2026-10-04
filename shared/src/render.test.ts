@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest"
 
 import type { ArticleContent, CalloutIcon, ContentBlock, RichText } from "./content"
-import { renderArticleContent } from "./render"
+import { createSearchText, findInternalBlogcardRoutes, renderArticleContent } from "./render"
 
 const text = (content: string, overrides: Partial<RichText> = {}): RichText => ({
   type: "text",
@@ -943,5 +943,187 @@ describe("renderArticleContent", () => {
     )
     expect(result.html).toContain('<div class="blogcard page">')
     expect(result.warnings).toEqual([])
+  })
+})
+
+describe("findInternalBlogcardRoutes", () => {
+  const bookmark = (id: string, url: string): ContentBlock => ({
+    id,
+    type: "bookmark" as const,
+    url,
+    caption: [],
+    children: [],
+  })
+
+  test("描いた本文から内部ブログカードの行き先だけを拾い、外部カードと普通のリンクは拾わない", () => {
+    const rendered = renderArticleContent(
+      article([
+        bookmark("internal", "https://mirumi.me/vivaldi/"),
+        bookmark("again", "https://mirumi.me/vivaldi/"),
+        bookmark("page", "https://mirumi.me/profile/"),
+        bookmark("external", "https://example.com/"),
+        {
+          id: "paragraph",
+          type: "paragraph" as const,
+          richText: [text("普通のリンク", { href: "https://mirumi.me/other/" })],
+          children: [],
+        },
+      ]),
+      {
+        amazonCardSignatures: {},
+        bookmarks: {
+          internal: {
+            kind: "internal",
+            url: "https://mirumi.me/vivaldi/",
+            title: "内部記事",
+            description: null,
+            imageUrl: null,
+            faviconUrl: null,
+            label: "PC",
+          },
+          again: {
+            kind: "internal",
+            url: "https://mirumi.me/vivaldi/",
+            title: "内部記事",
+            description: null,
+            imageUrl: null,
+            faviconUrl: null,
+            label: "PC",
+          },
+          page: {
+            kind: "internal",
+            url: "https://mirumi.me/profile/",
+            title: "固定ページ",
+            description: null,
+            imageUrl: null,
+            faviconUrl: null,
+            label: "",
+          },
+          external: {
+            kind: "external",
+            url: "https://example.com/",
+            title: "外部サイト",
+            description: null,
+            imageUrl: null,
+            faviconUrl: null,
+            label: "example.com",
+          },
+        },
+      },
+    )
+
+    expect(findInternalBlogcardRoutes(rendered.html)).toEqual(["/vivaldi/", "/profile/"])
+  })
+
+  test("解決できずに代替表示になった内部ブログカードは拾わない", () => {
+    const rendered = renderArticleContent(
+      article([bookmark("missing", "https://mirumi.me/unpublished/")]),
+    )
+
+    expect(rendered.warnings).not.toEqual([])
+    expect(findInternalBlogcardRoutes(rendered.html)).toEqual([])
+  })
+})
+
+describe("createSearchText", () => {
+  test("描いた本文から、もくじと内部ブログカードを除いた平文を、検索用にそろえて作る", () => {
+    const heading = (id: string, content: string): ContentBlock => ({
+      id,
+      type: "heading" as const,
+      level: 2,
+      richText: [text(content)],
+      children: [],
+    })
+    const rendered = renderArticleContent(
+      article([
+        heading("00000000-0000-0000-0000-000000000001", "見出しＡ"),
+        {
+          id: "paragraph",
+          type: "paragraph" as const,
+          richText: [text('本文の <タグ> & "引用"')],
+          children: [],
+        },
+        heading("00000000-0000-0000-0000-000000000002", "見出しB"),
+        {
+          id: "card",
+          type: "bookmark" as const,
+          url: "https://mirumi.me/other/",
+          caption: [],
+          children: [],
+        },
+      ]),
+      {
+        amazonCardSignatures: {},
+        bookmarks: {
+          card: {
+            kind: "internal",
+            url: "https://mirumi.me/other/",
+            title: "ほかの記事の題名",
+            description: null,
+            imageUrl: null,
+            faviconUrl: null,
+            label: "PC",
+          },
+        },
+      },
+    )
+
+    expect(rendered.html).toContain('class="toc"')
+    expect(createSearchText(rendered.html)).toEqual('見出しa 本文の <タグ> & "引用" 見出しb')
+  })
+})
+
+describe("アプリ紹介カード", () => {
+  const ios = "https://apps.apple.com/jp/app/some-app/id42"
+  const appParagraph = (content: string): ContentBlock => ({
+    id: "app",
+    type: "paragraph" as const,
+    richText: [text(content)],
+    children: [],
+  })
+  const app = {
+    id: "42",
+    name: "引いたアプリ",
+    developer: "引いた開発元",
+    price: "無料",
+    artworkUrl: "https://mirumi.media/0123456789abcdef-app-icon-42-512x512-512w.webp",
+  }
+
+  test("移行で焼き込んだカードは、書いた属性だけで描く", () => {
+    const rendered = renderArticleContent(
+      article([
+        appParagraph(
+          `[app name="移行したアプリ" icon="app.webp" developer="開発元" price="120 円" ios="${ios}"]`,
+        ),
+      ]),
+    )
+
+    expect(rendered.warnings).toEqual([])
+    expect(rendered.html).toContain('src="https://mirumi.media/app.webp" alt="移行したアプリ"')
+    expect(rendered.html).toContain('<span class="appreach__price">120 円</span>')
+  })
+
+  test("ios だけのカードは、App Store から引いた値で埋め、書いた属性はそちらを優先する", () => {
+    const rendered = renderArticleContent(
+      article([appParagraph(`[app ios="${ios}" price="セール中"]`)]),
+      {
+        amazonCardSignatures: {},
+        apps: { [ios]: app },
+      },
+    )
+
+    expect(rendered.warnings).toEqual([])
+    expect(rendered.html).toContain(`src="${app.artworkUrl}" alt="引いたアプリ"`)
+    expect(rendered.html).toContain('<span class="appreach__developper">引いた開発元</span>')
+    expect(rendered.html).toContain('<span class="appreach__price">セール中</span>')
+    expect(rendered.html).toContain(`href="${ios}"`)
+  })
+
+  test("App Store から引けなかった ios だけのカードは warning にする", () => {
+    const rendered = renderArticleContent(article([appParagraph(`[app ios="${ios}"]`)]))
+
+    expect(rendered.warnings).toEqual([
+      `アプリカードの情報を App Store から引けませんでした（${ios}）`,
+    ])
   })
 })

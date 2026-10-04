@@ -3,6 +3,7 @@ import { describe, expect, test, vi } from "vitest"
 import type { SiteDeploymentState } from "../lib/publishing"
 import type { DeploymentIndexRepository } from "../repositories/deployment-index"
 import {
+  PublishedRouteResolver,
   type PublishedSlugCache,
   PublishedSlugResolver,
   SignedS3DeploymentIndexStore,
@@ -69,7 +70,7 @@ describe("PublishedSlugResolver", () => {
     expect(await resolver.isPublishedPostSlug("article")).toEqual(true)
     expect(repository.load).toHaveBeenCalledTimes(1)
     expect(cache.puts).toEqual(1)
-    expect(JSON.parse(cache.values.get("published-post-slugs:v1")!).slugs).toEqual(["article"])
+    expect(JSON.parse(cache.values.get("published-post-slugs:v2")!).values).toEqual(["article"])
   })
 
   test("cache に無い slug は 1 分に 1 回だけ index を読み直す", async () => {
@@ -106,6 +107,60 @@ describe("PublishedSlugResolver", () => {
     const resolver = new PublishedSlugResolver({ repository, cache: null })
 
     await expect(resolver.isPublishedPostSlug("article")).rejects.toThrowError("s3 down")
+  })
+})
+
+describe("PublishedRouteResolver", () => {
+  const page = (
+    index: number,
+    kind: "post" | "page",
+    route: string,
+    status: "published" | "unpublished",
+  ) => {
+    const pageId = `00000000-0000-0000-0000-${String(index).padStart(12, "0")}`
+
+    return {
+      pageId,
+      kind,
+      status,
+      route,
+      slug: route.replaceAll("/", ""),
+      title: route,
+      excerpt: null,
+      category: kind === "post" ? { name: "技術", slug: "tech" } : null,
+      publishedAt: "2026-08-24T00:00:00.000Z",
+      updatedAt: null,
+      thumbnailUrls: null,
+      ogImageUrl: "https://mirumi.media/og.webp",
+      deployedNotionEdit: "2026-08-24T00:00:00.000Z",
+      deployedAt: "2026-08-24T00:00:00.000Z",
+      contentHash: "hash",
+      sourceHash: null,
+    }
+  }
+
+  test("公開中の記事と固定ページの route を許可し、非公開の route は許可しない", async () => {
+    const pages = [
+      page(1, "post", "/article/", "published"),
+      page(2, "page", "/about/", "published"),
+      page(3, "post", "/hidden/", "unpublished"),
+    ]
+    const repository = {
+      load: vi.fn(async () => ({
+        state: {
+          schemaVersion: 1 as const,
+          updatedAt: "2026-09-21T00:00:00.000Z",
+          pages: Object.fromEntries(pages.map((value) => [value.pageId, value])),
+          routeOwners: {},
+        },
+        etag: '"etag"',
+      })),
+    }
+    const resolver = new PublishedRouteResolver({ repository, cache: null })
+
+    expect(await resolver.isPublishedRoute("/article/")).toEqual(true)
+    expect(await resolver.isPublishedRoute("/about/")).toEqual(true)
+    expect(await resolver.isPublishedRoute("/hidden/")).toEqual(false)
   })
 })
 

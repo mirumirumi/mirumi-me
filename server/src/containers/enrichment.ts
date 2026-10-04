@@ -1,3 +1,4 @@
+import { parseAppStoreApp } from "shared/app-store"
 import type { BookmarkCardData } from "shared/bookmark"
 import { parseBookmarkCardData } from "shared/bookmark"
 import type { ArticleContent } from "shared/content"
@@ -43,6 +44,12 @@ export const resolveArticleEnrichment = async (
       return parseStaticXPostData(
         await fetchJson(new URL(`/x-post/${postId}`, "http://bindings.internal"), fetcher),
       )
+    },
+    appStore: async (url) => {
+      const bridge = new URL("http://bindings.internal/app-store")
+      bridge.searchParams.set("url", url)
+
+      return parseAppStoreApp(await fetchJson(bridge, fetcher))
     },
   })
 }

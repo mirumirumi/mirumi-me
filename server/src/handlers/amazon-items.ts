@@ -3,6 +3,7 @@ import type { Context } from "hono"
 import type { AmazonItemsResponse } from "shared/amazon"
 import { verifyAmazonCardSignature } from "shared/amazon"
 
+import { createPublicApiCorsHeaders } from "../lib/cors"
 import type { HonoEnv } from "../lib/types"
 import { AmazonService } from "../services/amazon"
 
@@ -15,43 +16,6 @@ export type AmazonItemsRateLimiter = Pick<RateLimit, "limit">
 interface ParsedAmazonItem {
   asin: string
   signature: string
-}
-
-const isDevLoopbackOrigin = (origin: string, appEnv: string | undefined): boolean => {
-  if (appEnv !== "dev") {
-    return false
-  }
-
-  try {
-    const url = new URL(origin)
-    const loopbackHosts = new Set(["localhost", "127.0.0.1", "[::1]"])
-
-    return (
-      (url.protocol === "http:" || url.protocol === "https:") && loopbackHosts.has(url.hostname)
-    )
-  } catch {
-    return false
-  }
-}
-
-const createCorsHeaders = (c: Context<HonoEnv>): Record<string, string> | null => {
-  const origin = c.req.raw.headers.get("Origin") ?? undefined
-  const allowedOrigins = new Set<string>(
-    [c.env.FRONTEND_ORIGIN, c.env.WORKERS_API_ORIGIN].filter((value) => value !== undefined),
-  )
-  if (origin && !allowedOrigins.has(origin) && !isDevLoopbackOrigin(origin, c.env.APP_ENV)) {
-    return null
-  }
-
-  const headers: Record<string, string> = {
-    "Cache-Control": "no-store",
-    Vary: "Origin",
-  }
-  if (origin) {
-    headers["Access-Control-Allow-Origin"] = origin
-  }
-
-  return headers
 }
 
 const parseItems = (url: string): Array<ParsedAmazonItem> | null => {
@@ -116,7 +80,7 @@ export const handleAmazonItems = async (
   resolver: AmazonItemsResolver | null,
   rateLimiter: AmazonItemsRateLimiter | null,
 ): Promise<Response> => {
-  const headers = createCorsHeaders(c)
+  const headers = createPublicApiCorsHeaders(c)
   if (!headers) {
     return c.json({ error: "Origin is not allowed" }, 403, {
       "Cache-Control": "no-store",
@@ -164,7 +128,7 @@ export const getAmazonItems = async (c: Context<HonoEnv>): Promise<Response> => 
 }
 
 export const handleAmazonItemsOptions = (c: Context<HonoEnv>): Response => {
-  const headers = createCorsHeaders(c)
+  const headers = createPublicApiCorsHeaders(c)
   if (!headers) {
     return c.json({ error: "Origin is not allowed" }, 403, {
       "Cache-Control": "no-store",

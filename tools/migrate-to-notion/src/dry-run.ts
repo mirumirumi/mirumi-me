@@ -7,6 +7,7 @@ import { convertWordPressContent } from "./convert"
 import { createMediaMigrationResolver, readMediaMigrationMapping } from "./media-mapping"
 import { selectMigrationTargets } from "./migration-targets"
 import { readContents } from "./read"
+import { checkConvertedRender, type RenderWarningRecord } from "./render-check"
 import type { MigrationWarning, MigrationWarningCode, NotionPageInput } from "./types"
 
 interface DryRunReport {
@@ -28,6 +29,10 @@ interface DryRunReport {
     slug: string
     warnings: Array<MigrationWarning>
   }>
+  // 公開と同じ render に通したときの warning。prd では 1 件でもあるとその記事の公開が止まる。
+  // 外部のブログカードと X ポストは解決できたものとして扱うので、ここには出ない
+  renderWarnings: number
+  renderWarningRecords: Array<RenderWarningRecord>
 }
 
 const sourcePath = fileURLToPath(
@@ -65,7 +70,10 @@ const addBlockCounts = (blocks: ReadonlyArray<unknown>, counts: Record<string, n
   return total
 }
 
-const makeReport = (conversions: Array<NotionPageInput>): DryRunReport => {
+const makeReport = (
+  conversions: Array<NotionPageInput>,
+  renderWarningRecords: Array<RenderWarningRecord>,
+): DryRunReport => {
   const blockTypes: Record<string, number> = {}
   const warningCodes: Partial<Record<MigrationWarningCode, number>> = {}
   let blocks = 0
@@ -127,13 +135,21 @@ const makeReport = (conversions: Array<NotionPageInput>): DryRunReport => {
         slug,
         warnings: conversionWarnings,
       })),
+    renderWarnings: renderWarningRecords.reduce(
+      (total, record) => total + record.warnings.length,
+      0,
+    ),
+    renderWarningRecords,
   }
 }
 
 const records = selectMigrationTargets(await readContents(sourcePath))
 const media = createMediaMigrationResolver(await readMediaMigrationMapping(mediaMappingPath))
 const conversions = records.map((record) => convertWordPressContent(record, media))
-const report = makeReport(conversions)
+const renderWarningRecords = await checkConvertedRender(
+  records.map((record, index) => ({ kind: record.postType, page: conversions[index]! })),
+)
+const report = makeReport(conversions, renderWarningRecords)
 
 await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`)
 process.stdout.write(
@@ -141,6 +157,7 @@ process.stdout.write(
     `${report.records} 件を変換しました`,
     `ブロック: ${report.blocks} 件`,
     `警告: ${report.warnings} 件 / ${report.warningRecords.length} 記事`,
+    `render warning（prd で公開が止まる。外部のブログカードと X ポストは数えない）: ${report.renderWarnings} 件 / ${report.renderWarningRecords.length} 記事`,
     `本文なし: ${report.recordsWithoutBlocks.length} 件`,
     `ブロック投入リクエスト: ${report.blockRequests} 回 / 追加リクエストが必要: ${report.recordsNeedingExtraRequests.length} 記事`,
     `レポート: ${reportPath}`,
