@@ -34,8 +34,8 @@
                 - 本文画像は横幅 800 / 1200 / 1600 px、拡大なしで生成し、`srcset` で使う
                 - thumbnail は 412x216（トップ・内部ブログカード）、600x315（mobile article header）、1200x630（desktop article header・OGP）を `cover` で生成する
             - 既存記事が参照している静止画像も、最終 Notion import 前の 1 回限りの batch で同じ形式に揃える
-            - 既存 animation は変換も URL 変更もしない。新しい本文 animation だけ元 bytes のまま S3 へコピーし、animated thumbnail は当面公開エラーにする
-            - Notion にアップロードした音声・動画も、新しい本文 animation と同じく元 bytes のまま S3 へコピーする
+            - 既存アニメーション GIF は変換も URL 変更もしない。新しい本文アニメーション GIF だけそのまま S3 へコピーする
+            - Notion にアップロードした音声や動画も、そのまま S3 へコピーする（サイズリミットはいまは 1GB まで）
                 - 既存記事の音声・動画は mirumi.media の URL を直接指しているので対象外
         - 新規公開した記事の公開日も Workers がセットする
         - `更新日` も Workers がセットする
