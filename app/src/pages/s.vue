@@ -107,8 +107,8 @@ async function search() {
     posts.value = []
     errorMessage.value =
       (err as { statusCode?: number }).statusCode === 429
-        ? "検索が混み合っています。少し待ってからもう一度お試しください :)"
-        : "うまく検索できませんでした。時間をおいてもう一度お試しください :)"
+        ? "ちょっと混み合っています。少しだけ待ってからもう一度お試しください！"
+        : "ちょっとうまくいきませんでした。時間をおいてからもう一度お試しください :("
   } finally {
     if (current === latestSearch) {
       isLoading.value = false

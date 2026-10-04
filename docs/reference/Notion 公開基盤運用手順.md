@@ -450,7 +450,7 @@ MIRUMI_BUILD_MANIFEST_DIR=/tmp/mirumi-build/JOB/manifest bun run dev
 
 検索画面（`app/src/pages/s.vue`）は Workers の `GET /api/search?q=<語>&page=<ページ>` を 1 回呼ぶ。13 件ずつ、`{ total, pages, posts }` を返す。
 
-- 検索画面は、API が失敗したら読み込み中のまま止めず、結果の欄にメッセージを出す（429 は「混み合っています」、それ以外は「うまく検索できませんでした」）。続けて検索したときは、最後に始めた検索の結果だけを出す
+- 検索画面は、API が失敗したら読み込み中のまま止めず、結果の欄にメッセージを出す（429 は「ちょっと混み合っています。…」、それ以外は「ちょっとうまくいきませんでした。…」）。続けて検索したときは、最後に始めた検索の結果だけを出す
 - 索引は Container が公開のたびに site bucket の `_internal/search-index-v1.json` に書く（`server/src/containers/search-index.ts`）。載るのは公開中の記事だけで、固定ページとコメントは載らない
     - generate / bootstrap：作り直した記事で丸ごと作る。作り直せなかった記事（失敗、snapshot が無いなど）は前の索引の値を引き継ぐ
     - 公開ボタン：今ある索引の、その記事だけを差し替える（非公開にした記事は消える）。索引がまだないか壊れているときは作らない（その記事だけの索引になるため）。generate を流せばできる
