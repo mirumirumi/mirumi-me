@@ -450,6 +450,7 @@ MIRUMI_BUILD_MANIFEST_DIR=/tmp/mirumi-build/JOB/manifest bun run dev
 
 検索画面（`app/src/pages/s.vue`）は Workers の `GET /api/search?q=<語>&page=<ページ>` を 1 回呼ぶ。13 件ずつ、`{ total, pages, posts }` を返す。
 
+- 検索画面は、API が失敗したら読み込み中のまま止めず、結果の欄にメッセージを出す（429 は「混み合っています」、それ以外は「うまく検索できませんでした」）。続けて検索したときは、最後に始めた検索の結果だけを出す
 - 索引は Container が公開のたびに site bucket の `_internal/search-index-v1.json` に書く（`server/src/containers/search-index.ts`）。載るのは公開中の記事だけで、固定ページとコメントは載らない
     - generate / bootstrap：作り直した記事で丸ごと作る。作り直せなかった記事（失敗、snapshot が無いなど）は前の索引の値を引き継ぐ
     - 公開ボタン：今ある索引の、その記事だけを差し替える（非公開にした記事は消える）。索引がまだないか壊れているときは作らない（その記事だけの索引になるため）。generate を流せばできる
@@ -502,7 +503,7 @@ MIRUMI_BUILD_MANIFEST_DIR=/tmp/mirumi-build/JOB/manifest bun run dev
     - key は `{assetHash}-{cleanStem}.{拡張子}`。`assetHash` の用途は `audio` / `video`。S3 の metadata の寸法は持たないので `0`
     - 拡張子は元のファイル名から取る。ファイル名に拡張子がなければ Content-Type から決める
     - Content-Type は取ってきたときの応答のものを使う。`application/octet-stream` で返ったときは拡張子から決める（mp4 / m4v / mov / webm / mp3 / m4a / wav / ogg / aac / flac）
-    - 1 ファイル 500 MiB まで。超えるとその記事の公開が失敗する（公開エラー に「500 MiB の上限を超えています」）
+    - 1 ファイル 1 GiB まで。超えるとその記事の公開が失敗する（公開エラー に「1 GiB の上限を超えています」）
 - thumbnail が canonical でなければ publish 時にホストを問わず取り込んで正規化する。Notion upload も WordPress 時代の `mirumi.media` 直下の画像も同じ経路を通る
 
 ### 既存 WordPress 画像の最終移行

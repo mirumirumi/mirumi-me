@@ -18,8 +18,14 @@ const THUMBNAIL_SIZES = [
 // audio / video は Notion にアップロードしたものを変換せずに置く（寸法は持たない）
 export type MediaUsage = "body" | "thumbnail" | "audio" | "video"
 
-// 本文の audio / video の上限。メモリに読んでから置くので、Container（standard-3）のメモリに余裕を残す
-export const MAX_BODY_FILE_BYTES = 500 * 1_024 * 1_024
+// 本文の audio / video の上限。key に中身の hash を入れる（content-addressed）ため、いったんメモリに全部読んでから置く。
+// 読みながら連結するあいだはファイルの約 2 倍を使うので、Container（standard-3、メモリ 8 GiB 程度）で Nuxt generate の分を
+// 残せる大きさにしている。Notion の上限（有料プランで 1 ファイル 5 GB。S3 の 1 回の PUT も 5 GB まで）まで上げたくなったら、
+// メモリに載せず Notion から読みながら S3 へ流す作りに変える。key を中身の hash ではなく Notion のファイルの path
+// （同じアップロードなら変わらない）から作れば、読む前に key が決まり、一度置いたあとは存在の確認だけで済む
+// （L2 `Notion 公開基盤の設計.md` の「Notion にアップロードした audio / video」）
+export const MAX_BODY_FILE_BYTES = 1_024 * 1_024 * 1_024
+export const MAX_BODY_FILE_LABEL = "1 GiB"
 
 // Notion が octet-stream で返したときと、拡張子のない URL のときに使う。同じ Content-Type は先のものを拡張子にする
 const BODY_FILE_TYPES: Array<{ extension: string; contentType: string }> = [
@@ -284,7 +290,7 @@ export class MediaNormalizer {
     fallbackStem: string,
   ): Promise<string> {
     if (MAX_BODY_FILE_BYTES < file.bytes.byteLength) {
-      throw Error(`${kind} が 500 MiB の上限を超えています`)
+      throw Error(`${kind} が ${MAX_BODY_FILE_LABEL} の上限を超えています`)
     }
     const sourceExtension =
       filenameFromSource(sourceUrl)

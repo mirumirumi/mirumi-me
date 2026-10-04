@@ -285,13 +285,16 @@ describe("downloadMediaFile", () => {
       "fetch",
       vi.fn(async () => {
         return new Response(new Uint8Array([1, 2, 3]), {
-          headers: { "Content-Type": "audio/mpeg", "Content-Length": String(600 * 1_024 * 1_024) },
+          headers: {
+            "Content-Type": "audio/mpeg",
+            "Content-Length": String(1_024 * 1_024 * 1_024 + 1),
+          },
         })
       }),
     )
 
     await expect(downloadMediaFile("https://file.notion.so/voice.mp3", "audio")).rejects.toThrow(
-      "500 MiB の上限を超えています",
+      "1 GiB の上限を超えています",
     )
   })
 })

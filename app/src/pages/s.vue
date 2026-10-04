@@ -14,8 +14,9 @@
           <PartsLoadSpinner :kind="'long'" />
         </div>
         <template v-else>
+          <div v-if="errorMessage" class="no_contents"> {{ errorMessage }} </div>
           <ModulesPostIndexes
-            v-if="posts && 1 <= posts.length"
+            v-else-if="posts && 1 <= posts.length"
             :posts="posts"
             :loaded="!isLoading"
           />
@@ -48,6 +49,9 @@ const posts = ref<Array<PostIndexSummary> | null>(null)
 const pageCount = ref(0)
 const itemCount = ref(0)
 const isLoading = ref(false)
+const errorMessage = ref<string | null>(null)
+// 続けて検索したりページを送ったりしたとき、前の検索の応答で表示を戻さないよう、最後に始めた検索だけを反映する
+let latestSearch = 0
 
 onMounted(async () => {
   await search()
@@ -76,19 +80,40 @@ const onEnter = async () => {
 async function search() {
   if (!keyword.value) return
 
+  const current = ++latestSearch
   isLoading.value = true
+  errorMessage.value = null
 
-  // Workers の検索 API が 13 件ずつ返す（shared/search の SEARCH_PER_PAGE）
-  const res = await $fetch<SearchResponse>("/api/search", {
-    baseURL: runtimeConfig.public.workersApiOrigin,
-    params: { q: keyword.value, page: page.value },
-  })
+  try {
+    // Workers の検索 API が 13 件ずつ返す（shared/search の SEARCH_PER_PAGE）
+    const res = await $fetch<SearchResponse>("/api/search", {
+      baseURL: runtimeConfig.public.workersApiOrigin,
+      params: { q: keyword.value, page: page.value },
+    })
+    if (current !== latestSearch) {
+      return
+    }
 
-  pageCount.value = res.pages
-  itemCount.value = res.total
-  posts.value = res.posts
+    pageCount.value = res.pages
+    itemCount.value = res.total
+    posts.value = res.posts
+  } catch (err) {
+    if (current !== latestSearch) {
+      return
+    }
 
-  isLoading.value = false
+    pageCount.value = 0
+    itemCount.value = 0
+    posts.value = []
+    errorMessage.value =
+      (err as { statusCode?: number }).statusCode === 429
+        ? "検索が混み合っています。少し待ってからもう一度お試しください :)"
+        : "うまく検索できませんでした。時間をおいてもう一度お試しください :)"
+  } finally {
+    if (current === latestSearch) {
+      isLoading.value = false
+    }
+  }
 }
 
 useHead({

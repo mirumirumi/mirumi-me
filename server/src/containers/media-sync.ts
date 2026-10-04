@@ -4,7 +4,7 @@ import { isNotionHostedFile, resolveThumbnailUrls } from "shared/media"
 
 import type { ThumbnailUrls } from "../lib/publishing"
 import type { DownloadedMediaFile, MediaNormalizer } from "./images"
-import { MAX_BODY_FILE_BYTES } from "./images"
+import { MAX_BODY_FILE_BYTES, MAX_BODY_FILE_LABEL } from "./images"
 
 const MAX_IMAGE_BYTES = 20 * 1_024 * 1_024
 const IMAGE_FETCH_TIMEOUT_MS = 15_000
@@ -106,7 +106,7 @@ export const downloadMediaFile = async (
     `Notion にアップロードした ${kind} `,
     kind,
     MAX_BODY_FILE_BYTES,
-    "500 MiB",
+    MAX_BODY_FILE_LABEL,
   )
 }
 

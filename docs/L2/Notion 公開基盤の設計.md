@@ -305,7 +305,11 @@ generate のあいだ、Container は「HTTP を開いたまま待っていな�
 - 公開のときに、新しい本文 animation と同じく変換せずに S3 へコピーすることにした
 - 採らなかった案は「Notion ホストの audio / video を validation error にして、mirumi.media に手で上げて external で貼る」。Notion のタブ 1 枚で書けるようにするという、移行の主目的に反するため
 - 2026-10-04 に実装した（`containers/media-sync.ts` の `syncBlocks`、`containers/images.ts` の `copyBodyFile`）。夜のあいだの作業で決めたこと（軽い仮決め。変えるのは定数だけで安い）
-    - 1 ファイル 500 MiB まで。メモリに読んでから S3 に置くので上限が要る。Container は standard-3（メモリ 8 GiB 程度）で、Nuxt generate の分を残しても余裕がある大きさにした。Notion の有料プランは 1 ファイル 5 GB まで上げられるが、ブログの動画でそこまでは想定しない。超えたらその記事の失敗として 公開エラー に出るので、黙って壊れることはない
+    - 1 ファイル 1 GiB まで（2026-10-04 の夜に 500 MiB で入れ、同じ日に圭くんの希望で 1 GiB に上げた。「もっと大きいのを上げる可能性はゼロじゃない」）。超えたらその記事の失敗として 公開エラー に出るので、黙って壊れることはない
+        - 上限が要るのは今の作りの都合で、Notion や S3 の上限ではない。key に中身の hash を入れる（content-addressed）ため、いったんメモリに全部読んでから置いている。読みながら連結するあいだはファイルの約 2 倍を使うので、Container（standard-3、メモリ 8 GiB 程度）で Nuxt generate の分を残せる大きさにしている
+        - 本当の上限は、Notion の 1 ファイル 5 GB（有料プラン。無料は 5 MB）と、S3 の 1 回の PUT の 5 GB
+        - 5 GB まで上げたくなったら（2026-10-04 に圭くんと話した B 案）：メモリに載せず、Notion から読みながら S3 へ流す（stream）作りに変える。key は中身の hash ではなく Notion のファイルの path（`/<ワークスペースの ID>/<ファイルの ID>/<ファイル名>`。署名のクエリは毎回変わるが path は同じアップロードなら変わらない。`lib/article-hash.ts` もこれに頼っている）から作る。読む前に key が決まるので、一度置いたあとは存在の確認だけで済み、公開のたびに動画を丸ごと取り直すこともなくなる（今の作りは公開のたびに取り直して hash を取っている）
+        - B 案で確かめること：Bun 上の `@aws-sdk/client-s3` で、Content-Length のわかっている stream を PutObject に渡せるか（`@aws-sdk/lib-storage` は入っていない。足すなら依存の追加）。media bucket の IAM には DeleteObject がないので、一時的な key に置いてから copy する作りは取れない
     - 取りに行くタイムアウトは 5 分（画像は 15 秒）
     - Content-Type は Notion の応答のものを使い、octet-stream のときだけ拡張子から決める。`<video>` / `<audio>` はブラウザによって Content-Type を見て再生するかを決めるため
     - S3 の metadata の usage は `audio` / `video` にした。画像の `body` と分けたのは、寸法を `0` にしている理由が metadata から読めるようにするため
