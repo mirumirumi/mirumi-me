@@ -475,7 +475,8 @@ MIRUMI_BUILD_MANIFEST_DIR=/tmp/mirumi-build/JOB/manifest bun run dev
 
 ## PV と site-admin-extension
 
-- フロント（`app/src/app.vue`）は、初めの表示とルートが変わるたびに、そのページのパスを Workers の `POST /api/pv` へ `navigator.sendBeacon` で送る（使えなければ `fetch` の keepalive）。応答は待たない
+- フロント（`app/src/app.vue`）は、初めの表示とルートが変わるたびに、そのページのパスを Workers の `POST /api/pv` へ `fetch`（keepalive つき、本文は text/plain）で送る。応答は待たない
+    - `navigator.sendBeacon` は使わない。ブラウザのトラッカーブロックが ping として止めるため（2026-10-05 に Vivaldi で確かめた。同じ URL でも `fetch` は通り、`sendBeacon` は `net::ERR_BLOCKED_BY_CLIENT` になった）
     - パスは末尾スラッシュをそろえる（`shared/src/page-views.ts`）。数えるのはトップと 1 階層のページで、2 階層以上、`/entries/`、`/s/` は送らない（WordPress 時代と同じ）
     - ローカルの nuxt dev では送らない
 - Worker は、トップ、`/entry-list/`、publish index で公開中の route（記事と固定ページ）だけを Analytics Engine（`MIRUMI_ME_PV`）に `indexes: [パス]`、`doubles: [1]` で書き、204 を返す。公開中でないパスは書かずに 204

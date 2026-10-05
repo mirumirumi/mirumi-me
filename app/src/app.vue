@@ -59,16 +59,16 @@ watch(
 )
 
 // 1 PV ずつ Workers に送り、Analytics Engine に書いてもらう。応答は待たない。
-// 一覧（/entries/）と検索（/s/）は WordPress 時代から数えていない。ローカルの nuxt dev では送らない
+// 一覧（/entries/）と検索（/s/）は WordPress 時代から数えていない。ローカルの nuxt dev では送らない。
+// sendBeacon は使わない。ブラウザのトラッカーブロック（Vivaldi の標準など）が ping として止めるため。
+// keepalive つきの fetch なら、ページを離れる途中でも送り切れる
 function sendPageView(path: string): void {
   if (import.meta.dev) return
   const normalized = normalizePageViewPath(path)
   if (!normalized || normalized === "/entries/" || normalized === "/s/") return
 
   const url = `${runtimeConfig.public.workersApiOrigin}/api/pv`
-  if (!navigator.sendBeacon?.(url, normalized)) {
-    void fetch(url, { method: "POST", body: normalized, keepalive: true }).catch(() => undefined)
-  }
+  void fetch(url, { method: "POST", body: normalized, keepalive: true }).catch(() => undefined)
 }
 </script>
 

@@ -349,7 +349,9 @@ generate のあいだ、Container は「HTTP を開いたまま待っていな�
 
 - 公開中の route かどうかは、コメントの受付で記事の slug を確かめるのと同じ仕組み（publish index → KV に 5 分 cache、知らない値は 1 分に 1 回だけ読み直し）で確かめる。`services/published-slugs.ts` を、集める値（記事の slug か、公開中の route か）と KV の key だけを差し替えられる形に広げた。そのとき KV の中身の項目名を `values` にそろえ、記事の slug の key を `published-post-slugs:v2` に上げた（古い v1 は 5 分で消える）
 - PV の rate limit は送信元の IP ごと（検索と同じ理由。2026-10-04 の仮決め）
-- 公開中でないパスや数えないパスでも、書かずに 204 を返す。sendBeacon は応答を読まないので、断っても伝わる先がない。形の崩れたパスだけ 400 にした（自前のフロント以外が送ってきたものの見分けに使える）
+- 公開中でないパスや数えないパスでも、書かずに 204 を返す。フロントは応答を読まないので、断っても伝わる先がない。形の崩れたパスだけ 400 にした（自前のフロント以外が送ってきたものの見分けに使える）
+- 送り方は、はじめ `navigator.sendBeacon`（だめなら keepalive つきの `fetch`）にしていた。dev で圭くんのブラウザ（Vivaldi。標準でトラッカーをブロックする）から PV が 1 件も届かず、調べると `sendBeacon` だけが `net::ERR_BLOCKED_BY_CLIENT` で止められていた。同じ URL・同じ本文でも keepalive つきの `fetch` は 204 で届いた（2026-10-05）。`sendBeacon` は止められても `true` を返すので、だめなら `fetch` に切り替える作りでは救えない。そこで最初から keepalive つきの `fetch` だけにした
+    - EasyPrivacy を見ても `/api/pv` に当たるルールはなく、ping という種類で止めているとみられる。ブロッカーによっては URL やドメイン（`workers.dev`）で止めるものもあるので、ブロッカーを入れた人の PV は多少取りこぼす。WordPress 版のカウンターも普通の fetch で送っていたので、それより減ることはないはず
 - 拡張は開いているページのホストで dev / prd を分ける（2026-10-04 の仮決め）。dev の CloudFront で新しい版を試せるようにするため。prd の data source ID は、本番リリースの準備で複製して作り直すときに `src/admin-data.ts` を直す（本番リリース手順の 6）
 - 拡張は shared に依存していない（依存を足すと lockfile も変わる）ので、パスのそろえ方（`shared/src/page-views.ts`）と Notion の API version は写している。どちらもコメントで元を書いた
 - 拡張にテストを足し（`src/admin-data.test.ts`）、root の `bun run test` からも流れるようにした

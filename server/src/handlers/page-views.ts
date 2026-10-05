@@ -55,7 +55,7 @@ const rejectOrigin = (c: Context<HonoEnv>): Response => {
   })
 }
 
-// フロントは sendBeacon で text/plain の本文にパスだけを送る。応答は読まないので、数えなくても 204 を返す
+// フロントは keepalive つきの fetch で text/plain の本文にパスだけを送る。応答は読まないので、数えなくても 204 を返す
 export const handlePageView = async (
   c: Context<HonoEnv>,
   recorder: PageViewRecorder | null,
