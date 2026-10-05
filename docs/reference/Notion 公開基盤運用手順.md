@@ -9,6 +9,10 @@
 - Container が Notion 取得、画像同期、Nuxt SSG、S3 更新までを行い、publish index を最後に更新する
 - CloudFront invalidation のあと、Notion の `internal-state` と公開結果を書き戻す
 - `_nuxt` の hash asset、旧画像、旧 WordPress object は自動削除しない
+    - mirumi.media には、Notion の記事から参照されない object もある。消す仕組み（孤立した object の cleanup など）を作るときは、Notion だけでなく、publish index、公開済みの snapshot、コードの参照も見る
+        - アプリ紹介カードのバッジ（`app-store-badge-ja.svg` / `google-play-badge-ja.png`）：render が直接指す。手で置いたもの
+        - App Store から引いたアプリのアイコン（`…-app-icon-<ID>-…webp`）：作った HTML と snapshot にだけ出る
+        - thumbnail のない記事の自動生成 OGP 画像：publish index の `ogImageUrl` と HTML にだけ出る
 - `_internal/*` は CloudFront から取得できない bucket policy にする
 
 ## Notion 移行の完了条件
