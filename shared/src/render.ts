@@ -592,10 +592,11 @@ const renderApp = (attributes: Record<string, string>, context: RenderContext): 
   }
   const developer = attributes.developer || app?.developer
   const price = attributes.price || app?.price
+  // バッジはアプリーチの配布元（GitHub Pages）から消えることがあるので（as_ja.svg が消えた）、mirumi.media に置いたものを使う
   const storeLink = (url: string | undefined, className: string, image: string, label: string) => {
     const safe = url ? safeUrl(url) : null
     return safe
-      ? `<a class="${className}" href="${escapeHtml(safe)}" target="_blank" rel="nofollow noopener"><img src="https://nabettu.github.io/appreach/img/${image}" alt="${label}" loading="lazy"></a>`
+      ? `<a class="${className}" href="${escapeHtml(safe)}" target="_blank" rel="nofollow noopener"><img src="https://mirumi.media/${image}" alt="${label}" loading="lazy"></a>`
       : ""
   }
   const detail = [
@@ -603,7 +604,7 @@ const renderApp = (attributes: Record<string, string>, context: RenderContext): 
     price ? `<span class="appreach__price">${escapeHtml(price)}</span>` : "",
   ].join("")
 
-  return `<div class="appreach"><img class="appreach__icon" src="${escapeHtml(icon)}" alt="${escapeHtml(name)}" loading="lazy"><div class="appreach__detail"><p class="appreach__name">${escapeHtml(name)}</p><p class="appreach__info">${detail}</p></div><div class="appreach__links">${storeLink(attributes.ios, "appreach__aslink", "itune_ja.svg", "App Store")}${storeLink(attributes.android, "appreach__gplink", "gplay_ja.png", "Google Play")}</div></div>`
+  return `<div class="appreach"><img class="appreach__icon" src="${escapeHtml(icon)}" alt="${escapeHtml(name)}" loading="lazy"><div class="appreach__detail"><p class="appreach__name">${escapeHtml(name)}</p><p class="appreach__info">${detail}</p></div><div class="appreach__links">${storeLink(attributes.ios, "appreach__aslink", "app-store-badge-ja.svg", "App Store")}${storeLink(attributes.android, "appreach__gplink", "google-play-badge-ja.png", "Google Play")}</div></div>`
 }
 
 const renderQuoteImage = (attributes: Record<string, string>, context: RenderContext): string => {

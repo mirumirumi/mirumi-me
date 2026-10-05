@@ -575,6 +575,8 @@ dev で見えない理由と、本番まで持ち越した経緯は `docs/L2/Not
     - 国は URL の `/jp/` などから決める。無ければ jp
     - アイコンは取ってきて、本文画像と同じく mirumi.media に置き直す（`app-icon-<ID>`）。CDN 直リンクは将来切れるため
 - 書いた属性（`name`、`icon`、`developer`、`price`）は引いた値より優先する。`android="…"` もそのまま書ける
+- Google Play のリンクは自動では付かない。Android 版があるときは、自分で `android="https://play.google.com/store/apps/details?id=…"` を書く（2026-10-05 に圭くんと決めた。iOS と同じ ID の Android 版を探す自動化も考えたが、ID が違うアプリ（Spotify など）を見逃すので入れなかった）
+- App Store / Google Play のバッジは mirumi.media の `app-store-badge-ja.svg` / `google-play-badge-ja.png`。2026-10-05 に、アプリーチの配布元（`nabettu.github.io/appreach/img/` の `itune_ja.svg` / `gplay_ja.png`）から写して手で置いた。コードでは作らないので、差し替えるときは別の名前で置いて render を直す
 - 引けず、古い値も無いときは render warning（prd では公開が止まる）。プレビューは引かないので、`ios` だけのカードは 🚨 の箱になる
 - 移行した 103 件は `[app name="…" icon="…" developer="…" price="…" ios="…" android="…"]` のように焼き込んであるので引かない（`icon` は mirumi.media のファイル名）
 
