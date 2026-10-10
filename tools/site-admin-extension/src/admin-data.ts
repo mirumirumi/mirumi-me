@@ -10,10 +10,9 @@ export interface SiteConfig {
 
 const PRD: SiteConfig = {
   dataset: "mirumi_me_pv_prd",
-  // 🔴 prd の posts / pages は本番リリースの準備で dev から複製して作り直すので、そのときに新しい ID にする
-  // （本番リリース手順の 6）
-  postsDataSourceId: "399e5acd-5762-442b-a3f5-be983498d926",
-  pagesDataSourceId: "53765425-ad40-828e-976a-0789d64d4dee",
+  // 2026-10-10 に dev から複製して作り直した prd の posts / pages
+  postsDataSourceId: "49d65425-ad40-8269-bf93-07fb8e39bc6b",
+  pagesDataSourceId: "83565425-ad40-8216-9107-076abcbcbd5b",
 }
 
 const DEV: SiteConfig = {
