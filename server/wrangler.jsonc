@@ -172,16 +172,16 @@
         "ACCESS_PREVIEW_AUD": "84cc688b6267419444da69a5a070b1043a8e1de0cf4c072d5affcd4ec779b239",
         "ACCESS_ADMIN_AUD": "e42b095901abf896e6644ac39a5b908113f7e4b6ba488f6f765468a9db76a44d",
         "ACCESS_TEAM_DOMAIN": "https://little-mud-182a.cloudflareaccess.com",
-        "NOTION_POSTS_DATA_SOURCE_ID": "399e5acd-5762-442b-a3f5-be983498d926",
-        "NOTION_PAGES_DATA_SOURCE_ID": "53765425-ad40-828e-976a-0789d64d4dee",
+        "NOTION_POSTS_DATA_SOURCE_ID": "49d65425-ad40-8269-bf93-07fb8e39bc6b",
+        "NOTION_PAGES_DATA_SOURCE_ID": "83565425-ad40-8216-9107-076abcbcbd5b",
         "NOTION_INTERNAL_STATE_PROPERTY_ID": "o=BU",
-        "NOTION_COMMENTS_DATA_SOURCE_ID": "201f8de6-3bca-4731-b19e-592fc87af528",
-        // comments の status / 本文 / 投稿者名 / 親コメント の property ID。prd の schema を dev と同じ構成に
-        // 作ってから埋める（値は dev と違う）。空のままだとコメント関連の Webhook は無視される🔴
-        "NOTION_COMMENT_STATE_PROPERTY_ID": "",
-        "NOTION_COMMENT_CONTENT_PROPERTY_ID": "",
-        "NOTION_COMMENT_AUTHOR_PROPERTY_ID": "",
-        "NOTION_COMMENT_PARENT_PROPERTY_ID": "",
+        "NOTION_COMMENTS_DATA_SOURCE_ID": "af365425-ad40-82e0-9cea-07efe7923d3f",
+        // comments の status / 本文 / 投稿者名 / 親コメント の property ID。prd の comments は dev を複製して
+        // 作り直したので、値は dev と同じ（2026-10-10 に確認）。空にするとコメント関連の Webhook は無視される
+        "NOTION_COMMENT_STATE_PROPERTY_ID": "}iwL",
+        "NOTION_COMMENT_CONTENT_PROPERTY_ID": "=xPq",
+        "NOTION_COMMENT_AUTHOR_PROPERTY_ID": "title",
+        "NOTION_COMMENT_PARENT_PROPERTY_ID": "J=Mc",
         "WORKERS_API_ORIGIN": "https://mirumi-me-prd.v2p04rubfuwnvttj.workers.dev",
         "FRONTEND_ORIGIN": "https://mirumi.me",
         "AMAZON_CREATORS_MARKETPLACE": "www.amazon.co.jp",

@@ -13,9 +13,9 @@ const MIGRATION_DATA_SOURCE_IDS: Readonly<Record<MigrationTarget, MigrationDataS
     comments: "3d365425-ad40-8100-9705-000ba2e7afec",
   },
   prd: {
-    posts: "399e5acd-5762-442b-a3f5-be983498d926",
-    pages: "53765425-ad40-828e-976a-0789d64d4dee",
-    comments: "201f8de6-3bca-4731-b19e-592fc87af528",
+    posts: "49d65425-ad40-8269-bf93-07fb8e39bc6b",
+    pages: "83565425-ad40-8216-9107-076abcbcbd5b",
+    comments: "af365425-ad40-82e0-9cea-07efe7923d3f",
   },
 }
 
