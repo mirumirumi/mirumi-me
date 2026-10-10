@@ -186,6 +186,9 @@ generate のあいだ、Container は「HTTP を開いたまま待っていな�
     - 同じことは、記事の題名などの日本語でも、切る位置しだいでいつでも起こりうる。一覧での確認はそのための保険
 - generate しない run でも rollout の収束は待つ。CI が緑になった時点で公開を試せるようにするため
 - 作業ブランチへの push では動かさない。圭くんは作業ブランチを不完全な状態で push するため。dev に出すのは `dev` への push と `workflow_dispatch` だけ
+- 手元から generate / bootstrap を起動するには Cloudflare の API token が要る。wrangler の OAuth のログインは、Workflow の instance の一覧や詳細は読めるが、作成は認証エラー（10000）になる
+    - 2026-09-07 の時点では「OAuth のまま deploy、workflows の list / describe が通るので専用の token は要らない」と見ていた（`.contexts/実装の進捗状況.md`）が、起動は試していなかった。2026-10-03 に起動で 10000 を踏み、2026-10-10 に存在しない Workflow 名で確かめた（一覧は not_found（10200）、起動は 10000。名前を確かめる前に権限で断られている）。`wrangler whoami` の OAuth の scope にも Workflows は出てこない
+    - bootstrap はエージェントに流してもらう前提だが、token はファイルに置かない決まりのまま（運用手順の「generate / bootstrap の見かた」）。起動のコマンドは一瞬で終わるので、そこだけ圭くんが自分のターミナルで流し、dry-run と監視はエージェントが OAuth のまま行う形にした
 - 手元から流す generate と bootstrap は SHA を持たないので基準点にならない。また prd の Workflow は 2026-09-10 以降に作るため、完了した instance の記録は既定で 7 日しか残らない（それより前に作った Workflow は 30 日）。どちらも generate が余分に走るだけで、安全側
 
 ## 既存記事の画像が dev で最終形にならない理由

@@ -215,14 +215,19 @@ dev CloudFront distribution は常時有効で、CloudFront Function が閲覧�
 
 ### 手元から generate を投げる
 
-コードを変えずにサイト全体を作り直したいときは、npm script を使う。
+コードを変えずにサイト全体を作り直したいときは、npm script を使う。リポジトリのルートの `package.json` にあるので、ルートで流す。
 
 ```bash
-bun run generate:dev
-bun run generate:prd   # yes の入力を求められる
+CLOUDFLARE_API_TOKEN=<token> bun run generate:dev
+CLOUDFLARE_API_TOKEN=<token> bun run generate:prd   # yes の入力を求められる
 ```
 
-`--dry-run` を付けると、投げずに instance ID と payload を表示する。
+**Workflow の起動には Cloudflare の API token が要る。**手元の wrangler のログイン（OAuth）では、instance の一覧や詳細は読めるが、起動（instance の作成）は認証エラー（10000）になる
+（2026-10-10 に確認。存在しない Workflow 名に対して、一覧は not_found（10200）、起動は 10000 が返ったので、名前を確かめる前に権限で断られている）。
+token は CI の deploy token と同じ権限で作り、下の「generate / bootstrap の見かた」の末尾にある決まりどおり、ファイルには保存せずに必要なプロセスだけへ渡して、作業後に revoke する。
+起動したらすぐ終わり、完了は待たない。
+
+`--dry-run` を付けると、投げずに instance ID と payload を表示する。token は要らない（走っている instance の確認は読み取りだけ）。
 初回だけ必要な `bootstrap` は `--mode bootstrap` で流す（`--` の後に渡す）。
 
 ```bash
