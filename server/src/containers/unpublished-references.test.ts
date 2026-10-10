@@ -95,6 +95,7 @@ describe("findUnpublishedReferences", () => {
         state,
         builtPages: new Map(),
         loadSnapshot,
+        signal: new AbortController().signal,
       }),
     ).toEqual([
       {
@@ -119,6 +120,7 @@ describe("findUnpublishedReferences", () => {
         state,
         builtPages: new Map([[ids.built, makeBuildPage(ids.built, card("/gone/"))]]),
         loadSnapshot,
+        signal: new AbortController().signal,
       }),
     ).toEqual([
       {
@@ -152,6 +154,7 @@ describe("findUnpublishedReferences", () => {
         state,
         builtPages: new Map(),
         loadSnapshot,
+        signal: new AbortController().signal,
       }),
     ).toEqual([
       {
@@ -173,7 +176,42 @@ describe("findUnpublishedReferences", () => {
         state,
         builtPages: new Map(),
         loadSnapshot: async (pageId) => makeBuildPage(pageId, card("/other/")),
+        signal: new AbortController().signal,
       }),
     ).toEqual([])
+  })
+
+  test("打ち切られたら、読み終わるのを待たずに失敗させ、残りの記事は読まない", async () => {
+    const pages = Array.from({ length: 20 }, (_, index) => {
+      return makeDeployedPage(
+        `00000000-0000-0000-0001-${String(index).padStart(12, "0")}`,
+        `p${index}`,
+      )
+    })
+    const state = makeState([unpublishedPage, ...pages])
+    const controller = new AbortController()
+    const pending: Array<(page: BuildPage | null) => void> = []
+    const loadSnapshot = vi.fn((_pageId: string): Promise<BuildPage | null> => {
+      return new Promise((resolve) => pending.push(resolve))
+    })
+    const search = findUnpublishedReferences({
+      unpublished: [unpublishedPage],
+      state,
+      builtPages: new Map(),
+      loadSnapshot,
+      signal: controller.signal,
+    })
+    controller.abort()
+    await expect(search).rejects.toThrow(
+      "非公開にした記事を指す記事を、時間内に探しきれませんでした",
+    )
+    const readBeforeAbort = loadSnapshot.mock.calls.length
+    for (const resolve of pending) {
+      resolve(null)
+    }
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(loadSnapshot.mock.calls.length).toEqual(readBeforeAbort)
+    expect(readBeforeAbort < pages.length).toEqual(true)
   })
 })

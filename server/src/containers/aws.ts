@@ -45,6 +45,66 @@ const isNotFound = (err: unknown): boolean => {
   )
 }
 
+// Bun 1.3 の node:https は、並列のリクエストでときどき応答が流れてこなくなり、AWS SDK の promise が
+// 永久に settle しない（oven-sh/bun#26066。2026-10-10 に dev の非公開が Container の中で止まって踏んだ）。
+// SDK には既定のタイムアウトがなく、requestTimeout も応答の header が届いた時点で外れて body の読み込みを守らない。
+// そこで body を読み終えるまでの 1 回の操作をこちらで時間で打ち切り、べき等な操作はやり直す
+const AWS_OPERATION_TIMEOUT_MS = 60_000
+const AWS_OPERATION_ATTEMPTS = 3
+// 大きな PUT（検索の索引や 1 GiB までの audio / video）に、1 MiB あたり 1 秒の余裕を足す
+const UPLOAD_MS_PER_MIB = 1_000
+
+interface AwsOperationOptions {
+  timeoutMs: number
+  attempts: number
+}
+
+const DEFAULT_AWS_OPERATION_OPTIONS: AwsOperationOptions = {
+  timeoutMs: AWS_OPERATION_TIMEOUT_MS,
+  attempts: AWS_OPERATION_ATTEMPTS,
+}
+
+class AwsOperationTimeoutError extends Error {}
+
+const uploadOptions = (byteLength: number, attempts: number): AwsOperationOptions => {
+  return {
+    timeoutMs: AWS_OPERATION_TIMEOUT_MS + Math.ceil(byteLength / 1_048_576) * UPLOAD_MS_PER_MIB,
+    attempts,
+  }
+}
+
+export const runAwsOperation = async <T>(
+  label: string,
+  operation: (abortSignal: AbortSignal) => Promise<T>,
+  options: AwsOperationOptions,
+): Promise<T> => {
+  for (let attempt = 1; ; attempt++) {
+    const controller = new AbortController()
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const timedOut = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => {
+        controller.abort()
+        reject(
+          new AwsOperationTimeoutError(
+            `AWS の ${label} が ${options.timeoutMs / 1_000} 秒以内に終わりませんでした`,
+          ),
+        )
+      }, options.timeoutMs)
+    })
+    try {
+      // abort が届かずに止まったままの試行もあるので、終わりは abort ではなく競争で決める
+      return await Promise.race([operation(controller.signal), timedOut])
+    } catch (err) {
+      if (!(err instanceof AwsOperationTimeoutError) || options.attempts <= attempt) {
+        throw err
+      }
+      console.warn(JSON.stringify({ event: "aws_operation_timed_out", label, attempt }))
+    } finally {
+      clearTimeout(timer)
+    }
+  }
+}
+
 const createS3Client = (config: AwsClientConfig): S3Client => {
   return new S3Client({
     region: config.region,
@@ -66,17 +126,24 @@ export class S3DeploymentIndexStore implements DeploymentIndexStore {
 
   async get(key: string): Promise<DeploymentIndexStoredObject | null> {
     try {
-      const response = await this.#client.send(
-        new GetObjectCommand({ Bucket: this.#bucket, Key: key }),
-      )
-      if (!response.Body || !response.ETag) {
-        throw Error("publish index の body または ETag がありません")
-      }
+      return await runAwsOperation(
+        `S3 GET ${key}`,
+        async (abortSignal) => {
+          const response = await this.#client.send(
+            new GetObjectCommand({ Bucket: this.#bucket, Key: key }),
+            { abortSignal },
+          )
+          if (!response.Body || !response.ETag) {
+            throw Error("publish index の body または ETag がありません")
+          }
 
-      return {
-        body: await response.Body.transformToString("utf8"),
-        etag: response.ETag,
-      }
+          return {
+            body: await response.Body.transformToString("utf8"),
+            etag: response.ETag,
+          }
+        },
+        DEFAULT_AWS_OPERATION_OPTIONS,
+      )
     } catch (err) {
       if (isNotFound(err)) {
         return null
@@ -87,16 +154,24 @@ export class S3DeploymentIndexStore implements DeploymentIndexStore {
   }
 
   async put(key: string, body: string, condition: DeploymentIndexWriteCondition): Promise<string> {
-    const response = await this.#client.send(
-      new PutObjectCommand({
-        Bucket: this.#bucket,
-        Key: key,
-        Body: body,
-        ContentType: "application/json; charset=utf-8",
-        CacheControl: "no-cache",
-        IfMatch: condition.ifMatch ?? undefined,
-        IfNoneMatch: condition.ifNoneMatch ? "*" : undefined,
-      }),
+    // 条件つきの書き込みは、時間切れでも S3 には書けていることがある。同じ条件でやり直すと 412 になって
+    // 原因が見えなくなるので、やり直さずに失敗させる（job ごとやり直せば index を読み直す）
+    const response = await runAwsOperation(
+      `S3 PUT ${key}`,
+      (abortSignal) =>
+        this.#client.send(
+          new PutObjectCommand({
+            Bucket: this.#bucket,
+            Key: key,
+            Body: body,
+            ContentType: "application/json; charset=utf-8",
+            CacheControl: "no-cache",
+            IfMatch: condition.ifMatch ?? undefined,
+            IfNoneMatch: condition.ifNoneMatch ? "*" : undefined,
+          }),
+          { abortSignal },
+        ),
+      uploadOptions(new TextEncoder().encode(body).byteLength, 1),
     )
     if (!response.ETag) {
       throw Error("publish index の PUT から ETag が返りませんでした")
@@ -117,11 +192,18 @@ export class S3SiteObjectStore implements SiteObjectStore {
 
   async get(key: string): Promise<Uint8Array | null> {
     try {
-      const response = await this.#client.send(
-        new GetObjectCommand({ Bucket: this.#bucket, Key: key }),
-      )
+      return await runAwsOperation(
+        `S3 GET ${key}`,
+        async (abortSignal) => {
+          const response = await this.#client.send(
+            new GetObjectCommand({ Bucket: this.#bucket, Key: key }),
+            { abortSignal },
+          )
 
-      return response.Body ? await response.Body.transformToByteArray() : null
+          return response.Body ? await response.Body.transformToByteArray() : null
+        },
+        DEFAULT_AWS_OPERATION_OPTIONS,
+      )
     } catch (err) {
       if (isNotFound(err)) {
         return null
@@ -132,19 +214,32 @@ export class S3SiteObjectStore implements SiteObjectStore {
   }
 
   async put(key: string, object: SiteObject): Promise<void> {
-    await this.#client.send(
-      new PutObjectCommand({
-        Bucket: this.#bucket,
-        Key: key,
-        Body: object.body,
-        ContentType: object.contentType,
-        CacheControl: object.cacheControl,
-      }),
+    await runAwsOperation(
+      `S3 PUT ${key}`,
+      (abortSignal) =>
+        this.#client.send(
+          new PutObjectCommand({
+            Bucket: this.#bucket,
+            Key: key,
+            Body: object.body,
+            ContentType: object.contentType,
+            CacheControl: object.cacheControl,
+          }),
+          { abortSignal },
+        ),
+      uploadOptions(object.body.byteLength, AWS_OPERATION_ATTEMPTS),
     )
   }
 
   async delete(key: string): Promise<void> {
-    await this.#client.send(new DeleteObjectCommand({ Bucket: this.#bucket, Key: key }))
+    await runAwsOperation(
+      `S3 DELETE ${key}`,
+      (abortSignal) =>
+        this.#client.send(new DeleteObjectCommand({ Bucket: this.#bucket, Key: key }), {
+          abortSignal,
+        }),
+      DEFAULT_AWS_OPERATION_OPTIONS,
+    )
   }
 }
 
@@ -192,8 +287,13 @@ export class S3MediaObjectStore implements MediaObjectStore {
 
   async head(key: string): Promise<MediaObjectMetadata | null> {
     try {
-      const response = await this.#client.send(
-        new HeadObjectCommand({ Bucket: this.#bucket, Key: key }),
+      const response = await runAwsOperation(
+        `S3 HEAD ${key}`,
+        (abortSignal) =>
+          this.#client.send(new HeadObjectCommand({ Bucket: this.#bucket, Key: key }), {
+            abortSignal,
+          }),
+        DEFAULT_AWS_OPERATION_OPTIONS,
       )
       const metadata = toMediaMetadata(response.Metadata)
       if (!metadata) {
@@ -211,21 +311,27 @@ export class S3MediaObjectStore implements MediaObjectStore {
   }
 
   async put(key: string, object: MediaObject): Promise<void> {
-    await this.#client.send(
-      new PutObjectCommand({
-        Bucket: this.#bucket,
-        Key: key,
-        Body: object.body,
-        ContentType: object.contentType,
-        CacheControl: "public,max-age=31536000,immutable",
-        Metadata: {
-          "transform-version": object.metadata.transformVersion,
-          "variant-hash": object.metadata.variantHash,
-          usage: object.metadata.usage,
-          width: object.metadata.width,
-          height: object.metadata.height,
-        },
-      }),
+    await runAwsOperation(
+      `S3 PUT ${key}`,
+      (abortSignal) =>
+        this.#client.send(
+          new PutObjectCommand({
+            Bucket: this.#bucket,
+            Key: key,
+            Body: object.body,
+            ContentType: object.contentType,
+            CacheControl: "public,max-age=31536000,immutable",
+            Metadata: {
+              "transform-version": object.metadata.transformVersion,
+              "variant-hash": object.metadata.variantHash,
+              usage: object.metadata.usage,
+              width: object.metadata.width,
+              height: object.metadata.height,
+            },
+          }),
+          { abortSignal },
+        ),
+      uploadOptions(object.body.byteLength, AWS_OPERATION_ATTEMPTS),
     )
   }
 }
@@ -249,14 +355,21 @@ export class CloudFrontInvalidator {
     if (paths.length === 0) {
       return
     }
-    await this.#client.send(
-      new CreateInvalidationCommand({
-        DistributionId: this.#distributionId,
-        InvalidationBatch: {
-          CallerReference: callerReference,
-          Paths: { Quantity: paths.length, Items: paths },
-        },
-      }),
+    // 同じ CallerReference の invalidation は CloudFront が 1 つにまとめるので、やり直してよい
+    await runAwsOperation(
+      "CloudFront CreateInvalidation",
+      (abortSignal) =>
+        this.#client.send(
+          new CreateInvalidationCommand({
+            DistributionId: this.#distributionId,
+            InvalidationBatch: {
+              CallerReference: callerReference,
+              Paths: { Quantity: paths.length, Items: paths },
+            },
+          }),
+          { abortSignal },
+        ),
+      DEFAULT_AWS_OPERATION_OPTIONS,
     )
   }
 }

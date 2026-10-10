@@ -8,8 +8,11 @@ import type {
   UnpublishedPageReferrer,
 } from "../lib/publishing"
 
-// 公開中の記事は数百あり、1 本ずつ snapshot を読むと非公開の job が長引くので並べて読む
-const SNAPSHOT_READ_CONCURRENCY = 16
+// 公開中の記事は数百あり、1 本ずつ snapshot を読むと非公開の job が長引くので並べて読む。
+// 並べすぎると Bun の node:https が止まりやすくなるので控えめにする（aws.ts の runAwsOperation）
+const SNAPSHOT_READ_CONCURRENCY = 8
+// 探すのはおまけなので、非公開そのものを待たせすぎない。S3 の読み込みが 1 回止まってやり直しても収まる長さにする
+export const UNPUBLISHED_REFERENCE_SEARCH_TIMEOUT_MS = 3 * 60 * 1_000
 
 export interface UnpublishedReferenceSearch {
   unpublished: Array<Pick<DeployedPage, "pageId" | "route">>
@@ -18,6 +21,8 @@ export interface UnpublishedReferenceSearch {
   // この job で作った page。snapshot を読みに行かず、作った本文で調べる
   builtPages: ReadonlyMap<string, BuildPage>
   loadSnapshot(pageId: string, contentHash: string): Promise<BuildPage | null>
+  // 打ち切ったら、読み終わるのを待たずに失敗させ、残りの記事は読まない
+  signal: AbortSignal
 }
 
 const readContentHtml = async (
@@ -62,7 +67,7 @@ export const findUnpublishedReferences = async (
   const referrersByRoute = new Map<string, Array<UnpublishedPageReferrer>>()
   let cursor = 0
   const worker = async () => {
-    while (cursor < candidates.length) {
+    while (!search.signal.aborted && cursor < candidates.length) {
       const page = candidates[cursor++]!
       const html = await readContentHtml(page, search)
       if (!html) {
@@ -79,9 +84,26 @@ export const findUnpublishedReferences = async (
       }
     }
   }
-  await Promise.all(
-    Array.from({ length: Math.min(SNAPSHOT_READ_CONCURRENCY, candidates.length) }, worker),
-  )
+  let onAbort: (() => void) | undefined
+  const aborted = new Promise<never>((_, reject) => {
+    onAbort = () => reject(Error("非公開にした記事を指す記事を、時間内に探しきれませんでした"))
+    if (search.signal.aborted) {
+      onAbort()
+    }
+    search.signal.addEventListener("abort", onAbort, { once: true })
+  })
+  try {
+    await Promise.race([
+      Promise.all(
+        Array.from({ length: Math.min(SNAPSHOT_READ_CONCURRENCY, candidates.length) }, worker),
+      ),
+      aborted,
+    ])
+  } finally {
+    if (onAbort) {
+      search.signal.removeEventListener("abort", onAbort)
+    }
+  }
 
   return search.unpublished.flatMap((page): Array<UnpublishedPageReferences> => {
     const referrers = referrersByRoute.get(page.route)

@@ -60,7 +60,10 @@ import {
   findRemovedAggregateRoutes,
   findUnpublishedContentRoutes,
 } from "./site-build"
-import { findUnpublishedReferences } from "./unpublished-references"
+import {
+  findUnpublishedReferences,
+  UNPUBLISHED_REFERENCE_SEARCH_TIMEOUT_MS,
+} from "./unpublished-references"
 
 const RETIRED_CONTENT_ROUTES = ["/what-is-this-blog/"]
 
@@ -375,6 +378,7 @@ const findReferencesToUnpublished = async (
       state: nextState,
       builtPages: new Map(buildPages.map((page) => [page.pageId, page])),
       loadSnapshot: (pageId, contentHash) => snapshotStore.load(pageId, contentHash),
+      signal: AbortSignal.timeout(UNPUBLISHED_REFERENCE_SEARCH_TIMEOUT_MS),
     })
   } catch (err) {
     console.warn(

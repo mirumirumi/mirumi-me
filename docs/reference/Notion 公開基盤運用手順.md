@@ -360,8 +360,12 @@ generate / bootstrap では、Container のジョブの末尾と、Workflow の 
     - 記事を `非公開` にしたとき、その記事を内部ブログカードで指している公開中の記事を Slack に知らせる（公開ボタンの Workflow の `notify-unpublished-references` step）。それらは、次に `公開` を押したときや generate で Notion の本文から作り直すときにカードを解決できず、prd では公開エラーになるため
         - 調べるのは公開中の記事の snapshot（`_internal/published-pages-v1`）の HTML。普通のリンクは対象外
         - snapshot を読めなかった記事は飛ばす（Container のログにだけ `unpublished_reference_check_skipped` が残る）
-- Container の標準出力はどこからも読めない。Nuxt generate が落ちた原因は例外へ載せて
+        - 探すのに 3 分を超えたら打ち切り、知らせずに非公開を終える（Container のログに `unpublished_reference_search_failed` が残る）
+- Container の標準出力は、Workers Observability の `containers` dataset（`$metadata.service` は Container application の ID）で読める。
+  Nuxt generate の出力が載る（2026-10-10 に確認。Container 自身の `console.warn` が載るかは未確認）。Nuxt generate が落ちた原因は、例外にも載せて
   Workflow まで持ち上げている
+- Container から S3 / CloudFront への操作は、1 回 60 秒（PUT は 1 MiB あたり 1 秒を足す）で打ち切り、べき等なものは 3 回まで試す。
+  打ち切ると `aws_operation_timed_out` が出る。Bun 1.3 の `node:https` が並列のリクエストでときどき応答を返さなくなるため（L2「Container から AWS への操作に時間の上限をつける」）
 - job が終わったのに Container instance が `running` のままなら、`sleepAfter` は SIGTERM を
   送るだけで PID 1 は既定ではシグナルを無視することを疑う。`wrangler containers instances <id>`
   で確認できる。気づく手がかりが課金しかないので、generate のあとは一度見ておく

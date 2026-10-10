@@ -110,6 +110,23 @@ generate のあいだ、Container は「HTTP を開いたまま待っていな�
     - 止めたときは `container_destroyed_after_deadline`、時計を始めたときは `container_job_adopted` を Worker のログに出す
 - 公開が固まった場合、Workflow の retry が同じジョブに相乗りしてリクエストを開き直すので、実際に止まるのは retry を使い切って 15 分たったあと（おおむね 2 時間以内）
 
+### Container から AWS への操作に時間の上限をつける
+
+2026-10-10 に足した（`containers/aws.ts` の `runAwsOperation`）。
+
+- 起きたこと：dev で keybord-recommend を非公開にしたら、Container の job が index と検索の索引を保存したあと、非公開にした記事を指す記事を探す処理（16 本ずつ並べて snapshot を読む）で止まった。Workflow の `publishSite` は 30 分ごとに打ち切ってやり直すが、やり直しは同じジョブに相乗りするので（上の「固まった Container を止める仕組み」）、後ろに並んだ dygma-defy の公開も始まらないまま待たされた
+- 原因：Bun 1.3 の `node:https` が、並列のリクエストでときどき応答の body を流さなくなり、AWS SDK v3 の promise が永久に settle しない（oven-sh/bun#26066。重複として閉じられた #27557 が同じ症状。2026-10-10 時点で open）
+    - 手元で、dev の snapshot 469 本を 16 本ずつ読む（SDK だけ、1 回 1,407 本）のを試した。Bun 1.3.3 は 3 回中 1 回、1 本が 155 秒以上返らなかった。同じことを 5-C のコードで試しても 3 回中 1 回止まった。Node 24 は 9 回とも 5 秒ほどで終わった
+    - Bun 1.4.3 は 8 回とも止まらなかった。直っているかもしれないが、issue に修正の記録はなく、上げるかは圭くんの判断（`.tool-versions` と Container の Dockerfile の両方）
+- AWS SDK には既定のタイムアウトがない。`requestTimeout` も、応答の header が届いた時点で外れるので（`@smithy/node-http-handler` の `handle` が response で clearTimeouts する）、body が流れてこない今回の止まり方は守れない
+- そこで、body を読み終えるまでの 1 回の操作を、こちらで時間で打ち切る
+    - 終わりは `Promise.race` で決め、打ち切るときに `abortSignal` も送る。abort が届かずに止まったままの試行もありうるので、abort が効くことには頼らない
+    - 打ち切りは 60 秒。PUT は 1 MiB あたり 1 秒を足す（検索の索引は 7 MB ほど、audio / video は 1 GiB まで）
+    - べき等な操作（GET / HEAD / DELETE / 条件なしの PUT / 同じ CallerReference の CloudFront invalidation）は 3 回まで試す。時間切れ以外のエラーは SDK が自分でやり直したあとなので、やり直さない
+    - publish index の条件つき PUT（`IfMatch` / `IfNoneMatch`）はやり直さない。時間切れでも S3 には書けていることがあり、同じ条件でやり直すと 412 になって原因が見えなくなる。job ごと失敗させれば、Workflow のやり直しが index を読み直す
+- Worker（`services/published-slugs.ts` などの `SignedS3DeploymentIndexStore`）は Workers の fetch で S3 を読むので、この問題の外
+- Container の標準出力は、Workers Observability の `containers` dataset（`$metadata.service` は Container application の ID）で読めた（2026-10-10。nuxt generate の出力を確かめた）。Container 自身の `console.warn` が載るかはまだ確かめていない
+
 ### CloudFront invalidation を 2 回流す理由
 
 - generate / bootstrap では、Container がジョブ末尾に自分で invalidation を流す。Workflow が hang 判定などで先に諦めても CDN が更新されるようにするため
@@ -229,13 +246,15 @@ generate のあいだ、Container は「HTTP を開いたまま待っていな�
 - 背景：prd では、解決できない内部ブログカードは render warning で、その記事の失敗になる。非公開にした記事を指すカードを持つ記事は、次に Notion の本文から作り直すとき（`公開` や generate）に 🔴 になる。WordPress は何も出さないだけだった。案 A（そのまま）、B（消えた記事を指すカードは warning にしない）、C（A のまま、非公開にした時点で Slack に知らせる）から C
 - 公開ボタンの job で非公開にした page があれば、Container が index を保存したあとに、公開中の全記事の snapshot の `contentHtml` から内部ブログカード（`shared/src/render.ts` の `findInternalBlogcardRoutes`）を拾って、非公開にした route を指す記事を集める。同じ job で作った page はメモリの BuildPage を使う。結果は `PublishJobSummary.unpublishedReferences` で Worker に返し、Worker が Slack に送る
     - generate / bootstrap は非公開をしないので調べない
-    - 公開中の記事が数百あるので、snapshot は 16 本ずつ並べて読む。非公開は頻度が低いので、そのたびに読む費用は気にしない
+    - 公開中の記事が数百あるので、snapshot は 8 本ずつ並べて読む。非公開は頻度が低いので、そのたびに読む費用は気にしない
+        - はじめは 16 本ずつだった。2026-10-10 に dev で最初の非公開を試したとき、この読み込みの途中で Container が止まった（下の「Container から AWS への操作に時間の上限をつける」）ので、8 本に下げた
+    - 探すのに 3 分を超えたら打ち切り、知らせずに非公開を終える（`UNPUBLISHED_REFERENCE_SEARCH_TIMEOUT_MS`。ログは `unpublished_reference_search_failed`）。S3 の読み込みが 1 回止まって、やり直しても収まる長さ
 - publish index の各 page に「指している route」を持たせる案は採らなかった
     - index の schema は `strictObject` なので、新しい項目を足すと、deploy の rollout 中に古い Worker / Container が新しい index を読めなくなる。足すなら「読む側を先に緩める → 書く」の 2 回の release が要る
     - index の上限は 800 KB で、2026-10-03 の dev はすでに 632 KB ある
     - 足す前に公開した記事の分は、作り直すまで空のままになる
 - カードの見つけ方は描いたあとの HTML の形（`<a class="blogcard" href="https://mirumi.me/...">`）に依存する。形を決める `renderBookmark` のすぐ下に置き、render.test.ts で「描いたカードを拾える」ことを確かめているので、片方だけ変えるとテストが落ちる
-- snapshot を読めなかった記事は飛ばし、Container の `console.warn` にだけ残す。Container の標準出力は読めないので、実際には気づけない。prd では bootstrap で全記事の snapshot ができ、comment-refresh も同じ snapshot に頼っているので、欠けていれば別の形で表に出る。ここで件数を Slack に出すのは見送った（`PublishJobSummary` の項目がもう 1 つ増えるわりに得が小さい）
+- snapshot を読めなかった記事は飛ばし、Container の `console.warn` にだけ残す。書いた時点では Container の標準出力は読めないと思っていたので、実際には気づけないとみていた（2026-10-10 に Workers Observability で nuxt generate の出力は読めたが、`console.warn` が載るかは未確認）。prd では bootstrap で全記事の snapshot ができ、comment-refresh も同じ snapshot に頼っているので、欠けていれば別の形で表に出る。ここで件数を Slack に出すのは見送った（`PublishJobSummary` の項目がもう 1 つ増えるわりに得が小さい）
 - 知らせられなくても、非公開の結果は失敗にしない（失敗の通知と同じ）
 
 ### internal-state が空の row は generate / bootstrap で失敗にしない
