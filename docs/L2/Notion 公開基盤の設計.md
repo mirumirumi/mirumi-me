@@ -117,7 +117,8 @@ generate のあいだ、Container は「HTTP を開いたまま待っていな�
 - 起きたこと：dev で keybord-recommend を非公開にしたら、Container の job が index と検索の索引を保存したあと、非公開にした記事を指す記事を探す処理（16 本ずつ並べて snapshot を読む）で止まった。Workflow の `publishSite` は 30 分ごとに打ち切ってやり直すが、やり直しは同じジョブに相乗りするので（上の「固まった Container を止める仕組み」）、後ろに並んだ dygma-defy の公開も始まらないまま待たされた
 - 原因：Bun 1.3 の `node:https` が、並列のリクエストでときどき応答の body を流さなくなり、AWS SDK v3 の promise が永久に settle しない（oven-sh/bun#26066。重複として閉じられた #27557 が同じ症状。2026-10-10 時点で open）
     - 手元で、dev の snapshot 469 本を 16 本ずつ読む（SDK だけ、1 回 1,407 本）のを試した。Bun 1.3.3 は 3 回中 1 回、1 本が 155 秒以上返らなかった。同じことを 5-C のコードで試しても 3 回中 1 回止まった。Node 24 は 9 回とも 5 秒ほどで終わった
-    - Bun 1.4.3 は 8 回とも止まらなかった。直っているかもしれないが、issue に修正の記録はなく、上げるかは圭くんの判断（`.tool-versions` と Container の Dockerfile の両方）
+    - Bun 1.4.3 は 8 回とも止まらなかった。直っているかもしれないが、issue に修正の記録はない。2026-10-10 に、圭くんの判断で上げないことにした（1.3.3 のまま。`.tool-versions` と Container の Dockerfile の両方）。止まり方は下の時間の上限で守る
+    - 手元の `normalize-media --apply` も同じ `S3MediaObjectStore` を使うので、手元の Bun 1.3.3 でもこの上限が効く
 - AWS SDK には既定のタイムアウトがない。`requestTimeout` も、応答の header が届いた時点で外れるので（`@smithy/node-http-handler` の `handle` が response で clearTimeouts する）、body が流れてこない今回の止まり方は守れない
 - そこで、body を読み終えるまでの 1 回の操作を、こちらで時間で打ち切る
     - 終わりは `Promise.race` で決め、打ち切るときに `abortSignal` も送る。abort が届かずに止まったままの試行もありうるので、abort が効くことには頼らない

@@ -18,6 +18,8 @@ dev 用データソースを置く。各データソースの ID と dev / prd �
 - dev のデータソースは prd と同期している必要がない。テストコンテンツが少しあればよい
     - 現在 470 件入っているのは変換スクリプトの動作確認によるもので、移行開発が終わったら更地にしてよい
     - 2026-10-03 決定：本番リリースの前に dev を一度空にして入れ直し、prd の投入から bootstrap までのリハーサルにする（圭くんの案）。手順は `docs/reference/本番リリース手順.md` の「dev の入れ直し（通しのリハーサル）」。upload / import の state は既定のファイル名が prd 用なので、dev では `--state` で分ける。site bucket は `_internal/` だけを消す（`assets/components/` のように generate では作られない object があるため、bucket ごと空にはしない）
+    - 2026-10-10 決定：prd の posts / pages / comments の複製は、このリハーサルの中で dev の row を消した直後に行い、明示 GO の区切りでいったん止めない（圭くん）。データソースの複製だけなら配信に何も起きないため。mirumi.me は WordPress 版のままで、prd の Worker はまだ存在しない（2026-10-10 に `wrangler deployments list --env prd` で確認）。dev の Worker は、Webhook で届いた page が dev のデータソースのものかを確かめてから動く（`fetchNotionPageRevision` / `fetchCommentState`）。prd の AWS / Cloudflare の準備は今までどおり明示 GO のあと
+    - 複製で変わる prd の data source ID の直しは、リハーサルの bootstrap が終わるまで `dev` に入れない。`wrangler.jsonc` の変更は CI の plan で generate が要ると判定され、publish index がないあいだの generate は失敗するため
 
 ## 補足
 
