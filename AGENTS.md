@@ -33,6 +33,15 @@
     - WordPress 側でアップロードされた画像はプラグインで僕の AWS アカウントにある S3 に同期されており、CloudFront から配信されています
     - その CloudFront に紐づいているドメインがこれ
 
+## ブランチ運用
+
+- 本番（`main`）に出す変更は、必ず `dev` を経由する（`main` ← `dev` ← `project/*` などの feature ブランチ）。`main` への直接マージや push は禁止
+    - リポジトリのデフォルトブランチは `main` だが、作業の PR を向ける先（create-pr スキルでいう trunk）は `dev`。project ブランチの上で作業しているときは、その project ブランチが trunk になる
+        - 本当はデフォルトブランチは全部揃えて mirumi-me でも `dev` にしたかったけど、たしか公開リポジトリだから見栄え優先でこうしたような記憶
+    - `dev` → `main` のリリース PR は、必ずマージコミットありでマージする（squash なし）
+    - project / feature ブランチ → `dev` は squash してよい
+    - `dev` も force push は禁止です（ふつうの直接 push は OK）
+
 ## その他
 
 - Notion を操作・調査するときは、Notion プラグインの MCP と公式 CLI の `ntn` を併用することを考慮する

@@ -67,7 +67,7 @@ const listChangedFiles = async (
   baselineSha: string,
   head: string,
 ): Promise<Array<string> | null> => {
-  // dev は force push で履歴が書き換わるため、基準点のコミットが残っていないことがある
+  // 作業ブランチから dispatch した generate の基準点は、そのブランチを squash でマージして消すと、手元に残っていないことがある
   const commit = `${baselineSha}^{commit}`
   const exists = await $`git cat-file -e ${commit}`.cwd(REPOSITORY_ROOT).quiet().nothrow()
   if (exists.exitCode !== 0) {

@@ -148,7 +148,8 @@ generate のあいだ、Container は「HTTP を開いたまま待っていな�
 - generate の要否の基準点は、Cloudflare 側の「最後に完了した CI の generate」にした
     - GitHub の run 履歴は基準にならない。以前の CI は trigger するだけで完了を待たなかったので、run の成功が generate の完了を意味しなかった
     - instance ID に SHA を入れているので、そこから取れる。wrangler の instance 一覧は表形式しか出せないので、API を直接読む
-    - 差分は `git diff <基準> <HEAD>` で木どうしを比べる。dev は force push するので、祖先関係に頼らない
+    - 差分は `git diff <基準> <HEAD>` で木どうしを比べる。作業ブランチから dispatch した generate の基準は、そのブランチを squash で `dev` に入れると `dev` の祖先にならないので、祖先関係に頼らない
+        - 以前は dev を force push していたのも理由だった。2026-10-10 に、`dev` は `main` へのリリースの元なので force push しないことにした（直接 push はよい）
     - 基準が取れないときは、どれも generate する側に倒す
 - 判定は「効かないとわかっているもの」の許可リスト方式にした。新しいディレクトリが増えても generate する側に倒れる
     - サーバーのコードは、generate の経路の入口（`containers/http.ts`、`containers/container.ts`、`workflows/workflow.ts`）から import をたどって決める。静的なリストだと、あとで Container が Worker 側のファイルを import し始めたときに、generate を飛ばす側（危ない側）に間違える

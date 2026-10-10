@@ -170,7 +170,8 @@ Cron（19:00 UTC = 04:00 JST）が `BackupWorkflow` を起動する。Worker だ
 | `dev` への push | dev |
 | `workflow_dispatch`（Actions の画面か `gh workflow run deploy.yml --ref <branch>`） | ref が `main` なら prd、それ以外は dev |
 
-作業ブランチへの push では動かない。dev に出したいときは `git push origin HEAD:dev` する（force push してよい）。
+作業ブランチへの push では動かない。作業ブランチのまま dev 環境に出したいときは、`gh workflow run deploy.yml --ref <branch>` で dispatch する。
+`dev` には直接 push してもよいが、force push はしない。`dev` は `main` へのリリースの元なので、マージした commit や切り戻しの revert が消えうる。
 
 1 回の run は 3 つの job に分かれる。
 
@@ -188,7 +189,7 @@ generate が要るかは、次のように決める。
     - サーバーのコードが generate の経路に乗っているかは、Container と publish の Workflow の入口から import をたどって決める
     - それ以外（app、shared、依存、wrangler の設定、Dockerfile など）は効くものとして扱う
 - 基準のコミットが見つからないときは generate する。手元から流した generate と bootstrap はコミットを持たないので基準にならない。
-  完了した instance の記録が保持期間を過ぎたときや、dev の force push でコミットが消えたときも同じ
+  完了した instance の記録が保持期間を過ぎたときや、作業ブランチから dispatch した generate のコミットが、そのブランチを squash でマージして消したあとで取れないときも同じ
 - `workflow_dispatch` の `generate` 入力（`auto` / `always` / `skip`、既定は `auto`）で上書きできる
 
 同じ環境への run は 1 本ずつ流れる。generate を待っているあいだに push すると、次の run は待ちに入る。
