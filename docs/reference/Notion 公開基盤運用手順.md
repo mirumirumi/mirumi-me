@@ -552,9 +552,10 @@ bun run upload
 - 旧 object は削除しない
 - final import 後の Notion 画像 URL に `-1999x...` などの WordPress 寸法サフィックスを残さない
 
-**既存記事の画像まわりの最終形（本文画像の `width` / `height` と、`convert.ts` が import 時に付けるトークン）は dev には出ていない。本番 import で初めて効く。**
-本番 import のあと、bootstrap の前に prd の preview で確認する（`本番リリース手順.md` の「4. 切り替え」）。
-dev で見えない理由と、本番まで持ち越した経緯は `docs/L2/Notion 公開基盤の設計.md` の「既存記事の画像が dev で最終形にならない理由」。
+既存記事の画像まわりの最終形（本文画像の `width` / `height` と、`convert.ts` が import 時に付けるトークン）は、2026-10-10 の dev の入れ直しから dev にも出ている（`本番リリース手順.md` の「dev の入れ直し」）。
+本番 import のあと、bootstrap の前に prd の preview でもう一度確認する（`本番リリース手順.md` の「4. 切り替え」）。
+それまで dev で見えなかった経緯は `docs/L2/Notion 公開基盤の設計.md` の「既存記事の画像が dev で最終形にならない理由」。
+プレビューは今の mirumi.me のトップページの HTML を型として借りる（`handlers/preview.ts`）ので、メインカラムの余白などの外側のレイアウトと CSS は、記事ページや新しいフロントとは違う。画像の最終的な見た目は、bootstrap のあとのサイトで見る。
 
 ## Amazon 商品カード
 
