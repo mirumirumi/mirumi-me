@@ -39,6 +39,11 @@ export const PAGES_DATA_SOURCE_ID = MIGRATION_DATA_SOURCE_IDS[MIGRATION_TARGET].
 
 export const COMMENTS_DATA_SOURCE_ID = MIGRATION_DATA_SOURCE_IDS[MIGRATION_TARGET].comments
 
+// media bucket は dev / prd で共用なので、MIGRATION_TARGET によらない
+export const MEDIA_BUCKET_REGION = "ap-northeast-1"
+
+export const MEDIA_BUCKET_NAME = "mirumime-prd-mirumi-media"
+
 export const CATEGORY_PAGE_IDS: Readonly<Record<string, string>> = {
   pc: "39765425-ad40-80c9-a3a0-ed4de6084a42",
   life: "39765425-ad40-8020-84af-c3c8ac4f7b41",

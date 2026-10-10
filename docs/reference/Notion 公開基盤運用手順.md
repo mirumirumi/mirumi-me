@@ -539,6 +539,8 @@ bun run upload
 
 - `dry-run` は変換したあと公開と同じ render まで通し、prd で公開を止める render warning を `dry-run-report.json` の `renderWarningRecords` に出す。内部ブログカードは投入する記事と固定ページの route で照合し、外部のブログカードと X ポストは解決できたものとして扱う（外部を見ないため）
 - `--apply` だけが media S3 へ書く
+    - 書き込み先の bucket と region は `src/config.ts` にある（dev / prd で共用）
+    - AWS の認証情報は SDK の既定の経路で解決する。`aws login` の profile（credential_process）なら期限が来ても取り直されるので、キーの発行も環境変数も要らない。解決できなければ、始める前に止まる
 - `upload` だけが Notion へ書く
 - static image の mapping 欠落は import error
 - 既存 animation と ICO は旧 URL のまま。名前に寸法がないので `width` / `height` は付かない（20 件）

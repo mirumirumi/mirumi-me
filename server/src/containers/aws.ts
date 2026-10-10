@@ -14,10 +14,27 @@ import type {
 } from "../repositories/deployment-index"
 import type { MediaObject, MediaObjectMetadata, MediaObjectStore, MediaUsage } from "./images"
 
-interface AwsClientConfig {
-  region: string
+// キーを省くと、SDK の既定の経路（環境変数、~/.aws の profile の credential_process など）で解決する。
+// 手元の normalize-media を `aws login` の一時的な認証情報で動かすため。Container は常にキーを渡す
+type AwsClientConfig =
+  | {
+      region: string
+      accessKeyId: string
+      secretAccessKey: string
+    }
+  | { region: string }
+
+interface AwsAccessKey {
   accessKeyId: string
   secretAccessKey: string
+}
+
+const resolveAccessKey = (config: AwsClientConfig): AwsAccessKey | undefined => {
+  if (!("accessKeyId" in config)) {
+    return undefined
+  }
+
+  return { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey }
 }
 
 export interface SiteObject {
@@ -108,10 +125,7 @@ export const runAwsOperation = async <T>(
 const createS3Client = (config: AwsClientConfig): S3Client => {
   return new S3Client({
     region: config.region,
-    credentials: {
-      accessKeyId: config.accessKeyId,
-      secretAccessKey: config.secretAccessKey,
-    },
+    credentials: resolveAccessKey(config),
   })
 }
 
@@ -343,10 +357,7 @@ export class CloudFrontInvalidator {
   constructor(config: AwsClientConfig, distributionId: string) {
     this.#client = new CloudFrontClient({
       region: config.region,
-      credentials: {
-        accessKeyId: config.accessKeyId,
-        secretAccessKey: config.secretAccessKey,
-      },
+      credentials: resolveAccessKey(config),
     })
     this.#distributionId = distributionId
   }

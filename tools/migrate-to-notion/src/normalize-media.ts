@@ -3,6 +3,7 @@ import { readFile, rename, writeFile } from "node:fs/promises"
 import { resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { parseArgs } from "node:util"
+import { S3Client } from "@aws-sdk/client-s3"
 import sharp from "sharp"
 
 import { S3MediaObjectStore } from "../../../server/src/containers/aws"
@@ -13,6 +14,7 @@ import {
   type MediaObjectStore,
 } from "../../../server/src/containers/images"
 import { downloadImage } from "../../../server/src/containers/media-sync"
+import { MEDIA_BUCKET_NAME, MEDIA_BUCKET_REGION } from "./config"
 import type { MediaMigrationEntry, MediaMigrationMapping } from "./media-mapping"
 import { selectMigrationTargets } from "./migration-targets"
 import {
@@ -168,25 +170,29 @@ const writeJsonAtomic = async (path: string, value: unknown) => {
   await rename(temporaryPath, path)
 }
 
-const createStore = (): MediaObjectStore => {
+const createStore = async (): Promise<MediaObjectStore> => {
   if (!apply) {
     return new PlanningMediaStore()
   }
-  const region = process.env.AWS_REGION
-  const accessKeyId = process.env.AWS_ACCESS_KEY_ID
-  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
-  const bucket = process.env.MEDIA_BUCKET_NAME
-  if (!region || !accessKeyId || !secretAccessKey || !bucket) {
-    throw Error("--apply に必要な AWS / MEDIA_BUCKET_NAME が設定されていません")
+  // 認証情報は SDK の既定の経路で解決する。`aws login` の profile（credential_process）でも、
+  // AWS_ACCESS_KEY_ID などの環境変数でもよい。一時的な認証情報は SDK が期限の前に取り直すので、
+  // 長い --apply の途中で切れない（`aws configure export-credentials` で環境変数に書き出した値は期限が短く、取り直されない）。
+  // 解決できないと全画像が同じエラーで失敗するので、始める前に 1 回だけ確かめる
+  try {
+    await new S3Client({ region: MEDIA_BUCKET_REGION }).config.credentials()
+  } catch (err) {
+    throw Error(
+      `AWS の認証情報を解決できません。aws login が切れていないか確かめてください: ${errorMessage(err)}`,
+    )
   }
 
-  return new S3MediaObjectStore({ region, accessKeyId, secretAccessKey }, bucket)
+  return new S3MediaObjectStore({ region: MEDIA_BUCKET_REGION }, MEDIA_BUCKET_NAME)
 }
 
 const records = selectMigrationTargets(await readContents(sourcePath))
 const attachmentIndex = createAttachmentIndex(await readAttachments(attachmentsPath))
 const references = collectMediaReferences(records)
-const store = createStore()
+const store = await createStore()
 const normalizer = new MediaNormalizer(store)
 const downloadCache = new Map<string, Promise<Uint8Array>>()
 const entries = new Array<MediaMigrationEntry | null>(references.length).fill(null)
