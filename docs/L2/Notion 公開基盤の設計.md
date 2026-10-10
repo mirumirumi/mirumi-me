@@ -149,6 +149,9 @@ generate のあいだ、Container は「HTTP を開いたまま待っていな�
 
 - 2026-09-24 に dev で踏んだ。deploy の約 1 分後に generate を投げて 2 分で Errored、rollout の完了は trigger の 2 分半後だった
 - `deploy.yml` にも同じ問題があったため、deploy と trigger の間に `Wait for container rollout`（固定 5 分 + `state` の確認）を挟んだ
+- 2026-10-10 の docs だけの deploy（`22e9826`）では、Container application の `state` が 13:45 から 14:06（UTC）まで 21 分 `provisioning` のままで、CI の待ち（最初の 5 分 + 30 秒ごとに 20 回で、およそ 15 分）を超えて deploy job が赤になった。Worker の deploy は済んでいて、待っていれば `ready` になったので、やり直しはしていない
+    - 中身に関係なく、Cloudflare 側の rollout が長引くことがある。CI が rollout の待ちで赤になったら、`bunx wrangler containers list --env <env>` で `ready` / `active` になるのを待てばよく、deploy をやり直す必要はない。そのあとに generate が要る run だったなら、`gh workflow run deploy.yml --ref <branch> -f generate=always` で流し直す
+    - 待ちを延ばすかは決めていない（延ばすと、本当に固まったときに気づくのが遅れる）
 
 ## deploy と generate の CI
 
@@ -200,6 +203,7 @@ generate のあいだ、Container は「HTTP を開いたまま待っていな�
     - `convert.ts` が import 時に付けるトークン。WordPress のエディタで変えた表示幅 `[image width="316px"]`（約 1,400 箇所）、本文幅より狭い画像の `align="none"`、`[quoteImage]` の `width`（漫画 17 箇所）、`align="center"` を付けないこと
 - render 側のコードはすべて dev に入っており、Notion に新しく upload した画像では `width` / `height` と新しい key まで end-to-end で確認済み
 - dev で最終形を見るには `normalize-media --apply`（prd と共用の media バケットへ約 12,000 object を書く）と dev の取り込み直しが要るため、圭くんの判断で本番リリースまで持ち越した。本番の手順（`normalize-media --apply` → import → `fix-toc-anchors --apply` → bootstrap）は変わらない
+- 2026-10-10 の dev の入れ直し（本番リリース手順の 1）で、この 2 つも dev に入った。`normalize-media --apply` は 12,159 object を書いて失敗 0、取り込み直した本文に WordPress の寸法サフィックスは残っていない（image ブロックと thumbnail の 4,958 個を走査。mirumi.media の正規化した形でないのは、変換しないアニメーション GIF と ICO、外部の画像 1 個だけ）。以降は dev で最終形を見られる
 
 ## 記事ごとの失敗の扱い
 
