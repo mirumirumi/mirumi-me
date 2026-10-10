@@ -8,7 +8,7 @@
       "!!**/public/assets/components",
       "!!**/public/assets/prism.js",
       "!!**/dist",
-      "!**/tools",
+      "!tools/migrate-to-notion/blog-content-block-survey",
       "!**/worker-configuration.d.ts",
       "!**/.wrangler"
     ]

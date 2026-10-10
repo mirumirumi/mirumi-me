@@ -1,0 +1,9 @@
+.git
+**/node_modules
+**/.nuxt
+**/.output
+**/.wrangler
+**/.cache
+**/.env
+**/.env.*
+!**/.env.example

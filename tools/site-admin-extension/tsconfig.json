@@ -1,0 +1,28 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "importHelpers": true,
+    "sourceMap": true,
+    "paths": {
+      "@/*": ["./src/*"],
+    },
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable",
+      "WebWorker",
+    ],
+    "types": [
+      "chrome",
+    ],
+  },
+  "include": [
+    "src/**/*.ts",
+    "vite.config.ts",
+  ],
+  "exclude": [
+    "dist",
+    "node_modules",
+  ],
+}

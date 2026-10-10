@@ -1,0 +1,775 @@
+import type { NotionPublishResult } from "shared/notion"
+
+import type {
+  DeploymentPageState,
+  PageRevision,
+  PreparedPageRevision,
+  PublishFailure,
+  PublishJobRequest,
+  PublishJobState,
+  PublishJobSummary,
+  PublishWorkflowParams,
+  PublishWorkflowResult,
+} from "../lib/publishing"
+import {
+  BOOTSTRAP_PUBLISH_ERROR_PREFIX,
+  GENERATE_PUBLISH_ERROR_PREFIX,
+  isGeneratePublishError,
+  validatePageRevisionMetadata,
+} from "../lib/publishing"
+import type { PublishFailureNotice, UnpublishedReferenceNotice } from "./notifications"
+
+type WorkflowDurationUnit = "second" | "minute" | "hour" | "day" | "week" | "month" | "year"
+type WorkflowDuration = `${number} ${WorkflowDurationUnit}` | `${number} ${WorkflowDurationUnit}s`
+
+interface WorkflowStepConfig {
+  retries: {
+    limit: number
+    delay: WorkflowDuration
+    backoff: "constant" | "linear" | "exponential"
+  }
+  timeout: WorkflowDuration
+}
+
+// bootstrap と generate の Notion 書き戻しは件数が多くなりうるので、この件数ごとに別の step に分ける
+export const NOTION_WRITEBACK_CHUNK_SIZE = 50
+// 書き戻しの request の間隔。Notion API の平均 3 request/秒に収める
+const NOTION_WRITEBACK_DELAY_MS = 350
+
+export const PUBLISH_WORKFLOW_STEP_CONFIGS = {
+  loadRequest: {
+    retries: { limit: 5, delay: "10 seconds", backoff: "exponential" },
+    timeout: "2 minutes",
+  },
+  preflightRequest: {
+    retries: { limit: 0, delay: "1 second", backoff: "constant" },
+    timeout: "1 minute",
+  },
+  publishSite: {
+    retries: { limit: 2, delay: "10 seconds", backoff: "exponential" },
+    timeout: "30 minutes",
+  },
+  // full と bootstrap は全記事の取得に加えて、thumbnail を持たない記事ぶんの自動生成 Lambda を
+  // 直列で通すため初回は数時間かかる。受け付けるだけなのでこの step 自体は短く、
+  // 完了を待つのは GENERATE_POLL_LIMIT 側の予算
+  startPublishSite: {
+    retries: { limit: 2, delay: "10 seconds", backoff: "exponential" },
+    timeout: "5 minutes",
+  },
+  // 受け付け済みの job の状態を見に行くだけ。ここで諦めると走っている build を追えなくなる
+  pollPublishSite: {
+    retries: { limit: 5, delay: "10 seconds", backoff: "exponential" },
+    timeout: "2 minutes",
+  },
+  invalidateCloudFront: {
+    retries: { limit: 5, delay: "10 seconds", backoff: "exponential" },
+    timeout: "2 minutes",
+  },
+  loadDeploymentState: {
+    retries: { limit: 5, delay: "10 seconds", backoff: "exponential" },
+    timeout: "2 minutes",
+  },
+  confirmPublishedPages: {
+    retries: { limit: 5, delay: "10 seconds", backoff: "exponential" },
+    timeout: "2 minutes",
+  },
+  notifyFailures: {
+    retries: { limit: 2, delay: "10 seconds", backoff: "exponential" },
+    timeout: "1 minute",
+  },
+  notifyUnpublishedReferences: {
+    retries: { limit: 2, delay: "10 seconds", backoff: "exponential" },
+    timeout: "1 minute",
+  },
+  writeNotionResult: {
+    retries: { limit: 5, delay: "10 seconds", backoff: "exponential" },
+    timeout: "2 minutes",
+  },
+  writeBootstrapNotionResult: {
+    retries: { limit: 5, delay: "10 seconds", backoff: "exponential" },
+    timeout: "10 minutes",
+  },
+  writeGenerateNotionResult: {
+    retries: { limit: 5, delay: "10 seconds", backoff: "exponential" },
+    timeout: "10 minutes",
+  },
+} as const satisfies Record<string, WorkflowStepConfig>
+
+export interface WorkflowStepExecutor {
+  do<T extends Rpc.Serializable<T>>(
+    name: string,
+    config: WorkflowStepConfig,
+    callback: () => Promise<T>,
+  ): Promise<T>
+}
+
+// 長い build の完了待ちを step.sleep で刻むのは publish workflow だけなので、ここで足す
+export interface PublishWorkflowStepExecutor extends WorkflowStepExecutor {
+  sleep(name: string, duration: WorkflowDuration): Promise<void>
+}
+
+export interface LoadedPublishRequest {
+  revisions: Array<PageRevision>
+  failed: Array<PublishFailure>
+  // generate が未公開の変更を見つけて、Notion の本文では作り直さない page。Container は publish index から
+  // 最後に公開した版で作り直す。partial と bootstrap では常に空
+  skippedPageIds: Array<string>
+}
+
+export interface PublishedPageCheck {
+  pageId: string
+  revision: PageRevision
+  fetchedHash: string | null
+}
+
+export interface PublishWorkflowDependencies {
+  loadRequest(): Promise<LoadedPublishRequest>
+  publishSite(request: PublishJobRequest): Promise<PublishJobSummary>
+  startPublishSite(request: PublishJobRequest): Promise<void>
+  readPublishSiteState(workflowId: string): Promise<PublishJobState>
+  invalidateSite(summary: PublishJobSummary): Promise<void>
+  loadDeploymentPages(pageIds: Array<string>): Promise<Array<DeploymentPageState>>
+  writeNotionResults(results: Array<NotionPublishResult>, delayMs?: number): Promise<void>
+  // 読み込んだときの revision から誰も触っていない page にだけ書く。generate は Notion の状態を変えないので、
+  // 途中で人が編集した page に書くと、その編集が 🟢 / 🔴 で上書きされて見えなくなる
+  writeNotionResultsIfUnchanged(
+    results: Array<NotionPublishResult>,
+    expectedRevisions: Array<PageRevision>,
+    delayMs: number,
+  ): Promise<void>
+  // 公開ボタンの build のあと（Container の最後の確認より後）で本文が直された page を返す
+  findPagesChangedAfterBuild(checks: Array<PublishedPageCheck>): Promise<Array<string>>
+  // 失敗した記事を Slack に知らせる。Notion の 公開エラー は公開ボタンを押した人しか見ないので、気づけるようにする
+  notifyFailures(notice: PublishFailureNotice): Promise<void>
+  // 非公開にした記事を内部ブログカードで指している記事を Slack に知らせる。それらは次に作り直すとき prd で失敗になるので、
+  // 非公開にした時点で気づけるようにする
+  notifyUnpublishedReferences(notice: UnpublishedReferenceNotice): Promise<void>
+}
+
+interface RunPublishWorkflowOptions {
+  workflowId: string
+  params: PublishWorkflowParams
+  step: PublishWorkflowStepExecutor
+  dependencies: PublishWorkflowDependencies
+}
+
+const toPublishFailure = (issue: PreparedPageRevision["issues"][number]): PublishFailure => {
+  return {
+    pageId: issue.pageId,
+    code: issue.code,
+    message: issue.message,
+  }
+}
+
+const ERROR_SUMMARY_HEAD_CHARS = 160
+const ERROR_SUMMARY_TAIL_CHARS = 500
+
+// Container の例外は「何が失敗したか」の前置きに generate のログ末尾が続く形なので、
+// 長いときは前置きとログの最後だけを残す
+const summarizeError = (err: unknown): string => {
+  const message = (err instanceof Error ? err.message : String(err))
+    .replaceAll(/[ \t]+/g, " ")
+    .trim()
+  if (message.length <= ERROR_SUMMARY_HEAD_CHARS + ERROR_SUMMARY_TAIL_CHARS) {
+    return message
+  }
+
+  return `${message.slice(0, ERROR_SUMMARY_HEAD_CHARS)} … ${message.slice(-ERROR_SUMMARY_TAIL_CHARS)}`
+}
+
+const toFailedNotionResults = (
+  failures: Array<PublishFailure>,
+  workflowId: string,
+  revisions: Array<PageRevision>,
+  deploymentPages: Array<DeploymentPageState>,
+): Array<NotionPublishResult> => {
+  const messagesByPage = new Map<string, Array<string>>()
+  for (const failure of failures) {
+    const messages = messagesByPage.get(failure.pageId) ?? []
+    messages.push(failure.message)
+    messagesByPage.set(failure.pageId, messages)
+  }
+
+  const revisionByPage = new Map(revisions.map((revision) => [revision.pageId, revision]))
+  const deploymentByPage = new Map(deploymentPages.map((page) => [page.pageId, page]))
+
+  return [...messagesByPage].map(([pageId, messages]) => {
+    const deployment = deploymentByPage.get(pageId)
+    let internalState: "下書き" | "公開中" | "非公開" | null = null
+    let deployedAt: string | null = null
+    let publishedAt: string | null = null
+    if (deployment?.status === "published") {
+      internalState = "公開中"
+      deployedAt = deployment.deployedAt
+      publishedAt = deployment.publishedAt
+    } else if (deployment?.status === "unpublished") {
+      internalState = "非公開"
+    } else if (
+      deployment?.status === "missing" &&
+      revisionByPage.get(pageId)?.lastDeploy === null
+    ) {
+      internalState = "下書き"
+    }
+
+    return {
+      status: "failed",
+      pageId,
+      internalState,
+      deployedAt,
+      publishedAt,
+      error: `${messages.join(" / ")}（Workflow: ${workflowId}）`,
+    }
+  })
+}
+
+const toGenerateNotionResults = (
+  failures: Array<PublishFailure>,
+  summary: PublishJobSummary | null,
+  revisions: Array<PageRevision>,
+  workflowId: string,
+): Array<NotionPublishResult> => {
+  const messagesByPage = new Map<string, Array<string>>()
+  for (const failure of failures) {
+    const messages = messagesByPage.get(failure.pageId) ?? []
+    messages.push(failure.message)
+    messagesByPage.set(failure.pageId, messages)
+  }
+  // generate は公開状態を変えないので、配信状態や日付には触らず 公開エラー だけを書く
+  const failed = [...messagesByPage].map(([pageId, messages]): NotionPublishResult => {
+    return {
+      status: "failed",
+      pageId,
+      internalState: null,
+      deployedAt: null,
+      publishedAt: null,
+      error: `${GENERATE_PUBLISH_ERROR_PREFIX}: ${messages.join(" / ")}（Workflow: ${workflowId}）`,
+    }
+  })
+  const revisionByPage = new Map(revisions.map((revision) => [revision.pageId, revision]))
+  const cleared = (summary?.pages ?? []).flatMap((page): Array<NotionPublishResult> => {
+    const publishError = revisionByPage.get(page.pageId)?.publishError ?? ""
+    if (page.action !== "publish" || !isGeneratePublishError(publishError)) {
+      return []
+    }
+
+    return [{ status: "error-cleared", pageId: page.pageId }]
+  })
+
+  return [...failed, ...cleared]
+}
+
+// bootstrap で失敗した page は publish index に載らないので、toFailedNotionResults が 下書き に戻す。
+// 直して公開ボタンを押せば、Notion の 公開日 のまま公開できる
+const toBootstrapFailedNotionResults = (
+  failures: Array<PublishFailure>,
+  workflowId: string,
+  revisions: Array<PageRevision>,
+  deploymentPages: Array<DeploymentPageState>,
+): Array<NotionPublishResult> => {
+  return toFailedNotionResults(failures, workflowId, revisions, deploymentPages).map((result) => {
+    return result.status === "failed"
+      ? { ...result, error: `${BOOTSTRAP_PUBLISH_ERROR_PREFIX}: ${result.error}` }
+      : result
+  })
+}
+
+const writeBootstrapNotionResults = async (
+  results: Array<NotionPublishResult>,
+  step: WorkflowStepExecutor,
+  dependencies: PublishWorkflowDependencies,
+) => {
+  // step の再試行は先頭からやり直すため、chunk に分けて書き戻し済みのぶんを捨てない
+  for (let index = 0; index < results.length; index += NOTION_WRITEBACK_CHUNK_SIZE) {
+    const chunk = results.slice(index, index + NOTION_WRITEBACK_CHUNK_SIZE)
+    await step.do(
+      `write-bootstrap-notion-result-${index / NOTION_WRITEBACK_CHUNK_SIZE}`,
+      PUBLISH_WORKFLOW_STEP_CONFIGS.writeBootstrapNotionResult,
+      async () => {
+        await dependencies.writeNotionResults(chunk, NOTION_WRITEBACK_DELAY_MS)
+      },
+    )
+  }
+}
+
+const writeGenerateNotionResults = async (
+  results: Array<NotionPublishResult>,
+  revisions: Array<PageRevision>,
+  step: WorkflowStepExecutor,
+  dependencies: PublishWorkflowDependencies,
+) => {
+  // step の再試行は先頭からやり直すため、chunk に分けて書き戻し済みのぶんを捨てない
+  for (let index = 0; index < results.length; index += NOTION_WRITEBACK_CHUNK_SIZE) {
+    const chunk = results.slice(index, index + NOTION_WRITEBACK_CHUNK_SIZE)
+    await step.do(
+      `write-generate-notion-result-${index / NOTION_WRITEBACK_CHUNK_SIZE}`,
+      PUBLISH_WORKFLOW_STEP_CONFIGS.writeGenerateNotionResult,
+      async () => {
+        await dependencies.writeNotionResultsIfUnchanged(
+          chunk,
+          revisions,
+          NOTION_WRITEBACK_DELAY_MS,
+        )
+      },
+    )
+  }
+}
+
+const notifyPublishFailures = async (
+  failures: Array<PublishFailure>,
+  revisions: Array<PageRevision>,
+  workflowId: string,
+  params: PublishWorkflowParams,
+  step: WorkflowStepExecutor,
+  dependencies: PublishWorkflowDependencies,
+) => {
+  if (failures.length === 0) {
+    return
+  }
+  const messagesByPage = new Map<string, Array<string>>()
+  for (const failure of failures) {
+    messagesByPage.set(failure.pageId, [
+      ...(messagesByPage.get(failure.pageId) ?? []),
+      failure.message,
+    ])
+  }
+  const revisionByPage = new Map(revisions.map((revision) => [revision.pageId, revision]))
+  const notice: PublishFailureNotice = {
+    workflowId,
+    mode: params.mode,
+    failures: [...messagesByPage].map(([pageId, messages]) => {
+      const revision = revisionByPage.get(pageId)
+
+      return {
+        pageId,
+        title: revision?.title ?? "",
+        slug: revision?.slug ?? "",
+        message: messages.join(" / "),
+      }
+    }),
+  }
+  try {
+    await step.do("notify-failures", PUBLISH_WORKFLOW_STEP_CONFIGS.notifyFailures, async () => {
+      await dependencies.notifyFailures(notice)
+    })
+  } catch (err) {
+    // 通知が届かないことを理由に、公開の結果まで失敗にしない
+    console.warn(
+      JSON.stringify({
+        event: "publish_failure_notification_failed",
+        workflowId,
+        error: err instanceof Error ? err.message : String(err),
+      }),
+    )
+  }
+}
+
+const notifyUnpublishedReferences = async (
+  summary: PublishJobSummary,
+  revisions: Array<PageRevision>,
+  workflowId: string,
+  step: WorkflowStepExecutor,
+  dependencies: PublishWorkflowDependencies,
+) => {
+  if (summary.unpublishedReferences.length === 0) {
+    return
+  }
+  const revisionByPage = new Map(revisions.map((revision) => [revision.pageId, revision]))
+  const notice: UnpublishedReferenceNotice = {
+    workflowId,
+    pages: summary.unpublishedReferences.map((references) => {
+      const revision = revisionByPage.get(references.pageId)
+
+      return {
+        pageId: references.pageId,
+        title: revision?.title ?? "",
+        slug: revision?.slug ?? "",
+        referrers: references.referrers,
+      }
+    }),
+  }
+  try {
+    await step.do(
+      "notify-unpublished-references",
+      PUBLISH_WORKFLOW_STEP_CONFIGS.notifyUnpublishedReferences,
+      async () => {
+        await dependencies.notifyUnpublishedReferences(notice)
+      },
+    )
+  } catch (err) {
+    // 非公開はもう済んでいるので、知らせられないことを理由に失敗にしない
+    console.warn(
+      JSON.stringify({
+        event: "unpublished_reference_notification_failed",
+        workflowId,
+        error: err instanceof Error ? err.message : String(err),
+      }),
+    )
+  }
+}
+
+const loadFailureDeploymentPages = async (
+  failures: Array<PublishFailure>,
+  step: WorkflowStepExecutor,
+  dependencies: PublishWorkflowDependencies,
+): Promise<Array<DeploymentPageState>> => {
+  if (failures.length === 0) {
+    return []
+  }
+
+  try {
+    return await step.do(
+      "load-deployment-state",
+      PUBLISH_WORKFLOW_STEP_CONFIGS.loadDeploymentState,
+      async () =>
+        dependencies.loadDeploymentPages([...new Set(failures.map(({ pageId }) => pageId))]),
+    )
+  } catch {
+    return []
+  }
+}
+
+const validateJobSummary = (
+  summary: PublishJobSummary,
+  workflowId: string,
+  pages: Array<PreparedPageRevision>,
+): void => {
+  if (summary.workflowId !== workflowId) {
+    throw Error("Container から別 Workflow の結果が返されました")
+  }
+
+  const expectedPageIds = new Set(pages.map((page) => page.revision.pageId))
+  const resultPageIds = [
+    ...summary.pages.map((page) => page.pageId),
+    ...summary.failed.map((page) => page.pageId),
+    ...summary.skipped,
+  ]
+  if (
+    resultPageIds.length !== expectedPageIds.size ||
+    resultPageIds.some((pageId) => !expectedPageIds.has(pageId)) ||
+    new Set(resultPageIds).size !== resultPageIds.length
+  ) {
+    throw Error("Container の公開結果と依頼した page が一致しません")
+  }
+}
+
+const createResult = (
+  workflowId: string,
+  summary: PublishJobSummary | null,
+  failures: Array<PublishFailure>,
+  loaded: LoadedPublishRequest,
+): PublishWorkflowResult => {
+  return {
+    workflowId,
+    status: 0 < failures.length ? "completed-with-errors" : "completed",
+    publishedPageIds:
+      summary?.pages.filter((page) => page.action === "publish").map((page) => page.pageId) ?? [],
+    unpublishedPageIds:
+      summary?.pages.filter((page) => page.action === "unpublish").map((page) => page.pageId) ?? [],
+    failed: failures.map(({ pageId, code }) => ({ pageId, code })),
+    skippedPageIds: [...loaded.skippedPageIds, ...(summary?.skipped ?? [])],
+    stalePageIds: summary?.stale ?? [],
+  }
+}
+
+// Container の最後の確認から Notion への書き戻しまでのあいだ（S3 への配置と CloudFront の更新）に本文が直されると、
+// 配信は直す前の本文なのに 🟢 になって直しが隠れる。書き戻す直前に確かめ、直されていたら 🔴 にして押し直してもらう
+const toChangedAfterBuildResult = (
+  result: Extract<NotionPublishResult, { status: "published" }>,
+  workflowId: string,
+): NotionPublishResult => {
+  return {
+    status: "failed",
+    pageId: result.pageId,
+    internalState: "公開中",
+    deployedAt: result.deployedAt,
+    publishedAt: result.publishedAt,
+    error: `公開の途中で本文が直されたので、直す前の本文で公開しました。もう一度「公開」を押してください（Workflow: ${workflowId}）`,
+  }
+}
+
+const createPublishedPageChecks = (
+  summary: PublishJobSummary,
+  revisions: Array<PageRevision>,
+): Array<PublishedPageCheck> => {
+  const revisionByPage = new Map(revisions.map((revision) => [revision.pageId, revision]))
+
+  return summary.pages.flatMap((page): Array<PublishedPageCheck> => {
+    const revision = revisionByPage.get(page.pageId)
+    if (page.action !== "publish" || !revision) {
+      return []
+    }
+
+    return [{ pageId: page.pageId, revision, fetchedHash: page.fetchedHash }]
+  })
+}
+
+const toSuccessfulNotionResults = (summary: PublishJobSummary): Array<NotionPublishResult> => {
+  return summary.pages.map((page) => {
+    if (page.action === "publish") {
+      return {
+        status: "published",
+        pageId: page.pageId,
+        deployedAt: page.deployedAt,
+        publishedAt: page.publishedAt,
+        updatedAt: page.updatedAt,
+      }
+    }
+
+    return { status: "unpublished", pageId: page.pageId }
+  })
+}
+
+// full / bootstrap は 1 時間以上かかるため、1 つの step で結果を待つと「待っているだけの
+// invocation」が Workers の hang 判定で打ち切られる。受け付けと待機を分けて step.sleep で刻む
+const GENERATE_POLL_INTERVAL: WorkflowDuration = "1 minute"
+// publish index が空の初回ビルドは全記事の thumbnail 生成が走るため極端に遅く、
+// dev では 1 回の試行が 4.7 時間走ってまだ終わっていなかった。本番 bootstrap も同じ条件なので、
+// 同期方式のときの step timeout（6 時間）では足りない恐れがある。
+// step.sleep は Workflows の step 上限に数えられず、待っているあいだのコストも無いので長く取る
+const GENERATE_POLL_LIMIT = 720
+
+const runPublishSite = async (
+  request: PublishJobRequest,
+  step: PublishWorkflowStepExecutor,
+  dependencies: PublishWorkflowDependencies,
+): Promise<PublishJobSummary> => {
+  // partial は数分で終わるので、1 step で完結させたままにする
+  if (request.params.mode === "partial") {
+    return step.do("publish-site", PUBLISH_WORKFLOW_STEP_CONFIGS.publishSite, async () => {
+      return dependencies.publishSite(request)
+    })
+  }
+  await step.do("start-publish-site", PUBLISH_WORKFLOW_STEP_CONFIGS.startPublishSite, async () => {
+    await dependencies.startPublishSite(request)
+  })
+  for (let attempt = 0; attempt < GENERATE_POLL_LIMIT; attempt++) {
+    await step.sleep(`wait-publish-site-${attempt}`, GENERATE_POLL_INTERVAL)
+    const state = await step.do(
+      `poll-publish-site-${attempt}`,
+      PUBLISH_WORKFLOW_STEP_CONFIGS.pollPublishSite,
+      async () => {
+        return dependencies.readPublishSiteState(request.workflowId)
+      },
+    )
+    if (state.status === "done") {
+      return state.summary
+    }
+    if (state.status === "failed") {
+      throw Error(state.message)
+    }
+    // Container が作り直されると受け付けた記録も消えるため、待ち続けずに落とす
+    if (state.status === "unknown") {
+      throw Error("Container が publish job を見失いました")
+    }
+  }
+
+  throw Error(`publish job が ${GENERATE_POLL_LIMIT} 回の polling で終わりませんでした`)
+}
+
+export const runPublishWorkflow = async ({
+  workflowId,
+  params,
+  step,
+  dependencies,
+}: RunPublishWorkflowOptions): Promise<PublishWorkflowResult> => {
+  const loaded = await step.do(
+    "load-request",
+    PUBLISH_WORKFLOW_STEP_CONFIGS.loadRequest,
+    dependencies.loadRequest,
+  )
+  const prepared = await step.do(
+    "preflight-request",
+    PUBLISH_WORKFLOW_STEP_CONFIGS.preflightRequest,
+    async () => {
+      return loaded.revisions.map((revision) =>
+        validatePageRevisionMetadata(revision, params.mode, params.requestedAt),
+      )
+    },
+  )
+  const preflightFailures = [
+    ...loaded.failed,
+    ...prepared.flatMap((page) => page.issues.map(toPublishFailure)),
+  ]
+  const publishablePages = prepared.filter(
+    (page) => page.action !== "noop" && page.issues.length === 0,
+  )
+
+  if (publishablePages.length === 0) {
+    if (params.mode === "partial" && 0 < preflightFailures.length) {
+      const deploymentPages = await loadFailureDeploymentPages(
+        preflightFailures,
+        step,
+        dependencies,
+      )
+      await step.do(
+        "write-notion-result",
+        PUBLISH_WORKFLOW_STEP_CONFIGS.writeNotionResult,
+        async () => {
+          await dependencies.writeNotionResults(
+            toFailedNotionResults(preflightFailures, workflowId, loaded.revisions, deploymentPages),
+          )
+        },
+      )
+    } else if (params.mode === "bootstrap") {
+      const deploymentPages = await loadFailureDeploymentPages(
+        preflightFailures,
+        step,
+        dependencies,
+      )
+      await writeBootstrapNotionResults(
+        toBootstrapFailedNotionResults(
+          preflightFailures,
+          workflowId,
+          loaded.revisions,
+          deploymentPages,
+        ),
+        step,
+        dependencies,
+      )
+    } else if (params.mode === "full") {
+      await writeGenerateNotionResults(
+        toGenerateNotionResults(preflightFailures, null, loaded.revisions, workflowId),
+        loaded.revisions,
+        step,
+        dependencies,
+      )
+    }
+
+    await notifyPublishFailures(
+      preflightFailures,
+      loaded.revisions,
+      workflowId,
+      params,
+      step,
+      dependencies,
+    )
+
+    return createResult(workflowId, null, preflightFailures, loaded)
+  }
+
+  let summary: PublishJobSummary
+  try {
+    summary = await runPublishSite(
+      { workflowId, params, pages: publishablePages },
+      step,
+      dependencies,
+    )
+    validateJobSummary(summary, workflowId, publishablePages)
+  } catch (err) {
+    if (params.mode === "partial") {
+      // Workflow の describe API は失敗 instance で 500 を返すことがあり、原因が Notion からしか追えない。
+      // Container が例外へ載せた generate のログ末尾もここを通るので、短く切って書き戻す
+      const message = `公開処理に失敗しました: ${summarizeError(err)}`
+      const publishFailures: Array<PublishFailure> = publishablePages.map((page) => ({
+        pageId: page.revision.pageId,
+        code: "publish-failed",
+        message,
+      }))
+      const failures = [...preflightFailures, ...publishFailures]
+      const deploymentPages = await loadFailureDeploymentPages(failures, step, dependencies)
+      await step.do(
+        "write-notion-result",
+        PUBLISH_WORKFLOW_STEP_CONFIGS.writeNotionResult,
+        async () => {
+          await dependencies.writeNotionResults(
+            toFailedNotionResults(failures, workflowId, loaded.revisions, deploymentPages),
+          )
+        },
+      )
+    }
+
+    throw err
+  }
+
+  const failures = [...preflightFailures, ...summary.failed]
+  try {
+    await step.do(
+      "invalidate-cloudfront",
+      PUBLISH_WORKFLOW_STEP_CONFIGS.invalidateCloudFront,
+      async () => {
+        await dependencies.invalidateSite(summary)
+      },
+    )
+  } catch (err) {
+    if (params.mode === "partial") {
+      const invalidationFailures: Array<PublishFailure> = summary.pages.map((page) => ({
+        pageId: page.pageId,
+        code: "publish-failed",
+        message: "CloudFront の更新に失敗しました",
+      }))
+      const allFailures = [...failures, ...invalidationFailures]
+      const deploymentPages = await loadFailureDeploymentPages(allFailures, step, dependencies)
+      await step.do(
+        "write-notion-result",
+        PUBLISH_WORKFLOW_STEP_CONFIGS.writeNotionResult,
+        async () => {
+          await dependencies.writeNotionResults(
+            toFailedNotionResults(allFailures, workflowId, loaded.revisions, deploymentPages),
+          )
+        },
+      )
+    }
+
+    throw err
+  }
+  if (params.mode === "partial") {
+    const deploymentPages = await loadFailureDeploymentPages(failures, step, dependencies)
+    const checks = createPublishedPageChecks(summary, loaded.revisions)
+    // 書き込みとは別の step にする。同じ step にすると、書き込んだあとの retry で自分の書き込みを編集とみなしてしまう
+    const changedPageIds =
+      0 < checks.length
+        ? new Set(
+            await step.do(
+              "confirm-published-pages",
+              PUBLISH_WORKFLOW_STEP_CONFIGS.confirmPublishedPages,
+              async () => dependencies.findPagesChangedAfterBuild(checks),
+            ),
+          )
+        : new Set<string>()
+    const successResults = toSuccessfulNotionResults(summary).map((result) => {
+      return result.status === "published" && changedPageIds.has(result.pageId)
+        ? toChangedAfterBuildResult(result, workflowId)
+        : result
+    })
+    await step.do(
+      "write-notion-result",
+      PUBLISH_WORKFLOW_STEP_CONFIGS.writeNotionResult,
+      async () => {
+        await dependencies.writeNotionResults([
+          ...toFailedNotionResults(failures, workflowId, loaded.revisions, deploymentPages),
+          ...successResults,
+        ])
+      },
+    )
+    // 直す前の本文で公開した page も、押し直してもらうために知らせる
+    failures.push(
+      ...[...changedPageIds].map((pageId) => ({
+        pageId,
+        code: "publish-failed" as const,
+        message: "公開の途中で本文が直されたので、直す前の本文で公開しました",
+      })),
+    )
+    await notifyUnpublishedReferences(summary, loaded.revisions, workflowId, step, dependencies)
+  } else if (params.mode === "bootstrap") {
+    const deploymentPages = await loadFailureDeploymentPages(failures, step, dependencies)
+    await writeBootstrapNotionResults(
+      [
+        ...toSuccessfulNotionResults(summary),
+        ...toBootstrapFailedNotionResults(failures, workflowId, loaded.revisions, deploymentPages),
+      ],
+      step,
+      dependencies,
+    )
+  } else {
+    await writeGenerateNotionResults(
+      toGenerateNotionResults(failures, summary, loaded.revisions, workflowId),
+      loaded.revisions,
+      step,
+      dependencies,
+    )
+  }
+
+  await notifyPublishFailures(failures, loaded.revisions, workflowId, params, step, dependencies)
+
+  return createResult(workflowId, summary, failures, loaded)
+}

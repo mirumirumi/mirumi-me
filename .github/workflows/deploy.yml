@@ -1,85 +1,108 @@
 name: deploy
 
+# dev, main ブランチにおいては push のたびに deploy は必ず行い、generate はサイトの生成物に効く変更があるときだけ流す
+# 判定と各 step の中身は server/src/scripts/release.ts にある
 on:
   workflow_dispatch:
+    inputs:
+      generate:
+        description: generate を流すか（auto は最後に完了した generate からの差分で決める）
+        type: choice
+        options:
+          - auto
+          - always
+          - skip
+        default: auto
   push:
     branches:
       - main
-      # Enable only when in use
-      - chore/migrate-nuxt-4
+      - dev
+
+# 同じ環境への deploy は 1 本ずつ
+# 待っている run が新しい run に置き換えられても generate の要否は Cloudflare 側の完了記録との差分で決めるので、変更を取りこぼさない
+concurrency:
+  group: deploy-${{ github.ref_name == 'main' && 'prd' || 'dev' }}
+  cancel-in-progress: false
+
+env:
+  ENV_NAME: ${{ github.ref_name == 'main' && 'prd' || 'dev' }}
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
 jobs:
-  deploy:
+  plan:
     runs-on: ubuntu-latest
+    outputs:
+      generate: ${{ steps.plan.outputs.generate }}
     steps:
-      - uses: actions/checkout@v3
-    
+      # 基準点のコミットとの差分を取るため、履歴をすべて取る
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.3.3
-
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.9"
+          bun-version-file: .tool-versions
 
       - name: Install dependencies
         run: bun i --frozen-lockfile
 
-      - name: Install Python modules
-        run: pip3 install httpx
+      - name: Decide whether to generate
+        id: plan
+        env:
+          GENERATE_REQUEST: ${{ inputs.generate || 'auto' }}
+        run: bun server/src/scripts/release.ts plan "${ENV_NAME}" --request "${GENERATE_REQUEST}"
 
-      - name: Decrypt secrets with gpg
-        run: |
-          echo "${{ secrets.GPG_PASSPHRASE }}" \
-            | sudo gpg --batch --passphrase-fd 0 --output "src/secrets/secret.dev.js" --decrypt "src/secrets/secret.dev.js.gpg" 
-          echo "${{ secrets.GPG_PASSPHRASE }}" \
-            | sudo gpg --batch --passphrase-fd 0 --output "src/secrets/secret.prd.js" --decrypt "src/secrets/secret.prd.js.gpg" 
+  deploy:
+    needs: plan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
 
-      - name: Generate site
-        run: |
-          bun run generate
-
-      - name: Generate XMLs
-        run: |
-          python3 .github/workflows/generate_sitemaps.py
-          python3 .github/workflows/generate_feeds.py
-
-      - name: Sign in
-        uses: aws-actions/configure-aws-credentials@v1
+      - uses: oven-sh/setup-bun@v2
         with:
-          aws-region: ap-northeast-1
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          bun-version-file: .tool-versions
 
-      - name: Copy files to S3
-        env:
-          ENV_NAME: ${{ github.ref_name == 'main' && 'prd' || 'dev' }}
-        run: |
-          bucket="s3://mirumime-${ENV_NAME}-mirumi-me"
-          aws configure set default.s3.max_concurrent_requests 40
+      - name: Install dependencies
+        run: bun i --frozen-lockfile
 
-          aws s3 sync \
-            --region ap-northeast-1 \
-            --cache-control "public,max-age=31536000,immutable" \
-            --exclude "builds/*" \
-            .output/public/_nuxt/ "${bucket}/_nuxt/"
-          aws s3 sync \
-            --region ap-northeast-1 \
-            --cache-control "no-cache" \
-            .output/public/_nuxt/builds/ "${bucket}/_nuxt/builds/"
-          aws s3 sync \
-            --region ap-northeast-1 \
-            --delete \
-            --cache-control "no-cache" \
-            --exclude "_nuxt/*" \
-            --exclude "apps/*" \
-            --exclude "assets/components/*" \
-            .output/public/ "${bucket}/"
+      # deploy は Container image を差し替えるため、走っている build に新しい image は反映されない。
+      # Container 側にも「走っているジョブがあるなら作り直さない」ガードがあるが、
+      # 黙って古い image のまま完走するより、ここで気づいて落ちたほうがよい
+      - name: Check running publish workflow
+        run: bun server/src/scripts/release.ts check-idle "${ENV_NAME}"
 
-      - name: Purge CDN caches
-        env:
-          DISTRIBUTION_ID: ${{ github.ref_name == 'main' && 'E1UPWIMHFP5TEC' || 'E16GU2ZPNLT91U' }}
-        run: |
-          aws cloudfront create-invalidation \
-            --distribution-id ${DISTRIBUTION_ID} \
-            --paths "/*"
+      # Worker、Workflow、Container の準備だけ行う
+      - name: Deploy Worker
+        working-directory: server
+        run: bun run "deploy:${ENV_NAME}"
+
+      # deploy が Container image を差し替えると application rollout が走り、その最中に起動した
+      # instance は "Runtime signalled the container to exit due to a new version rollout" で
+      # 途中で殺される。走っている build を復帰させる手段は無いので、収束を待ってから投げる。
+      # generate しない run でも待つのは、CI が緑になった時点で公開を試せるようにするため
+      - name: Wait for container rollout
+        run: bun server/src/scripts/release.ts wait-rollout "${ENV_NAME}"
+
+  generate:
+    needs:
+      - plan
+      - deploy
+    if: needs.plan.outputs.generate == 'true'
+    runs-on: ubuntu-latest
+    # generate は Notion へ何も書き戻さないので、完了まで待って失敗を CI に出す。
+    # この job を止めても Cloudflare 側の generate は止まらない
+    timeout-minutes: 200
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .tool-versions
+
+      - name: Install dependencies
+        run: bun i --frozen-lockfile
+
+      # サイトの生成、S3 反映、CloudFront invalidation はすべて Workflow が行う
+      - name: Generate
+        run: bun server/src/scripts/release.ts generate "${ENV_NAME}"

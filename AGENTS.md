@@ -3,7 +3,7 @@
 
 - このリポジトリは、僕の個人ブログです
 - 現在は次のセクションで話すような構成になっていますが、近いうちに CMS としての機能および管理画面も Notion に移行する計画があり、それが完了した暁にはこの mirumi-me リポジトリをモノレポにし、このリポジトリだけで完結できるようにします
-    - Notion 移行のすべての計画は tools/migrate-to-notion 以下にあるので目を通してください
+    - Notion 移行のすべての計画は docs/L1 以下（「Notion 移行」で始まるファイルと「コンテンツブロックタイプ変換方針.md」）にあるので目を通してください
     - あなたへの作業依頼は Notion 移行に関係しているかもしれないししていないかもしれないが、常にこの存在を考慮してください
 
 ## 構成
@@ -18,7 +18,10 @@
         - サーバーは ConoHa WING のレンタルサーバーで動いていて、SSH で中身はいつでも確認できます
             - 接続したければ `ssh conoha-wing` でどうぞ
             - ただし、書き込み系コマンドは許可なく実行してはいけません！
-            - WP CLI はサーバーにログインしたあと `cd public_html/mirumi.in` すると使えるようになるよ（非対話 SSH だと使えないという情報もあり）
+            - WP CLI はサーバーにログインしたあと `cd public_html/mirumi.in` すると使えるようになるよ
+                - 非対話 SSH では `wp` が PATH に無いので、`ssh -o BatchMode=yes conoha-wing 'cd public_html/mirumi.in && php ~/workspace/wp-cli.phar <サブコマンド>'` の形で使う
+                - 出力の先頭に locale の perl warning が混ざるので、必要なら grep で落とす
+                - MySQL が古く `WITH RECURSIVE` が使えないので、再帰的な集計は自己結合を並べて書く
     - このドメインでも実は mirumi.me と全く同じ記事 URL でサイトが公開されているけど、すべて noindex にしてあるので実害はない
         - もし実際の表示やレンダリング結果を確認するときは必ず mirumi.in ではなく mirumi.me を見るように気をつけてください
     - 現在は WordPress 側のリポジトリは別物としてわかれており、~/dev/mirumi-me-wordpress にあります
@@ -30,11 +33,21 @@
     - WordPress 側でアップロードされた画像はプラグインで僕の AWS アカウントにある S3 に同期されており、CloudFront から配信されています
     - その CloudFront に紐づいているドメインがこれ
 
+## ブランチ運用
+
+- 本番（`main`）に出す変更は、必ず `dev` を経由する（`main` ← `dev` ← `project/*` などの feature ブランチ）。`main` への直接マージや push は禁止
+    - リポジトリのデフォルトブランチは `main` だが、作業の PR を向ける先（create-pr スキルでいう trunk）は `dev`。project ブランチの上で作業しているときは、その project ブランチが trunk になる
+        - 本当はデフォルトブランチは全部揃えて mirumi-me でも `dev` にしたかったけど、たしか公開リポジトリだから見栄え優先でこうしたような記憶
+    - `dev` → `main` のリリース PR は、必ずマージコミットありでマージする（squash なし）
+    - project / feature ブランチ → `dev` は squash してよい
+    - `dev` も force push は禁止です（ふつうの直接 push は OK）
+
 ## その他
 
 - Notion を操作・調査するときは、Notion プラグインの MCP と公式 CLI の `ntn` を併用することを考慮する
     - Codex のシェルに `NOTION_KEYRING` が継承されていない場合は、コマンド単位で `NOTION_KEYRING=0` を指定する
     - `ntn` の認証が利用できない場合は MCP のみで作業を継続する
+    - `ntn api` は標準入力が端末でないとき（ファイルへのリダイレクトやシェルのループの中など）、標準入力を読もうとして止まることがあるので、`< /dev/null` を付けて実行する
 - 現在の linter/formatter は以下のようになっており、Vue の template 部分はリポジトリ設定や CI には何もないことに留意する
     - Vue の script、js/ts：Biome
     - Vue の style、css/scss：stylelint

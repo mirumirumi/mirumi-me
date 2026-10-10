@@ -26,7 +26,7 @@
 
 | ファイル | 何を見るものか |
 |---|---|
-| `contents.ndjson` | DB から取得した対象 477 件の本文ローカルコピー。本文を含むので大きい。 |
+| `contents.ndjson` | DB から取得した本文のローカルコピー。本文を含むので大きい。移行スクリプトの `bun run --cwd tools/migrate-to-notion fetch` の出力先でもあるため、実行するたび上書きされる。 |
 | `raw-patterns.json` | raw な機械集計の詳細 JSON。 |
 | `block-type-counts.json` | 意味分類後のブロックタイプ別件数・代表例の JSON。 |
 | `analyze-content-patterns.mjs` | raw 集計を生成するスクリプト。 |
@@ -68,6 +68,7 @@ mv -n -- 少ないものリスト.md 上位外・少数系ブロックタイプ�
 
 - この調査は `futaribo` とは無関係。作業場所として一時的に使っていただけ。
 - DB から取得した本文は `contents.ndjson` に含まれる。外部共有する場合は注意。
+- `contents.ndjson` 以外は調査時点のスナップショット。再フェッチすると件数も内容もずれるので、最新の状況は `dry-run-report.json` を見る。
 - Gutenberg は使っていない前提で、実データでも `<!-- wp:* -->` は 0 件。
 - 実レンダリングは調べず、DB の `post_content` 内にある HTML / class / shortcode / 独自記法だけで分類している。
 

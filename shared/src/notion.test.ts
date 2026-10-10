@@ -1,0 +1,686 @@
+import type { Client, PageObjectResponse } from "@notionhq/client"
+import { afterEach, describe, expect, test, vi } from "vitest"
+
+import {
+  createNotionClient,
+  createNotionPublishUpdate,
+  fetchNotionArticle,
+  fetchNotionBlockTree,
+  fetchNotionPageIndex,
+  fetchNotionPageRevision,
+  fetchStuckPublishRevisions,
+  forEachNotionDataSourcePage,
+  isNotionPublishResultApplied,
+  parseNotionPageIndex,
+  writeNotionPublishResult,
+} from "./notion"
+
+describe("createNotionClient", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  test("rate limit は Retry-After に従って最大 5 回再試行する", async () => {
+    const rateLimited = (): Response => {
+      return new Response(
+        JSON.stringify({
+          object: "error",
+          status: 429,
+          code: "rate_limited",
+          message: "rate limited",
+          request_id: "request-id",
+        }),
+        { status: 429, headers: { "Retry-After": "0" } },
+      )
+    }
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(rateLimited())
+      .mockResolvedValueOnce(rateLimited())
+      .mockResolvedValueOnce(rateLimited())
+      .mockResolvedValueOnce(rateLimited())
+      .mockResolvedValueOnce(rateLimited())
+      .mockResolvedValueOnce(new Response(JSON.stringify({ object: "user", id: "user-id" })))
+    vi.stubGlobal("fetch", fetcher)
+    const client = createNotionClient("notion-token")
+
+    await expect(client.request({ path: "users/me", method: "get" })).resolves.toEqual({
+      object: "user",
+      id: "user-id",
+    })
+    expect(fetcher).toHaveBeenCalledTimes(6)
+  })
+})
+
+describe("parseNotionPageIndex", () => {
+  test("ローカル cache 用の revision と thumbnail を検証する", () => {
+    const value = [
+      {
+        revision: {
+          pageId: "page-id",
+          kind: "post",
+          title: "記事",
+          slug: "article",
+          internalState: "公開中",
+          lastEditedTime: "2026-08-28T00:00:00.000Z",
+          lastEditedBy: "user-id",
+          lastDeploy: null,
+          lastNotionEdit: null,
+          publishedAt: "2026-08-24T00:00:00.000Z",
+          updatedAt: null,
+          category: { name: "技術", slug: "tech" },
+          publishError: "",
+        },
+        thumbnailUrl: "https://file.notion.so/signed-url",
+        thumbnailName: "thumbnail.png",
+      },
+    ]
+
+    expect(parseNotionPageIndex(value)).toEqual(value)
+    expect(() => parseNotionPageIndex([{ ...value[0], extra: true }])).toThrowError()
+  })
+})
+
+describe("fetchNotionBlockTree", () => {
+  const listResponse = (results: Array<unknown>) => ({
+    object: "list",
+    results,
+    next_cursor: null,
+    has_more: false,
+    type: "block",
+    block: {},
+  })
+  const paragraph = (id: string, overrides: Record<string, unknown> = {}) => ({
+    object: "block",
+    id,
+    type: "paragraph",
+    has_children: false,
+    in_trash: false,
+    paragraph: { rich_text: [], color: "default" },
+    ...overrides,
+  })
+
+  test("応答をそのまま保持し、子を持つブロックは再帰して木にする", async () => {
+    const children: Record<string, Array<unknown>> = {
+      page: [paragraph("parent", { has_children: true }), paragraph("sibling")],
+      parent: [paragraph("child")],
+    }
+    const list = vi.fn(async ({ block_id }: { block_id: string }) =>
+      listResponse(children[block_id]!),
+    )
+    const client = { blocks: { children: { list } } } as unknown as Client
+
+    expect(await fetchNotionBlockTree(client, "page")).toEqual([
+      {
+        block: paragraph("parent", { has_children: true }),
+        children: [{ block: paragraph("child"), children: [] }],
+      },
+      { block: paragraph("sibling"), children: [] },
+    ])
+    expect(list).toHaveBeenCalledTimes(2)
+  })
+
+  test("ゴミ箱内のブロックは落として子も取りに行かず、partial block は葉として残す", async () => {
+    const list = vi.fn(async () =>
+      listResponse([
+        paragraph("trashed", { has_children: true, in_trash: true }),
+        { object: "block", id: "partial" },
+      ]),
+    )
+    const client = { blocks: { children: { list } } } as unknown as Client
+
+    expect(await fetchNotionBlockTree(client, "page")).toEqual([
+      { block: { object: "block", id: "partial" }, children: [] },
+    ])
+    expect(list).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe("fetchNotionArticle", () => {
+  test("thumbnail の一時 URL と Files property の name を分けて保持する", async () => {
+    const page = {
+      object: "page",
+      id: "page-id",
+      url: "https://notion.so/page-id",
+      properties: {
+        thumbnail: {
+          type: "files",
+          files: [
+            {
+              name: "My Cover.png",
+              type: "file",
+              file: {
+                url: "https://file.notion.so/signed-url?signature=x",
+                expiry_time: "2026-08-24T04:00:00.000Z",
+              },
+            },
+          ],
+        },
+      },
+    } as unknown as PageObjectResponse
+    const client = {
+      pages: { retrieve: vi.fn(async () => page) },
+      blocks: {
+        children: {
+          list: vi.fn(async () => ({
+            object: "list",
+            results: [],
+            next_cursor: null,
+            has_more: false,
+            type: "block",
+            block: {},
+          })),
+        },
+      },
+    } as unknown as Client
+
+    expect(await fetchNotionArticle(client, page.id)).toEqual(
+      expect.objectContaining({
+        thumbnailUrl: "https://file.notion.so/signed-url?signature=x",
+        thumbnailName: "My Cover.png",
+      }),
+    )
+  })
+
+  test("callout の icon を絵文字・Notion のアイコン・それ以外に分けて保持する", async () => {
+    const page = {
+      object: "page",
+      id: "page-id",
+      url: "https://notion.so/page-id",
+      properties: {},
+    } as unknown as PageObjectResponse
+    const callout = (id: string, icon: unknown) => ({
+      object: "block",
+      id,
+      type: "callout",
+      has_children: false,
+      in_trash: false,
+      callout: { rich_text: [], color: "default", icon },
+    })
+    const client = {
+      pages: { retrieve: vi.fn(async () => page) },
+      blocks: {
+        children: {
+          list: vi.fn(async () => ({
+            object: "list",
+            results: [
+              callout("emoji", { type: "emoji", emoji: "💡" }),
+              callout("icon", {
+                type: "icon",
+                icon: { name: "square-alternate", color: "lightgray" },
+              }),
+              callout("none", null),
+              callout("custom", {
+                type: "custom_emoji",
+                custom_emoji: { id: "x", name: "x", url: "" },
+              }),
+            ],
+            next_cursor: null,
+            has_more: false,
+            type: "block",
+            block: {},
+          })),
+        },
+      },
+    } as unknown as Client
+
+    const article = await fetchNotionArticle(client, page.id)
+
+    expect(
+      article.blocks.map((block) => (block.type === "callout" ? block.icon : undefined)),
+    ).toEqual([
+      { type: "emoji", emoji: "💡" },
+      { type: "icon", name: "square-alternate", color: "lightgray" },
+      null,
+      { type: "other", originalType: "custom_emoji" },
+    ])
+  })
+})
+
+describe("fetchNotionPageRevision", () => {
+  test("最後の編集者と 公開エラー を revision に持つ", async () => {
+    const text = (content: string) => ({
+      type: "text",
+      plain_text: content,
+      href: null,
+      text: { content, link: null },
+      annotations: {
+        bold: false,
+        italic: false,
+        strikethrough: false,
+        underline: false,
+        code: false,
+        color: "default",
+      },
+    })
+    const page = {
+      object: "page",
+      id: "page-id",
+      url: "https://notion.so/page-id",
+      parent: { type: "data_source_id", data_source_id: "posts-source" },
+      last_edited_time: "2026-10-02T00:00:00.000Z",
+      last_edited_by: { object: "user", id: "bot-user-id" },
+      properties: {
+        title: { type: "title", title: [text("記事")] },
+        slug: { type: "rich_text", rich_text: [text("article")] },
+        "internal-state": { type: "select", select: { name: "公開中" } },
+        公開エラー: { type: "rich_text", rich_text: [text("公開処理に"), text("失敗しました")] },
+      },
+    } as unknown as PageObjectResponse
+    const client = { pages: { retrieve: vi.fn(async () => page) } } as unknown as Client
+
+    expect(
+      await fetchNotionPageRevision(client, page.id, {
+        posts: "posts-source",
+        pages: "pages-source",
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        lastEditedTime: "2026-10-02T00:00:00.000Z",
+        lastEditedBy: "bot-user-id",
+        publishError: "公開処理に失敗しました",
+      }),
+    )
+  })
+})
+
+describe("fetchNotionPageIndex", () => {
+  test("data source query に response 専用の in_trash は送らない", async () => {
+    const query = vi.fn(async (_parameters: unknown) => {
+      return {
+        object: "list",
+        results: [],
+        next_cursor: null,
+        has_more: false,
+        type: "page_or_data_source",
+        page_or_data_source: {},
+      }
+    })
+    const client = { dataSources: { query } } as unknown as Client
+
+    await expect(
+      fetchNotionPageIndex(client, { posts: "posts-source", pages: "pages-source" }),
+    ).resolves.toEqual([])
+    expect(query).toHaveBeenCalledTimes(2)
+    for (const [parameters] of query.mock.calls) {
+      expect(parameters).not.toHaveProperty("in_trash")
+    }
+  })
+})
+
+describe("fetchStuckPublishRevisions", () => {
+  test("公開待ち / 非公開待ち のまま、指定した時刻より前から触られていない page を探す", async () => {
+    const page = {
+      object: "page",
+      id: "page-id",
+      url: "https://notion.so/page-id",
+      in_trash: false,
+      parent: { type: "data_source_id", data_source_id: "posts-source" },
+      last_edited_time: "2026-10-03T06:00:00.000Z",
+      last_edited_by: { object: "user", id: "user-id" },
+      properties: {
+        "internal-state": { type: "select", select: { name: "公開待ち" } },
+      },
+    }
+    const query = vi.fn(async (parameters: { data_source_id: string }) => {
+      return {
+        object: "list",
+        results: parameters.data_source_id === "posts-source" ? [page] : [],
+        next_cursor: null,
+        has_more: false,
+      }
+    })
+    const client = { dataSources: { query } } as unknown as Client
+
+    expect(
+      await fetchStuckPublishRevisions(
+        client,
+        { posts: "posts-source", pages: "pages-source" },
+        { before: "2026-10-03T07:00:00.000Z", onOrAfter: null },
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        pageId: "page-id",
+        kind: "post",
+        internalState: "公開待ち",
+        lastEditedTime: "2026-10-03T06:00:00.000Z",
+      }),
+    ])
+    expect(query).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data_source_id: "posts-source",
+        filter: {
+          and: [
+            {
+              or: [
+                { property: "internal-state", select: { equals: "公開待ち" } },
+                { property: "internal-state", select: { equals: "非公開待ち" } },
+              ],
+            },
+            {
+              timestamp: "last_edited_time",
+              last_edited_time: { before: "2026-10-03T07:00:00.000Z" },
+            },
+          ],
+        },
+      }),
+    )
+  })
+
+  test("始まりの時刻も渡すと、そのあいだに止まった page だけを探す", async () => {
+    const query = vi.fn(async () => ({
+      object: "list",
+      results: [],
+      next_cursor: null,
+      has_more: false,
+    }))
+    const client = { dataSources: { query } } as unknown as Client
+
+    await fetchStuckPublishRevisions(
+      client,
+      { posts: "posts-source", pages: "pages-source" },
+      { before: "2026-10-03T07:00:00.000Z", onOrAfter: "2026-10-03T06:30:00.000Z" },
+    )
+
+    expect(query).toHaveBeenCalledWith(
+      expect.objectContaining({
+        filter: {
+          and: [
+            {
+              or: [
+                { property: "internal-state", select: { equals: "公開待ち" } },
+                { property: "internal-state", select: { equals: "非公開待ち" } },
+              ],
+            },
+            {
+              timestamp: "last_edited_time",
+              last_edited_time: { before: "2026-10-03T07:00:00.000Z" },
+            },
+            {
+              timestamp: "last_edited_time",
+              last_edited_time: { on_or_after: "2026-10-03T06:30:00.000Z" },
+            },
+          ],
+        },
+      }),
+    )
+  })
+})
+
+describe("forEachNotionDataSourcePage", () => {
+  test("ページングをたどりながら full page だけを順に渡す", async () => {
+    const page = (id: string) => ({
+      object: "page",
+      id,
+      properties: {},
+      url: `https://notion.so/${id}`,
+    })
+    const query = vi
+      .fn()
+      .mockResolvedValueOnce({
+        object: "list",
+        results: [page("first"), { object: "page", id: "partial" }],
+        next_cursor: "cursor-1",
+        has_more: true,
+      })
+      .mockResolvedValueOnce({
+        object: "list",
+        results: [page("second")],
+        next_cursor: null,
+        has_more: false,
+      })
+    const client = { dataSources: { query } } as unknown as Client
+    const visited: Array<string> = []
+
+    await forEachNotionDataSourcePage(client, "source", async ({ id }) => {
+      visited.push(id)
+    })
+
+    expect(visited).toEqual(["first", "second"])
+    expect(query).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ data_source_id: "source", start_cursor: "cursor-1" }),
+    )
+  })
+})
+
+describe("createNotionPublishUpdate", () => {
+  test("公開成功を 1 回の page update にまとめる", () => {
+    expect(
+      createNotionPublishUpdate({
+        status: "published",
+        pageId: "page-id",
+        deployedAt: "2026-08-24T02:00:00.000Z",
+        publishedAt: "2026-08-24T01:00:00.000Z",
+        updatedAt: null,
+      }),
+    ).toEqual({
+      page_id: "page-id",
+      properties: {
+        "internal-state": { type: "select", select: { name: "公開中" } },
+        "last-deploy": {
+          type: "date",
+          date: { start: "2026-08-24T02:00:00.000Z" },
+        },
+        公開日: {
+          type: "date",
+          date: { start: "2026-08-24T01:00:00.000Z" },
+        },
+        公開エラー: { type: "rich_text", rich_text: [] },
+      },
+    })
+  })
+
+  test("内容が変わった再公開では更新日も書く", () => {
+    const update = createNotionPublishUpdate({
+      status: "published",
+      pageId: "page-id",
+      deployedAt: "2026-08-24T02:00:00.000Z",
+      publishedAt: "2026-08-24T01:00:00.000Z",
+      updatedAt: "2026-08-24T02:00:00.000Z",
+    })
+    expect(update.properties).toHaveProperty("更新日", {
+      type: "date",
+      date: { start: "2026-08-24T02:00:00.000Z" },
+    })
+  })
+
+  test("last-notion-edit は自動更新 property なので書き込まない", () => {
+    const update = createNotionPublishUpdate({
+      status: "unpublished",
+      pageId: "page-id",
+    })
+
+    expect(update).toEqual({
+      page_id: "page-id",
+      properties: {
+        "internal-state": { type: "select", select: { name: "非公開" } },
+        公開エラー: { type: "rich_text", rich_text: [] },
+      },
+    })
+    expect(update.properties).not.toHaveProperty("last-notion-edit")
+    expect(update.properties).not.toHaveProperty("last-deploy")
+  })
+
+  test("失敗時は配信状態に基づく state と短い公開エラーだけを書く", () => {
+    expect(
+      createNotionPublishUpdate({
+        status: "failed",
+        pageId: "page-id",
+        internalState: "公開中",
+        deployedAt: "2026-08-24T02:00:00.000Z",
+        publishedAt: "2026-08-24T01:00:00.000Z",
+        error: "slug が変更されています (workflow-id)",
+      }),
+    ).toEqual({
+      page_id: "page-id",
+      properties: {
+        "internal-state": { type: "select", select: { name: "公開中" } },
+        "last-deploy": {
+          type: "date",
+          date: { start: "2026-08-24T02:00:00.000Z" },
+        },
+        公開日: {
+          type: "date",
+          date: { start: "2026-08-24T01:00:00.000Z" },
+        },
+        公開エラー: {
+          type: "rich_text",
+          rich_text: [
+            {
+              type: "text",
+              text: { content: "slug が変更されています (workflow-id)" },
+            },
+          ],
+        },
+      },
+    })
+  })
+
+  test("generate が自分で書いた 公開エラー を消すときは 公開エラー だけを書く", () => {
+    expect(createNotionPublishUpdate({ status: "error-cleared", pageId: "page-id" })).toEqual({
+      page_id: "page-id",
+      properties: {
+        公開エラー: { type: "rich_text", rich_text: [] },
+      },
+    })
+  })
+
+  test("配信状態が不明な失敗は state と日付を変えない", () => {
+    expect(
+      createNotionPublishUpdate({
+        status: "failed",
+        pageId: "page-id",
+        internalState: null,
+        deployedAt: null,
+        publishedAt: null,
+        error: "publish index を確認できません (workflow-id)",
+      }),
+    ).toEqual({
+      page_id: "page-id",
+      properties: {
+        公開エラー: {
+          type: "rich_text",
+          rich_text: [
+            {
+              type: "text",
+              text: { content: "publish index を確認できません (workflow-id)" },
+            },
+          ],
+        },
+      },
+    })
+  })
+})
+
+describe("writeNotionPublishResult", () => {
+  const makePage = (
+    state: "下書き" | "公開中" | "非公開",
+    error: string,
+    dates?: { lastDeploy: string; publishedAt: string },
+  ): PageObjectResponse => {
+    return {
+      object: "page",
+      id: "page-id",
+      created_time: "2026-08-24T00:00:00.000Z",
+      last_edited_time: "2026-08-24T02:00:00.000Z",
+      created_by: { object: "user", id: "user-id" },
+      last_edited_by: { object: "user", id: "user-id" },
+      cover: null,
+      icon: null,
+      parent: { type: "data_source_id", data_source_id: "data-source-id" },
+      archived: false,
+      in_trash: false,
+      url: "https://notion.so/page-id",
+      public_url: null,
+      properties: {
+        "internal-state": {
+          type: "select",
+          select: { name: state },
+        },
+        "last-deploy": {
+          type: "date",
+          date: { start: dates?.lastDeploy ?? "2026-08-24T02:00:00.000Z" },
+        },
+        公開日: {
+          type: "date",
+          date: { start: dates?.publishedAt ?? "2026-08-24T01:00:00.000Z" },
+        },
+        公開エラー: {
+          type: "rich_text",
+          rich_text: [
+            {
+              type: "text",
+              plain_text: error,
+              href: null,
+              annotations: {
+                bold: false,
+                italic: false,
+                strikethrough: false,
+                underline: false,
+                code: false,
+                color: "default",
+              },
+            },
+          ],
+        },
+      },
+    } as unknown as PageObjectResponse
+  }
+
+  test("書き込み応答を失っても再取得値が一致すれば成功とみなす", async () => {
+    const page = makePage("公開中", "")
+    const update = vi.fn(async () => {
+      throw Error("response lost")
+    })
+    const retrieve = vi.fn(async () => page)
+    const client = { pages: { update, retrieve } } as unknown as Client
+    const result = {
+      status: "published",
+      pageId: "page-id",
+      deployedAt: "2026-08-24T02:00:00.000Z",
+      publishedAt: "2026-08-24T01:00:00.000Z",
+      updatedAt: null,
+    } as const
+
+    expect(isNotionPublishResultApplied(page, result)).toEqual(true)
+    expect(await writeNotionPublishResult(client, result)).toEqual(page)
+    expect(retrieve).toHaveBeenCalledWith({ page_id: "page-id" })
+  })
+
+  test("Notion が日時を分に切り捨てて別の形式で返しても、同じ分なら書けているとみなす", () => {
+    const page = makePage("公開中", "", {
+      lastDeploy: "2026-08-24T02:00:00.000+00:00",
+      publishedAt: "2026-08-24T01:00:00.000+00:00",
+    })
+    const result = {
+      status: "published",
+      pageId: "page-id",
+      deployedAt: "2026-08-24T02:00:42.123Z",
+      publishedAt: "2026-08-24T10:00:59.000+09:00",
+      updatedAt: null,
+    } as const
+
+    expect(isNotionPublishResultApplied(page, result)).toEqual(true)
+    expect(
+      isNotionPublishResultApplied(page, { ...result, deployedAt: "2026-08-24T02:01:00.000Z" }),
+    ).toEqual(false)
+  })
+
+  test("再取得値が期待値と違うときは元の更新エラーを保つ", async () => {
+    const page = makePage("下書き", "")
+    const updateError = Error("response lost")
+    const update = vi.fn(async () => {
+      throw updateError
+    })
+    const retrieve = vi.fn(async () => page)
+    const client = { pages: { update, retrieve } } as unknown as Client
+
+    await expect(
+      writeNotionPublishResult(client, {
+        status: "unpublished",
+        pageId: "page-id",
+      }),
+    ).rejects.toEqual(updateError)
+  })
+})

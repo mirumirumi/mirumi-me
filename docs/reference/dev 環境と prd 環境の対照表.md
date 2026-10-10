@@ -1,0 +1,80 @@
+# dev 環境と prd 環境の対照表
+
+dev / prd のリソースと、共通にしているものの理由をまとめる。
+リソースを増やすときはこの表に 1 行足す。
+
+判断基準は「dev の操作ミスが prd の配信・データ・課金へ波及しうるか」。
+波及しうるものは分ける。外部アカウントに 1 つしか持てないものは共通のままにする。
+
+🚧 はまだ揃っていない予定のもの。prd 側の 🚧 は production bootstrap 前に揃える。
+
+## Cloudflare
+
+| リソース | prd | dev | 区分 | メモ |
+| --- | --- | --- | --- | --- |
+| Worker | `mirumi-me-prd` | `mirumi-me-dev` | 分離 | |
+| Workflow | `mirumi-me-publish-prd` | `mirumi-me-publish-dev` | 分離 | comment-refresh、backup も同じ命名で分離 |
+| Container | `mirumi-me-build-prd` | `mirumi-me-build-dev` | 分離 | 同じ Dockerfile |
+| KV `CONTENT_CACHE` | 🚧 未作成 | `ab630ddb…` | 分離 | prd の namespace ID 未設定のままだと deploy が通らない |
+| R2 `BACKUP` | `mirumi-me-backup-prd` | `mirumi-me-backup-dev` | 分離 | 定期バックアップの staging 兼 1 つ目の保管先 |
+| Analytics Engine | `mirumi_me_pv_prd` | `mirumi_me_pv_dev` | 分離 | フロントが送った PV を Workers の `POST /api/pv` が書き、site-admin-extension が SQL API で読む（2026-10-04 に実装）。dataset は最初の書き込みでできる |
+| Rate limit namespace | `913240002`（API 全般）/ `913240004`（コメント投稿） | `913240001` / `913240003` | 分離 | |
+| Access `mirumi-me-preview` | 共通 AUD | 共通 AUD | 共通 | 同一人物・同一ポリシーのため 1 アプリで dev / prd 両方の `/preview` を保護 |
+| Access `mirumi-me-admin` | 共通 AUD | 共通 AUD | 共通 | 同上 |
+| Access `mirumi-me-local-x-post` | なし | 専用 AUD | dev のみ | prd では同 route を 404 にする |
+| Access service token | なし | `mirumi-me-local-development` | dev のみ | 有効期限 1 年 |
+| `workers.dev` サブドメイン | 共通 | 共通 | 共通 | アカウントに 1 つ |
+| 請求予算アラート（budget alert） | 共通 | 共通 | 共通 | アカウントに 1 つ。Cloudflare が自動で作ったもので、しきい値は $10（2026-09-29 時点）。従量課金だけが対象でメールが届くだけ |
+
+## AWS
+
+| リソース | prd | dev | 区分 | メモ |
+| --- | --- | --- | --- | --- |
+| site S3 bucket | `mirumime-prd-mirumi-me` | `mirumime-dev-mirumi-me` | 分離 | |
+| media S3 bucket | `mirumime-prd-mirumi-media` | prd と同じ | 共通 | key が content hash ベースで衝突が無害。dev の画像も prd に残る点は許容する |
+| backup S3 bucket | `mirumime-prd-backup` | `mirumime-dev-backup` | 分離 | 定期バックアップの Deep Archive。comments のメールを含むため private |
+| site CloudFront | `E1UPWIMHFP5TEC`（mirumi.me） | `E16GU2ZPNLT91U`（`d3694gpnjd4x49`） | 分離 | dev も常時有効で、dev だけ CloudFront Function で閲覧を絞る |
+| CloudFront origin 方式 | S3 ウェブサイトエンドポイント | prd と同じ | 共通 | カスタムオリジン（http-only）。OAI / OAC ではない。index document とルーティングルールを S3 側が処理するため CloudFront Function が不要 |
+| origin アクセス制御 | `Referer` カスタムヘッダ | prd と同じ方式 | 共通 | bucket policy が `aws:Referer` 一致時だけ `GetObject` を許可。現在の値はバケット名そのもので推測可能。🚧 ランダムな秘密値へ変更する |
+| `_internal/*` の Deny | 🚧 未設定 | 設定済み | 分離 | prd は bootstrap の GO 後に設定する |
+| media CloudFront | mirumi.media | prd と同じ | 共通 | media bucket と同じ理由 |
+| IAM アクセスキー | `mirumime-prd-publisher`（ユーザーと policy は作成済み。🚧 キー発行と secret 登録、それまでは暫定で `S3_FullAccess_IAM`） | `mirumime-dev-publisher` | 分離 | dev のキーから prd の site bucket と distribution へは届かない。media bucket だけ両方が書く |
+| サムネイル生成 Lambda | 専用 URL | 専用 URL | 分離 | `THUMBNAIL_FUNCTION_URL` |
+| お問い合わせ Lambda | あり | なし | prd のみ | 当面そのまま |
+| Route53 / ACM | あり | なし | prd のみ | dev はカスタムドメインを持たない |
+
+## Notion
+
+| リソース | prd | dev | 区分 | メモ |
+| --- | --- | --- | --- | --- |
+| ワークスペース | `mirumi.me` | prd と同じ | 共通 | MCP も `ntn` も同時に 1 ワークスペースしか見られないため、分けると接続の張り替えが常時発生する |
+| posts / pages data source | `399e5acd…` / `53765425…` | `3c065425…` / `dc065425…` | 分離 | 同一ワークスペース内で `(dev)` として分ける。🚧 prd は dev を複製して作り直すので ID が変わる（`本番リリース手順.md` の 2） |
+| comments data source | `201f8de6…` | `3d365425…` | 分離 | 🚧 prd は posts / pages と同じく作り直す |
+| categories data source | `b2786440…` | prd と同じ | 共通 | 15 件で変化が少なく、dev 側に複製する利点がない |
+| `NOTION_TOKEN` | 共通 | 分離 | 分離 | dev の integration は dev の 3 データソースと共用 categories にしか接続していない |
+| `NOTION_WEBHOOK_SECRET` | 分離 | 分離 | 分離 | |
+| `internal-state` property ID | `o=BU` | `o=BU` | 共通 | データソースを複製しても Notion がプロパティ ID を維持するため |
+| integration の bot 名 | `workers-api` | `workers-api (dev)` | 分離 | `status` の式は 4 データソースとも `contains(..., "workers-api")` で共通 |
+
+## 外部サービス
+
+| リソース | prd | dev | 区分 | メモ |
+| --- | --- | --- | --- | --- |
+| Amazon Creators credential | 共通 | 共通 | 共通 | アカウントに 1 つ |
+| `AMAZON_ASSOCIATE_TAG` | `milmemo-22` | 同じ | 共通 | 同上 |
+| `AMAZON_CARD_SIGNING_SECRET` | 分離 | 分離 | 分離 | 署名 token が環境をまたがないようにする |
+| xAI API key | 共通 | 共通 | 共通 | アカウントに 1 つ。dev の呼び出しも課金対象 |
+| Slack の通知先（`SLACK_WEBHOOK_URL`） | 共通 | 共通 | 共通 | Incoming Webhook 1 本。通知の本文に環境名を入れて区別する |
+| Turnstile | site key ハードコード | prd と同じ | 共通 | ウィジェットのホスト名に `mirumi.me`、dev の CloudFront domain、`localhost` を登録済み |
+| GA4 | `G-Y7HSDMHBW5` | 読み込まない | 実質分離 | `APP_ENV=prd` の build でだけ計測タグを差し込む |
+| AdSense | `ca-pub-2873410957106428` | `ca-google`（テスト ID） | 実質分離 | 枠は prd と同じだけ出してレイアウトを揃え、本番アカウントへは記録させない |
+| コメント digest の宛先 | mmmm の outlook（`COMMENT_DIGEST_RECIPIENT` secret） | prd と同じ | 共通 | 送信元は `mail@mirumi.me`。SES は `us-east-1` の sandbox のまま |
+
+## CI / ローカル
+
+| リソース | prd | dev | 区分 | メモ |
+| --- | --- | --- | --- | --- |
+| GitHub Actions deploy | `main` push | `dev` push | 分離 | `ENV_NAME` が ref 名から切り替わる。`workflow_dispatch` は ref が `main` なら prd、それ以外は dev |
+| `CLOUDFLARE_API_TOKEN` | 共通 | 共通 | 共通 | deploy 権限のみのトークン 1 本 |
+| ローカル `app/.env` | 使わない | dev を参照 | dev のみ | Notion token と Access service token |
+| site-admin-extension の `.env.local` | 🚧 prd の posts / pages を読む | dev の posts / pages を読む | 分離 | Cloudflare の API token（ユーザートークン、Account Analytics: Read）と、読み取りだけの Notion integration の token。integration は 2026-10-02 時点で dev にだけ接続。拡張は開いているページのホストで dev / prd の読み先を分ける（`src/admin-data.ts`） |

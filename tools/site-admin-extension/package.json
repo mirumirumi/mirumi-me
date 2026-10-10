@@ -1,0 +1,17 @@
+{
+  "name": "site-admin-extension",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 8080",
+    "tsc": "tsc --noEmit",
+    "test": "vitest run --config ../../vitest.config.ts --configLoader runner tools/site-admin-extension",
+    "build": "tsc --noEmit && vite build"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.7.1",
+    "@types/chrome": "^0.2.5",
+    "vite": "^8.2.1"
+  }
+}

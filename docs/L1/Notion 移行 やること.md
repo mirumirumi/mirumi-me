@@ -1,0 +1,200 @@
+
+## 開発要素
+
+- 全体構成
+    - 以下を mirumi-me リポジトリに Bun workspaces のモノレポでいれる：
+        - Nuxt フロントエンド本体
+        - Cloudflare バックエンド全体
+        - site-admin-extension
+    - 主な使用フレームワーク
+        - Cloudflare Workers: Hono, zod（その他書き方のイメージなどは ~/dev/futaribo/server 内の雰囲気に揃えたい）
+    - シークレット管理
+        - アプリケーションで使うものは Cloudflare Workers Secrets に入れて完結させる
+        - CI/CD は wrangler deploy できる権限だけに絞ったトークンだけ渡して普通にデプロイする
+
+- Cloudflare API サーバー
+    - 記事更新差分ビルド API ✅
+        - Notion Webhook を受信して本文を取りに行く → Nuxt ビルド
+            - Notion の `公開`、`非公開` ボタンが `internal-state` をそれぞれ `公開待ち`、`非公開待ち` に変えた更新をリクエストとして受け付ける
+            - 公開可能かどうかの厳密なバリデーションは Workers 側で行う
+        - POST エンドポイントで、pageId のパラメータを受けれるようにする（pageId は複数可）
+        - バリデーション
+            - slug が変わってしまっていないかチェックする
+                - 一致していなかったら API は成功で返しつつ「公開エラー」にセットして安全に終了する
+        - バックアップは部分ビルドではなし
+            - その記事のバックアップしか取れないとあまり意味はないし、かといってスナップショットの部分更新をできるようにするためだけにバックアップ全体のデータ構造を変えるのは理にかなっていない
+        - ビルド自体は Workers の中ではできないので Cloudflare Containers を使う
+            - Sandbox SDK はいらない
+            - いままで CI 環境として用意していた実行環境を Dockerfile で用意するようにする
+        - コンテナ起動を含む公開処理のオーケストレーションには Cloudflare Workflows を使う
+            - 流れは Notion -> Workers -> Workflows -> Containers になる
+        - 画像同期
+            - 編集後、公開するタイミングで Notion 上でアップロードされた画像を拾って S3 に配置
+            - 静止画像は webp quality 80 に統一する（変換するようにする）
+                - 本文画像は横幅 800 / 1200 / 1600 px、拡大なしで生成し、`srcset` で使う
+                - thumbnail は 412x216（トップ・内部ブログカード）、600x315（mobile article header）、1200x630（desktop article header・OGP）を `cover` で生成する
+            - 既存記事が参照している静止画像も、最終 Notion import 前の 1 回限りの batch で同じ形式に揃える
+            - 既存アニメーション GIF は変換も URL 変更もしない。新しい本文アニメーション GIF だけそのまま S3 へコピーする
+            - Notion にアップロードした音声や動画も、そのまま S3 へコピーする（サイズリミットはいまは 1GB まで）
+                - 既存記事の音声・動画は mirumi.media の URL を直接指しているので対象外
+        - 新規公開した記事の公開日も Workers がセットする
+        - `更新日` も Workers がセットする
+        - サチコのインデックス API はなんとこれまでずっと無駄だったということらしいので今回廃止する
+            - 逆にサイトマップ更新の重要性が上がるが、これは WordPress 任せだったので Notion 経由でつくれるように作り直す必要がある
+        - 公開停止も受け付けられるようにする
+        - CI の re-generate は廃止
+    - コメント受付 ✅
+        - スパム対策（Cloudflare Turnstile を使う）
+        - Notion へ書き込み
+        - Application Password は当然廃止
+        - メール通知（1 日 1 回見れれば十分なので mmmm の outlook のほうでいい）
+        - コメントフィードは移行せず廃止する
+            - WordPress が勝手に生やしていたもので、旧 CI は `mirumi.in/comments/feed` を取ってきていただけ
+            - 中身が既存記事の `#comment-123` フラグメントなので、RSS の唯一の効能である URL 発見にも寄与しない
+            - `<link rel="alternate">` は nuxt.config.ts から削除済み。S3 の `feed-comments.xml` object の削除だけ残っている🔴
+    - コメント更新差分ビルド API ✅
+        - コメントを承認なり返信したらフックする API
+        - もしかしたら記事更新差分ビルド API と併用できるかも
+    - アクセスカウンター ✅
+        - 現行の WordPress カウンターを、フロントエンドから Workers に 1PV ずつ送って Cloudflare Analytics Engine に書き込む方式へ移行する
+            - ページは末尾スラッシュの有無を正規化したパスで識別する
+        - site-admin-extension は読み取り用の Cloudflare API トークンをローカルに持ち、Analytics Engine の SQL API から現在と同じ直近 31 日間の PV 合計を直接取得する
+    - その他
+        - 本格的な全文検索は行わず、簡単な検索 API を用意する ✅
+        - いいね数機能はもう使っていないため廃止する ✅
+        - サムネイル自動生成とお問い合わせの Lambda は当面そのまま使う ✅
+            - サムネイル自動生成は最適化が必要になったらモノレポへの移管を検討する
+                - リポジトリは ~/dev/generate-article-title-thumbnail です
+            - 自動生成画像は OGP とトップに使い、記事ヘッダーには出さず、Notion の `thumbnail` には書き戻さない
+    - シークレット管理に GitHub Actions secrets を使うのをやめる ✅
+        - そのプラットフォームが必要とするシークレットはそのプラットフォームで管理する
+
+- generate（サイト全体の生成）✅（dev で動確認済み）
+    - deploy.yml を新方式に差し替え済みなのでAWS 系と GPG_PASSPHRASE はリリース完了して安定したら完全に不要🔴
+    - いままで通り全記事フェッチはする
+        - 後述するバックアップ用定期バッチでもおそらく同じ全記事フェッチロジックを使うので、レートリミットコントロール含めて共通化したい
+        - プロパティから「編集したがまだ公開していない」記事だけフェッチから除外する
+            - 除外した記事は、最後に公開したときの内容から今のアプリで作り直す（コメント反映と同じやり方。未公開の編集は出ない）
+    - バリデーション
+        - 部分ビルドと同じように slug の変更有無チェックをここでもやる
+    - S3 は全削除せず、生成したオブジェクトだけ上書きする
+        - 除外記事の `{slug}/**` は削除せず、最後に公開したときの内容のまま今のアプリで作り直して上書きする
+            - 旧アプリケーション状態のまま残すと、見た目の更新が届かないうえ、サイト内遷移で新しいアプリが古いデータを読んで壊れうるため
+            - 旧記事が参照する可能性があるため、ハッシュ付きの `_nuxt/**` も削除せず新旧を共存させる
+        - 記事や不要アセットの削除は、generate とは別の明示的な処理として行う
+        - CloudFront の invalidation は通常どおり実行してよい
+
+- コメントの移行✅（dev では実施確認済み）
+    - Notion の comments データソースに移行する
+    - 細かい計画は `docs/L2/コメント基盤の移行設計.md` を参照のこと
+
+- バックアップ用の定期バッチ ✅
+    - Cloudflare Cron Triggers を使う
+    - バックアップを 2 段階で取る（Notion 側の標準バックアップ(自動保存のこと)も含めると 3 段階）
+        - Notion からの API レスポンスそのまま
+        - パースして Vue コンポーネントに HTML として渡す直前の状態のもの
+        - Block API からの変換ルート：
+            - レスポンスをそのままレンダリングしたい HTML にする
+                - 使うライブラリとしてはこれだけ（変換自体は自前実装）
+                    - https://github.com/makenotion/notion-sdk-js
+    - あとバックアップは R2 と S3 に取るようにすれば複数保管要件も満たせそう
+        - R2 はよくわかってないのもあるが、S3 は Deeply Archive でよさそう
+
+- Nuxt 4 へのマイグレーション ✅
+    - 主にビルドプロセスの高速化が目的
+        - あと部分ビルドで `crawlLinks: false, routes: [###]` ってやってるやついい加減なんとかならんか
+            - →そもそも要らなくなるからこれごと消した
+    - パッケージ類も上げられるだけ上げる、audit も通す
+
+- 移行スクリプト ✅（細かい現在状況は .contexts/実装の進捗状況.md を参照のこと）
+    - Notion 移行が完了したら、tools/migrate-to-notion 直下の git ignore された生成物をまとめて消してよい
+        - 入力: `blog-content-block-survey/contents.ndjson`、`media-attachments.ndjson`、`media-mapping*.json`
+        - 出力: `dry-run-report.json`、`media-normalization-report.json`
+        - 状態: `upload-state.*.json`。これは Notion のデータソースの中身と対になっているため、
+          dev を更地にするときは同時に消す。片方だけ消すと次の upload が重複ページを作る
+    - コンテンツブロックの対応づけが決定したらそれに応じた変換スクリプトをつくる
+        - 作成前に全記事本文を取り直すのを忘れずに
+        - 投稿は posts、固定ページは pages と、Notion 側でもデータソースを分けて投入する
+            - 両者はプロパティ構成がまったく同じなので、変換処理は投入先の指定以外は共通でよい
+            - 固定ページは 4 件で、いずれもカテゴリを持たないので `category` は空のまま（移行が完全に完了したら category プロパティ消してもいいね）
+                - 必要なのは about, privacy-policy, profile, featured-posts
+    - もちろん WordPress 側のメタデータ類を Notion のプロパティに変換するのも含む
+    - `thumbnail` をセットするのは `show_thumbnail_on_frontend` が true の 90 件だけにする
+        - 本文タイトル直下の表示は現状と完全に一致する
+        - 残り 377 件は `thumbnail` が空になるので OGP 画像が自前のものから Workers の自動生成に変わるが、これは呑む
+        - 自動生成した画像を `thumbnail` プロパティに書き戻さないことが前提（書き戻すと本文表示が復活してしまう）
+    - 移行が完了したら OGP 画像が壊れていた 36 記事が直っているか確認する（これは移行で自動的に直るはずという期待）
+        - 33 件は 2025-08-24 に古い記事をまとめて自動生成させたときのもので guid が画像ではなく記事ページを指している（.contexts にリストあるよ）
+        - 3 件は URL は正しいが S3 に実体がない（nuxt3-regenerate-only-one、agentic-coding、id-and-universe）
+        - どれも `show_thumbnail_on_frontend` が false なので Notion では `thumbnail` が空になり、Workers の自動生成で埋まって直るはず
+ 
+- プレビュー機能 ✅
+    - Notion 側
+        - posts に `プレビュー` Formula プロパティをつくる
+    - Workers は実際の変換ロジックを実行して `Content-Type: text/html; charset=UTF-8` で生の HTML をレスポンスするだけ
+    - 上記の HTML の中で mirumi.me で実際に配信されている css を参照するようにする
+    - プレビュー URL は `https://mirumi-me-prd.v2p04rubfuwnvttj.workers.dev/preview?pageId=xxx`
+        - お手軽な認証として Cloudflare Access というのを使うとよさそうっぽい！
+    - プレビュー中の画像だけは Notion API が返す一時 URL をそのまま使って表示する（本番 generate ではこれを S3 put した URL に差し替える）
+
+- localhost 開発 ✅
+    - 従来通り Nuxt は普通に localhost で開発できるようにする
+    - コンテンツは常に本番と同じものが最新状態できっちり揃っていなくてもいいけど、すっからかんとか完全に追従しないとかはイヤ
+        - というわけで、現在は Notion の dev データソースだけを見て、基本はローカル（`app/.cache/notion-dev`）にキャッシュする形になっている
+        - キャッシュ鮮度は `docs/reference/Notion 公開基盤運用手順.md` の「cache の鮮度」を参照のこと
+        - ただし、そもそも dev データソースを定期的に最新化する仕組みとかはいまは考えてないのでそれ以上に新しくはならないことに注意
+
+- フロントエンド改善
+    - ブロックごとなくしたので css 消していいものがけっこうある ✅
+        - rating_star
+        - voice_wrap
+        - speech_wrap
+        - blank-box
+        - keyboard-key
+        - table-wrapper
+    - X の Static Tweet block を再活用する！！ ✅
+        - xAI API の x_search というやつを使う、一回 $0.005、同日内無課金
+        - とはいえキャッシュは必須なので、KV にでも置いておく
+        - あとたぶん UI のダークテーマはつくってなかったかも（どうせ Twitter -> X とか見直し要素はいろいろありそう）
+        - あわせて X ウィジェットタグの読み込みとかもろもろゴミ掃除もできる！
+    - 目次リンクを見出し名にしたい
+        - 記事更新するとリンク先がずれる問題を直せる
+        - 設計：
+            - Notion の Block ID を使う（基本的な変更パターンすべてで大丈夫そう）
+            - もし見出し階層が変わっても HTML の id で振っておけばそれもサポートできる
+            - ただしこの方式では Notion 移行しないと id がわからない以上、事前に既存記事のリンク先を更新をすることはできない
+                - でも別に数日間の目次リンクのリンク切れは全然許容できるので、単発の置換スクリプトをつくって移行後に置き換えればよい
+    - 新しい記事のアプリ紹介カードを `ios` の URL だけから組み立てられるようにする ✅
+        - iTunes Search API（認証不要・無料）を使う。細かいことは `コンテンツブロックタイプ変換方針.md` のアプリ紹介カードのとこ
+
+## Notion 側の細かいカスタマイズ
+
+- 公開・非公開リクエスト前の確認とバリデーション ✅
+    - Notion 側では誤操作とサムネイルのセット忘れを防ぐための確認だけを行い、公開可能かどうかの厳密なバリデーションは Workers 側で行う
+    - `公開` ボタン
+        1. `Show confirmation`
+        2. このページの `internal-state` を `公開待ち` に変更する
+    - `非公開` ボタン
+        1. `Show confirmation` で「この記事を非公開にしますか？」と表示する
+        2. このページの `internal-state` を `非公開待ち` に変更する
+    - 確認後も `thumbnail` が空なら、Workers が自動生成 Lambda にリクエストして生成画像を使用する
+    - `internal-state` の変更は Notion Webhook から Workers が受け取るため、Notion のデータベースオートメーションは使わない
+
+- 「編集したがまだ公開していないフラグ」や周辺ステータスについて ✅
+    - `status` が以下の条件などから最終的な表示になる
+        - `internal-state`（WordPress からそのまま持ってきたやつ、書き込み可能）は普段は人間は見ないものとする
+    - 条件：
+        - `公開待ち`：🔵 公開処理中
+        - `公開エラー` あり：🔴 公開エラー
+        - `非公開待ち`：🟠 非公開処理中
+        - `非公開`：🟤 非公開
+        - `last-deploy` なし：⚪ 未公開
+        - `last-edited-by` の名前に `workers-api` を含む：🟢 公開中（`workers-api (dev)` / `workers-api`）
+        - それ以外：🟡 未公開差分あり
+    - 初回の本番デプロイに含まれた記事だけ、成功後に `last-deploy` を初期化する
+        - ただしスクリプトで移行してきたら `internal-state` はすべて公開中になる予定なのでそこだけ留意してね
+    - 動作確認：
+        - 公開完了を書き戻したときに実際に `🟢公開中` へ変わること ✅（dev で `公開` ボタンから 🟢 まで通した）
+
+- Search Regex 的なことがすぐできるようになってるといいなと思った
+    - けど、それは小さな CLI をつくればわりとすぐ解決できるわかったのでそのうちつくる
